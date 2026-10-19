@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nông Sản Lành | Hệ Thống Truy Xuất Nguồn Gốc & Chuỗi Lạnh Nông Nghiệp Thông Minh</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            farm: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          },
+          boxShadow: {
+            'farm': '0 10px 25px -5px rgba(22, 163, 74, 0.1), 0 8px 10px -6px rgba(22, 163, 74, 0.1)',
+            'card': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    
+    .glassmorphism {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    
+    .timeline-dot::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 24px;
+      bottom: -16px;
+      width: 2px;
+      background-color: #e2e8f0;
+    }
+    .timeline-item:last-child .timeline-dot::before {
+      display: none;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- ================= TOP TOAST NOTIFICATION CONTAINER ================= -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ================= HEADER & NAVBAR ================= -->
+  <header class="sticky top-0 z-40 glassmorphism border-b border-slate-200/80 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Logo & Brand Name -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('storefront')">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-600 to-green-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 transform hover:scale-105 transition-transform">
+            <i class="fa-solid fa-seedling text-xl"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent">
+                Nông Sản Lành
+              </span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                IoT Farm 4.0
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium">Truy Xuất Nguồn Gốc & Chuỗi Lạnh</p>
+          </div>
+        </div>
+
+        <!-- Quick Search Bar (Product name & Batch Code) -->
+        <div class="hidden md:flex flex-1 max-w-md mx-8">
+          <div class="relative w-full">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-magnifying-glass text-sm"></i>
+            </span>
+            <input 
+              type="text" 
+              id="globalSearchInput" 
+              placeholder="Tìm nông sản hoặc nhập mã lô (VD: BATCH-TOM-2601)..." 
+              oninput="handleSearch(this.value)"
+              class="w-full pl-10 pr-10 py-2.5 text-sm bg-slate-100/80 border border-slate-200 rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all placeholder:text-slate-400"
+            />
+            <button 
+              id="clearSearchBtn"
+              onclick="clearSearch()" 
+              class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 text-xs">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Actions: Mode Switch & Cart -->
+        <div class="flex items-center gap-3 sm:gap-4">
+          
+          <!-- Mode Toggle Switch (Client Storefront vs Admin Farm Dashboard) -->
+          <div class="bg-slate-200/80 p-1 rounded-full flex items-center shadow-inner text-xs font-semibold">
+            <button 
+              id="storefrontTabBtn"
+              onclick="switchView('storefront')" 
+              class="px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm">
+              <i class="fa-solid fa-basket-shopping text-xs"></i>
+              <span class="hidden sm:inline">Khách Mua Hàng</span>
+              <span class="sm:hidden">Cửa Hàng</span>
+            </button>
+            <button 
+              id="adminTabBtn"
+              onclick="switchView('admin')" 
+              class="px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+              <i class="fa-solid fa-tractor text-xs"></i>
+              <span class="hidden sm:inline">Quản Trị Nhà Vườn</span>
+              <span class="sm:hidden">Quản Trị</span>
+            </button>
+          </div>
+
+          <!-- Shopping Cart Button with Dynamic Badge -->
+          <button 
+            id="cartToggleBtn"
+            onclick="toggleCartDrawer(true)" 
+            class="relative p-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-emerald-600 hover:border-emerald-300 shadow-sm transition-all group"
+            title="Xem giỏ hàng">
+            <i class="fa-solid fa-cart-shopping text-lg group-hover:scale-110 transition-transform"></i>
+            <span 
+              id="cartBadgeCount" 
+              class="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 bg-emerald-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm scale-100 transition-transform">
+              0
+            </span>
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- Mobile Search Bar -->
+      <div class="pb-3 md:hidden">
+        <div class="relative w-full">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <i class="fa-solid fa-magnifying-glass text-sm"></i>
+          </span>
+          <input 
+            type="text" 
+            placeholder="Tìm theo tên hoặc mã lô..." 
+            oninput="handleSearch(this.value)"
+            class="w-full pl-10 pr-4 py-2 text-sm bg-slate-100/90 border border-slate-200 rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT WRAPPER ================= -->
+  <main class="flex-grow">
+
+    <!-- ======================================================== -->
+    <!-- VIEW 1: STOREFRONT (Khách Mua Hàng & Tra Cứu)           -->
+    <!-- ======================================================== -->
+    <div id="storefrontView" class="transition-opacity duration-300">
+      
+      <!-- HERO BANNER -->
+      <section class="relative bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 text-white overflow-hidden py-14 sm:py-20">
+        <!-- Background Overlay Decorative Pattern -->
+        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#86efac_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+        <div class="absolute -right-20 -bottom-20 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            
+            <div class="lg:col-span-7 space-y-6">
+              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-700/60 border border-emerald-400/30 text-emerald-200 text-xs font-semibold backdrop-blur-sm">
+                <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                100% Canh Tác Chuẩn VietGAP & GlobalGAP
+              </div>
+
+              <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                Nông Sản Tươi Ngon <br class="hidden sm:inline">
+                <span class="text-emerald-300">Minh Bạch Từng Nguồn Cội</span>
+              </h1>
+
+              <p class="text-emerald-100 text-base sm:text-lg max-w-xl font-normal leading-relaxed">
+                Ứng dụng cảm biến IoT nhà màng và chuỗi lạnh giám sát nhiệt độ 24/7. Mỗi sản phẩm được gắn mã định danh điện tử, minh bạch từ lúc gieo hạt đến tay người tiêu dùng.
+              </p>
+
+              <div class="flex flex-wrap items-center gap-4 pt-2">
+                <a href="#productCatalog" class="px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold rounded-xl shadow-lg shadow-emerald-500/25 transition-all flex items-center gap-2 transform hover:-translate-y-0.5">
+                  <i class="fa-solid fa-basket-shopping"></i>
+                  Mua Sắm Nông Sản
+                </a>
+                <button onclick="openQuickTracePrompt()" class="px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl border border-white/20 backdrop-blur-sm transition-all flex items-center gap-2">
+                  <i class="fa-solid fa-qrcode text-emerald-300"></i>
+                  Nhập Mã Tra Cứu Lô
+                </button>
+              </div>
+
+              <!-- Trust Metrics -->
+              <div class="grid grid-cols-3 gap-4 pt-4 border-t border-emerald-700/50 max-w-lg">
+                <div>
+                  <div class="text-2xl font-black text-white">100%</div>
+                  <div class="text-xs text-emerald-200 font-medium">Hữu cơ sinh học</div>
+                </div>
+                <div>
+                  <div class="text-2xl font-black text-white">&lt; 2 Giờ</div>
+                  <div class="text-xs text-emerald-200 font-medium">Thu hái giao ngay</div>
+                </div>
+                <div>
+                  <div class="text-2xl font-black text-white">4°C - 8°C</div>
+                  <div class="text-xs text-emerald-200 font-medium">Chuỗi lạnh liên tục</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mini Banner Graphic Card -->
+            <div class="lg:col-span-5">
+              <div class="relative bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-300">Nhà Màng Thông Minh #04</span>
+                  </div>
+                  <span class="text-xs text-white/70">Đà Lạt Farm</span>
+                </div>
+                <img 
+                  src="https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=800&q=80" 
+                  alt="Nhà màng công nghệ cao" 
+                  class="rounded-xl w-full h-52 object-cover shadow-inner"
+                />
+                <div class="flex items-center justify-between text-xs text-emerald-100 bg-emerald-950/40 p-3 rounded-lg border border-emerald-500/20">
+                  <span><i class="fa-solid fa-temperature-half text-emerald-400 mr-1.5"></i>Nhiệt độ tối ưu: 24.5°C</span>
+                  <span><i class="fa-solid fa-leaf text-emerald-400 mr-1.5"></i>Tưới nhỏ giọt Israel</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- REALTIME IOT GREENHOUSE MONITOR WIDGET -->
+      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
+        <div class="bg-white rounded-2xl shadow-card border border-slate-200/80 p-5 sm:p-6 transition-all hover:shadow-farm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-tower-broadcast animate-pulse"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-slate-800 text-base sm:text-lg flex items-center gap-2">
+                  Giám Sát Môi Trường Canh Tác IoT
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 animate-pulse">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1"></span> LIVE
+                  </span>
+                </h3>
+                <p class="text-xs text-slate-500">Cập nhật tự động thời gian thực từ cảm biến trạm vi khí hậu</p>
+              </div>
+            </div>
+            <div class="text-xs text-slate-500 flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
+              Đồng bộ: <span id="iotLastSyncTime" class="font-semibold text-slate-700">18:55:00</span>
+            </div>
+          </div>
+
+          <!-- 4 Sensor Metrics Cards -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Temperature -->
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/60 hover:bg-emerald-50/40 hover:border-emerald-200 transition-colors">
+              <div class="flex items-center justify-between text-slate-500 text-xs mb-2">
+                <span class="font-medium">Nhiệt độ không khí</span>
+                <i class="fa-solid fa-temperature-half text-amber-500 text-base"></i>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span id="sensorTemp" class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">24.6</span>
+                <span class="text-sm font-semibold text-slate-500">°C</span>
+              </div>
+              <div class="mt-2 text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-circle-check text-emerald-500"></i> Ngưỡng chuẩn (20-27°C)
+              </div>
+            </div>
+
+            <!-- Air Humidity -->
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/60 hover:bg-emerald-50/40 hover:border-emerald-200 transition-colors">
+              <div class="flex items-center justify-between text-slate-500 text-xs mb-2">
+                <span class="font-medium">Độ ẩm không khí</span>
+                <i class="fa-solid fa-droplet text-blue-500 text-base"></i>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span id="sensorHumidity" class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">74.2</span>
+                <span class="text-sm font-semibold text-slate-500">%</span>
+              </div>
+              <div class="mt-2 text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-circle-check text-emerald-500"></i> Độ ẩm lý tưởng
+              </div>
+            </div>
+
+            <!-- Soil Moisture -->
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/60 hover:bg-emerald-50/40 hover:border-emerald-200 transition-colors">
+              <div class="flex items-center justify-between text-slate-500 text-xs mb-2">
+                <span class="font-medium">Độ ẩm giá thể / đất</span>
+                <i class="fa-solid fa-water text-cyan-600 text-base"></i>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span id="sensorSoil" class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">68.5</span>
+                <span class="text-sm font-semibold text-slate-500">%</span>
+              </div>
+              <div class="mt-2 text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-circle-check text-emerald-500"></i> Tự động ngắt tưới
+              </div>
+            </div>
+
+            <!-- Light Intensity -->
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/60 hover:bg-emerald-50/40 hover:border-emerald-200 transition-colors">
+              <div class="flex items-center justify-between text-slate-500 text-xs mb-2">
+                <span class="font-medium">Cường độ ánh sáng</span>
+                <i class="fa-solid fa-sun text-yellow-500 text-base"></i>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span id="sensorLight" class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">32,450</span>
+                <span class="text-sm font-semibold text-slate-500">Lux</span>
+              </div>
+              <div class="mt-2 text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-circle-check text-emerald-500"></i> Quang hợp tối đa
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- CATALOG SECTION -->
+      <section id="productCatalog" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        
+        <!-- Header & Category Filters -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+          <div>
+            <span class="text-xs font-bold text-emerald-600 uppercase tracking-widest">Sản Phẩm Tươi Mới Trong Ngày</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+              Gian Hàng Nông Sản Hữu Cơ
+            </h2>
+          </div>
+
+          <!-- Category Pills -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-none" id="categoryFilterContainer">
+            <button 
+              onclick="filterByCategory('all')" 
+              data-cat="all"
+              class="cat-pill active px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-emerald-600 text-white shadow-sm whitespace-nowrap">
+              Tất cả nông sản
+            </button>
+            <button 
+              onclick="filterByCategory('greens')" 
+              data-cat="greens"
+              class="cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">
+              <i class="fa-solid fa-leaf text-emerald-500 mr-1"></i> Rau xanh hữu cơ
+            </button>
+            <button 
+              onclick="filterByCategory('roots')" 
+              data-cat="roots"
+              class="cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">
+              <i class="fa-solid fa-carrot text-amber-500 mr-1"></i> Củ quả sạch
+            </button>
+            <button 
+              onclick="filterByCategory('fruits')" 
+              data-cat="fruits"
+              class="cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">
+              <i class="fa-solid fa-apple-whole text-rose-500 mr-1"></i> Trái cây nhiệt đới
+            </button>
+          </div>
+        </div>
+
+        <!-- PRODUCT GRID -->
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <!-- Rendered dynamically by JavaScript -->
+        </div>
+
+        <!-- Empty State Message -->
+        <div id="emptyCatalogState" class="hidden text-center py-16 bg-white rounded-2xl border border-slate-200 mt-4">
+          <div class="w-16 h-16 mx-auto rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-2xl mb-3">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-800">Không tìm thấy nông sản phù hợp</h3>
+          <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Vui lòng thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc danh mục.</p>
+          <button onclick="clearSearch()" class="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-500 transition-colors">
+            Xem lại tất cả
+          </button>
+        </div>
+
+      </section>
+
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 2: ADMIN & FARM DASHBOARD (Quản Trị Nhà Vườn)       -->
+    <!-- ======================================================== -->
+    <div id="adminView" class="hidden transition-opacity duration-300 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Admin Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              <i class="fa-solid fa-circle-dot text-emerald-500 mr-1.5 text-[9px]"></i> Hệ thống đang hoạt động
+            </span>
+            <span class="text-xs text-slate-400">Trạm trung tâm: Khu Công Nghệ Cao</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+            Bảng Quản Trị & Điều Hành Nông Trại
+          </h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="openAddBatchModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm shadow-sm transition-all flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i>
+            Tạo Lô Nông Sản Mới
+          </button>
+          <button onclick="switchView('storefront')" class="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl text-sm transition-all flex items-center gap-2">
+            <i class="fa-solid fa-eye"></i>
+            Xem Giao Diện Khách
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI METRIC CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng Lô Canh Tác</p>
+            <p id="kpiTotalBatches" class="text-2xl font-black text-slate-800 mt-1">8 Lô</p>
+            <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-arrow-trend-up"></i> +2 lô mới tuần này
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-cubes-stacked"></i>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sản Lượng Xuất Kho</p>
+            <p class="text-2xl font-black text-slate-800 mt-1">4.8 Tấn</p>
+            <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-check"></i> Đạt 100% mục tiêu
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-boxes-packing"></i>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Doanh Thu Dự Kiến</p>
+            <p id="kpiRevenue" class="text-2xl font-black text-slate-800 mt-1">198.5 Tr</p>
+            <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-chart-line"></i> Tăng trưởng 18%
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-money-bill-trend-up"></i>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đạt Chuẩn VietGAP</p>
+            <p class="text-2xl font-black text-slate-800 mt-1">99.4%</p>
+            <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-shield-virus"></i> Không dư lượng BVTV
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-award"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- FARM BATCHES TABLE -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-10">
+        
+        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">Danh Sách Lô Hàng Canh Tác & Giám Sát</h3>
+            <p class="text-xs text-slate-500">Quản lý định danh mã QR, kiểm định nông sản và trạng thái chuỗi lạnh</p>
+          </div>
+          <div class="text-xs text-slate-600 font-medium">
+            Hiển thị: <span id="adminBatchCount" class="font-bold text-emerald-700">8</span> lô
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200">
+              <tr>
+                <th class="px-5 py-3.5">Mã Lô (Batch ID)</th>
+                <th class="px-5 py-3.5">Tên Nông Sản</th>
+                <th class="px-5 py-3.5">Vùng / Khu Màng</th>
+                <th class="px-5 py-3.5">Ngày Gieo / Thu</th>
+                <th class="px-5 py-3.5">Giá Bán</th>
+                <th class="px-5 py-3.5">Trạng Thái</th>
+                <th class="px-5 py-3.5 text-right">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody id="adminBatchTableBody" class="divide-y divide-slate-100">
+              <!-- Rendered dynamically by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-slate-900 text-slate-400 text-xs py-10 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        
+        <div class="space-y-3">
+          <div class="flex items-center gap-2 text-white font-bold text-base">
+            <i class="fa-solid fa-seedling text-emerald-400"></i>
+            Nông Sản Lành
+          </div>
+          <p class="text-slate-400 leading-relaxed">
+            Nền tảng nông nghiệp thông minh, minh bạch chuỗi cung ứng nông sản sạch bằng công nghệ IoT và QR Code chống gian lận thương mại.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="text-white font-semibold mb-3 uppercase tracking-wider text-[11px]">Tiêu Chuẩn Chất Lượng</h4>
+          <ul class="space-y-2">
+            <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>VietGAP Trồng trọt số 18/2026</li>
+            <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>GlobalGAP Certified Farm</li>
+            <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>Kiểm soát vi khí hậu IoT tự động</li>
+            <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>HACCP Giám sát chuỗi lạnh 4°C</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-white font-semibold mb-3 uppercase tracking-wider text-[11px]">Vùng Trồng Liên Kết</h4>
+          <ul class="space-y-2">
+            <li>• Khu Nông nghiệp Công nghệ cao Củ Chi, TP.HCM</li>
+            <li>• Hợp tác xã Nông sản Lạc Dương, Lâm Đồng</li>
+            <li>• Nông trại Sinh học Đơn Dương, Đà Lạt</li>
+            <li>• Vùng chuyên canh Bưởi Da Xanh Châu Thành, Bến Tre</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-white font-semibold mb-3 uppercase tracking-wider text-[11px]">Hỗ Trợ & Tra Cứu</h4>
+          <p class="mb-2">Hotline kiểm định: <span class="text-white font-bold">1900 8866 (Nhánh 1)</span></p>
+          <p>Email: <span class="text-emerald-400">kiemdinh@nongsanlanh.vn</span></p>
+          <div class="mt-4 flex gap-3 text-base text-slate-300">
+            <a href="#" class="hover:text-emerald-400 transition-colors"><i class="fa-brands fa-facebook"></i></a>
+            <a href="#" class="hover:text-emerald-400 transition-colors"><i class="fa-brands fa-youtube"></i></a>
+            <a href="#" class="hover:text-emerald-400 transition-colors"><i class="fa-brands fa-github"></i></a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="pt-6 border-t border-slate-800 text-center text-slate-500">
+        © 2026 Nông Sản Lành - Dự án Hệ Thống Truy Xuất Nguồn Gốc và Giám Sát Chuỗi Lạnh Nông Sản. Thiết kế Single-Page App chuẩn SPA.
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL: HỘ CHIẾU NÔNG SẢN SỐ (DIGITAL PRODUCE PASSPORT)   -->
+  <!-- ======================================================== -->
+  <div id="tracePassportModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+    <div class="relative bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 transform transition-all animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-emerald-800 to-emerald-900 text-white p-6 relative">
+        <button 
+          onclick="closeTraceModal()" 
+          class="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="flex items-center gap-2 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-1">
+          <i class="fa-solid fa-passport"></i>
+          Hộ Chiếu Nông Sản Điện Tử (Digital Agri-Passport)
+        </div>
+        <h3 id="modalProduceName" class="text-2xl font-black text-white">
+          Cà Chua Cherry Sô-Cô-La
+        </h3>
+        <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-emerald-100">
+          <span class="bg-emerald-700/80 px-2.5 py-1 rounded-md font-mono font-bold tracking-wide" id="modalBatchCode">
+            BATCH-TOM-2601
+          </span>
+          <span id="modalCertBadge" class="bg-amber-400 text-slate-900 px-2 py-0.5 rounded font-bold text-[11px]">
+            GlobalGAP
+          </span>
+          <span class="text-emerald-200">
+            <i class="fa-solid fa-calendar-check mr-1"></i>Niêm phong: <span id="modalHarvestDate">18/10/2026</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+        
+        <!-- Top Details: QR Code + Key Specs -->
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+          
+          <!-- Simulated QR Code Container -->
+          <div class="sm:col-span-4 flex flex-col items-center justify-center text-center p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div id="modalQrCodeImg" class="w-32 h-32 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200">
+              <!-- QR Code image injected by JS -->
+            </div>
+            <span class="text-[10px] font-mono font-semibold text-slate-500 mt-2">MÃ QR ĐỘC BẢN</span>
+            <span class="text-[9px] text-emerald-600 font-bold">Xác thực bởi Blockchain / Hash</span>
+          </div>
+
+          <!-- Specs Info -->
+          <div class="sm:col-span-8 space-y-2 text-xs">
+            <div class="flex justify-between py-1.5 border-b border-slate-200">
+              <span class="text-slate-500 font-medium"><i class="fa-solid fa-location-dot text-emerald-600 mr-1.5"></i>Vùng canh tác:</span>
+              <span id="modalFarmLocation" class="font-bold text-slate-800 text-right">Nhà Màng Đà Lạt Farm Zone A</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-200">
+              <span class="text-slate-500 font-medium"><i class="fa-solid fa-user-doctor text-emerald-600 mr-1.5"></i>Kỹ sư phụ trách:</span>
+              <span id="modalEngineer" class="font-bold text-slate-800">KS. Nguyễn Hoàng Nam</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-200">
+              <span class="text-slate-500 font-medium"><i class="fa-solid fa-flask-vial text-emerald-600 mr-1.5"></i>Chỉ số nước tưới:</span>
+              <span id="modalPh" class="font-bold text-emerald-700">6.5 pH (Nước ngầm lọc RO)</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-200">
+              <span class="text-slate-500 font-medium"><i class="fa-solid fa-shield-virus text-emerald-600 mr-1.5"></i>Dư lượng Nitrate:</span>
+              <span id="modalNitrate" class="font-bold text-emerald-700">&lt; 120 mg/kg (Chuẩn an toàn)</span>
+            </div>
+            <div class="flex justify-between py-1.5">
+              <span class="text-slate-500 font-medium"><i class="fa-solid fa-snowflake text-cyan-600 mr-1.5"></i>Giám sát chuỗi lạnh:</span>
+              <span id="modalColdChain" class="font-bold text-cyan-700">4.2°C (Liên tục từ kho đến quầy)</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Farming Journal Timeline -->
+        <div>
+          <h4 class="font-bold text-slate-900 text-sm mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-timeline text-emerald-600"></i>
+            Nhật Ký Nông Vụ Điện Tử (Farming Traceability Log)
+          </h4>
+
+          <div id="modalTimelineContainer" class="space-y-4 pl-2">
+            <!-- Injected by JavaScript -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <span class="text-xs text-slate-500">
+          <i class="fa-solid fa-lock text-emerald-600 mr-1"></i> Dữ liệu chống sửa đổi (Tamper-evident)
+        </span>
+        <button 
+          onclick="closeTraceModal()" 
+          class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-colors shadow-sm">
+          Đóng Hộ Chiếu
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL: TẠO LÔ NÔNG SẢN MỚI (DÀNH CHO ADMIN)              -->
+  <!-- ======================================================== -->
+  <div id="addBatchModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+    <div class="relative bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
+      
+      <div class="bg-emerald-800 text-white p-5 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold">Thêm Lô Nông Sản Mới Vào Hệ Thống</h3>
+          <p class="text-xs text-emerald-200">Dữ liệu sẽ đồng bộ ngay lập tức sang Cửa Hàng & Bảng Quản Trị</p>
+        </div>
+        <button onclick="closeAddBatchModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-sm">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="newBatchForm" onsubmit="handleCreateBatch(event)" class="p-6 space-y-4 text-xs">
+        
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Tên Nông Sản *</label>
+          <input type="text" id="formName" required placeholder="Ví dụ: Dưa Lưới Huỳnh Long" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Danh Mục *</label>
+            <select id="formCategory" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+              <option value="greens">Rau xanh hữu cơ</option>
+              <option value="roots">Củ quả sạch</option>
+              <option value="fruits">Trái cây nhiệt đới</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Mã Lô (Tự sinh hoặc nhập) *</label>
+            <input type="text" id="formBatchCode" required placeholder="BATCH-MEL-2609" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm font-mono uppercase">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Giá Bán (VNĐ) *</label>
+            <input type="number" id="formPrice" required placeholder="75000" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Đơn vị tính *</label>
+            <input type="text" id="formUnit" required placeholder="kg hoặc hộp 500g" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Vùng Trồng / Khu Màng *</label>
+            <input type="text" id="formFarm" required placeholder="Nhà màng Củ Chi Zone B" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Chứng Nhận</label>
+            <select id="formCert" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+              <option value="VietGAP">VietGAP</option>
+              <option value="GlobalGAP">GlobalGAP</option>
+              <option value="Organic EU">Organic EU</option>
+              <option value="USDA Organic">USDA Organic</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">URL Hình Ảnh Nông Sản</label>
+          <input type="url" id="formImage" placeholder="https://images.unsplash.com/..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeAddBatchModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-600 hover:bg-slate-100">
+            Hủy Bỏ
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-sm">
+            <i class="fa-solid fa-check mr-1.5"></i>Lưu Lô Hàng
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- SHOPPING CART DRAWER (OFF-CANVAS)                        -->
+  <!-- ======================================================== -->
+  <div id="cartDrawerBackdrop" onclick="toggleCartDrawer(false)" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-300 opacity-0 pointer-events-none"></div>
+
+  <div id="cartDrawer" class="fixed inset-y-0 right-0 z-50 max-w-md w-full bg-white shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out">
+    
+    <!-- Cart Header -->
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+          <i class="fa-solid fa-basket-shopping text-sm"></i>
+        </div>
+        <h3 class="font-bold text-slate-900 text-base">Giỏ Hàng Nông Sản</h3>
+        <span id="cartItemCountHeader" class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">0 món</span>
+      </div>
+      <button onclick="toggleCartDrawer(false)" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Cart Items List -->
+    <div id="cartItemsList" class="flex-grow p-5 overflow-y-auto divide-y divide-slate-100">
+      <!-- Injected by JavaScript -->
+    </div>
+
+    <!-- Empty Cart Graphic State -->
+    <div id="emptyCartView" class="hidden flex-grow flex flex-col items-center justify-center p-8 text-center">
+      <div class="w-20 h-20 rounded-full bg-emerald-50 text-emerald-400 flex items-center justify-center text-3xl mb-4">
+        <i class="fa-solid fa-cart-arrow-down"></i>
+      </div>
+      <h4 class="font-bold text-slate-800 text-base">Giỏ hàng của bạn đang trống</h4>
+      <p class="text-xs text-slate-500 mt-1 max-w-xs">Hãy chọn cho mình các sản phẩm nông nghiệp sạch, an toàn chuẩn VietGAP từ nông trại nhé!</p>
+      <button onclick="toggleCartDrawer(false)" class="mt-5 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-500 shadow-sm transition-all">
+        Khám Phá Nông Sản Ngay
+      </button>
+    </div>
+
+    <!-- Cart Footer & Calculation -->
+    <div id="cartFooter" class="p-5 border-t border-slate-200 bg-slate-50 space-y-3">
+      <div class="space-y-1.5 text-xs">
+        <div class="flex justify-between text-slate-500">
+          <span>Tạm tính nông sản:</span>
+          <span id="cartSubtotal" class="font-bold text-slate-800">0 ₫</span>
+        </div>
+        <div class="flex justify-between text-slate-500">
+          <span>Phí vận chuyển chuỗi lạnh:</span>
+          <span id="cartShipping" class="font-bold text-emerald-600">Miễn phí (Đơn &gt; 150k)</span>
+        </div>
+        <div class="flex justify-between text-sm font-extrabold text-slate-900 pt-2 border-t border-slate-200">
+          <span>Tổng thanh toán:</span>
+          <span id="cartGrandTotal" class="text-emerald-700 text-base font-black">0 ₫</span>
+        </div>
+      </div>
+
+      <button onclick="checkoutCart()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 text-sm flex items-center justify-center gap-2 transition-all">
+        <i class="fa-solid fa-credit-card"></i>
+        Tiến Hành Đặt Hàng Chuỗi Lạnh
+      </button>
+      <p class="text-[10px] text-center text-slate-400">
+        <i class="fa-solid fa-truck-fast text-emerald-600 mr-1"></i> Cam kết bảo quản lạnh trong suốt quá trình giao nhận
+      </p>
+    </div>
+
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: DATA REST API SIMULATION & APP LOGIC        -->
+  <!-- ======================================================== -->
+  <script>
+    /**
+     * MOCK REST API DATASET: agriculturalBatches
+     * Đại diện cấu trúc JSON tiêu chuẩn cho các lô nông sản
+     */
+    let agriculturalBatches = [
+      {
+        id: 1,
+        code: "BATCH-TOM-2601",
+        name: "Cà Chua Cherry Sô-Cô-La",
+        category: "greens",
+        categoryName: "Rau củ quả",
+        price: 65000,
+        unit: "hộp 500g",
+        farm: "Nhà màng Đà Lạt Farm Zone A",
+        plantingDate: "2026-08-15",
+        harvestDate: "2026-10-18",
+        status: "Đã thu hoạch",
+        cert: "GlobalGAP",
+        image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=700&q=80",
+        engineer: "KS. Nguyễn Hoàng Nam",
+        waterPh: "6.5 pH (Nước ngầm lọc RO)",
+        nitrate: "< 110 mg/kg (Mức tối ưu)",
+        coldChainTemp: "4.5°C (Lưu trữ kho lạnh)",
+        timeline: [
+          { stage: "Gieo hạt mầm giống F1 Israel", date: "15/08/2026", desc: "Sử dụng giá thể xơ dừa vi sinh đã tiệt trùng nhiệt độ cao, tỷ lệ nảy mầm đạt 99%." },
+          { stage: "Chăm sóc & Phun men vi sinh sinh học", date: "05/09/2026", desc: "Hệ thống tưới nhỏ giọt dinh dưỡng tự động theo ẩm độ đất, không dùng thuốc trừ sâu hóa học." },
+          { stage: "Kiểm nghiệm dư lượng an toàn", date: "14/10/2026", desc: "Trung tâm Vinacert phân tích 42 chỉ tiêu BVTV: 100% đạt chuẩn âm tính." },
+          { stage: "Thu hoạch & Đóng gói màng thở", date: "18/10/2026", desc: "Thu hái thủ công buổi sáng sớm, đóng hộp màng thoáng khí phân hủy sinh học." },
+          { stage: "Lưu kho lạnh & Niêm phong điện tử", date: "19/10/2026", desc: "Gắn thẻ RFID giám sát nhiệt độ 4-6°C đưa vào xe tải đông lạnh chuyên dụng." }
+        ]
+      },
+      {
+        id: 2,
+        code: "BATCH-SAL-2602",
+        name: "Xà Lách Mỡ Thủy Canh Batavia",
+        category: "greens",
+        categoryName: "Rau xanh hữu cơ",
+        price: 35000,
+        unit: "túi 350g",
+        farm: "Khu CNC Nông Nghiệp Củ Chi",
+        plantingDate: "2026-09-10",
+        harvestDate: "2026-10-19",
+        status: "Đã thu hoạch",
+        cert: "VietGAP",
+        image: "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?auto=format&fit=crop&w=700&q=80",
+        engineer: "KS. Lê Thị Thu Thảo",
+        waterPh: "6.2 pH (Hồi lưu tuần hoàn)",
+        nitrate: "< 85 mg/kg (An toàn tuyệt đối)",
+        coldChainTemp: "5.0°C (Xe lạnh chuyên dụng)",
+        timeline: [
+          { stage: "Ươm mây thủy canh", date: "10/09/2026", desc: "Hạt giống Rijk Zwaan Hà Lan ươm trong bọt xốp sinh học vô trùng." },
+          { stage: "Chuyển máng màng mỏng dinh dưỡng (NFT)", date: "22/09/2026", desc: "Dinh dưỡng khoáng hữu cơ hòa tan, cảm biến EC/pH theo dõi 10 phút/lần." },
+          { stage: "Thu hoạch nguyên gốc", date: "19/10/2026", desc: "Giữ lại rễ để rau tươi giòn tự nhiên trong 7 ngày không cần chất bảo quản." }
+        ]
+      },
+      {
+        id: 3,
+        code: "BATCH-STR-2603",
+        name: "Dâu Tây Giống Nhật New Sky",
+        category: "fruits",
+        categoryName: "Trái cây nhiệt đới",
+        price: 145000,
+        unit: "hộp 250g",
+        farm: "Smart Farm Lạc Dương, Lâm Đồng",
+        plantingDate: "2026-07-20",
+        harvestDate: "2026-10-18",
+        status: "Đã thu hoạch",
+        cert: "Organic EU",
+        image: "https://images.unsplash.com/photo-1543528176-61b239494933?auto=format&fit=crop&w=700&q=80",
+        engineer: "Chuyên gia Koji Tanaka & KS. Hải",
+        waterPh: "6.0 pH (Nước suối nguồn tinh khiết)",
+        nitrate: "< 40 mg/kg (Chuẩn EU)",
+        coldChainTemp: "2.5°C (Nghiêm ngặt quả mọng)",
+        timeline: [
+          { stage: "Cấy mô & Canh tác giàn treo", date: "20/07/2026", desc: "Cây trồng trên giàn cao 1.2m cách ly hoàn toàn với mầm bệnh đất." },
+          { stage: "Thụ phấn nhờ ong tự nhiên", date: "15/09/2026", desc: "Sử dụng đàn ong mật trong nhà kính hỗ trợ thụ phấn đồng đều quả mọng." },
+          { stage: "Kiểm tra độ Brix đường", date: "17/10/2026", desc: "Đo khúc xạ kế quang học: Độ ngọt đạt 13.5 Brix chuẩn cao cấp." },
+          { stage: "Đóng gói chân không chuỗi lạnh", date: "18/10/2026", desc: "Đóng vỉ chống va đập, bảo quản lạnh 2-4°C ngay tại vườn." }
+        ]
+      },
+      {
+        id: 4,
+        code: "BATCH-CAR-2604",
+        name: "Cà Rốt Baby Hữu Cơ",
+        category: "roots",
+        categoryName: "Củ quả sạch",
+        price: 42000,
+        unit: "túi 500g",
+        farm: "Vùng Canh Tác Đơn Dương, Đà Lạt",
+        plantingDate: "2026-08-01",
+        harvestDate: "2026-10-16",
+        status: "Đã thu hoạch",
+        cert: "VietGAP",
+        image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=700&q=80",
+        engineer: "KS. Trần Đình Trọng",
+        waterPh: "6.8 pH",
+        nitrate: "< 140 mg/kg",
+        coldChainTemp: "6.0°C",
+        timeline: [
+          { stage: "Làm đất vi sinh phân trùn quế", date: "01/08/2026", desc: "Cải tạo đất đỏ bazan bằng 15 tấn phân trùn quế hữu cơ hoai mục." },
+          { stage: "Gieo hạt phủ màng hữu cơ", date: "05/08/2026", desc: "Sử dụng màng phủ sinh học ngăn ngừa cỏ dại không dùng thuốc diệt cỏ." },
+          { stage: "Thu hoạch & Rửa sục khí Ozone", date: "16/10/2026", desc: "Rửa sạch đất bám bằng nước ozone tiệt trùng 0.5ppm." }
+        ]
+      },
+      {
+        id: 5,
+        code: "BATCH-MEL-2605",
+        name: "Dưa Lưới Ruột Cam Huỳnh Long",
+        category: "fruits",
+        categoryName: "Trái cây nhiệt đới",
+        price: 85000,
+        unit: "trái 1.4 - 1.6kg",
+        farm: "Nông Trại Công Nghệ Vĩnh Long",
+        plantingDate: "2026-07-28",
+        harvestDate: "2026-10-17",
+        status: "Đã thu hoạch",
+        cert: "GlobalGAP",
+        image: "https://images.unsplash.com/photo-1571575173700-afb9492e6a50?auto=format&fit=crop&w=700&q=80",
+        engineer: "KS. Phạm Quốc Huy",
+        waterPh: "6.5 pH",
+        nitrate: "< 90 mg/kg",
+        coldChainTemp: "8.0°C",
+        timeline: [
+          { stage: "Gieo bầu & Treo dây nhà màng", date: "28/07/2026", desc: "Mỗi cây chỉ tuyển chọn duy nhất 1 quả đẹp nhất để tập trung dưỡng chất." },
+          { stage: "Tạo vân lưới tự nhiên", date: "20/09/2026", desc: "Kiểm soát độ ẩm và nhiệt độ nghiêm ngặt để quả tạo vân lưới dày đều." },
+          { stage: "Thu hoạch cuống chữ T", date: "17/10/2026", desc: "Cắt cuống chữ T tiêu chuẩn xuất khẩu, gắn tem QR chống hàng giả." }
+        ]
+      },
+      {
+        id: 6,
+        code: "BATCH-PEP-2606",
+        name: "Ớt Chuông Sweet Trio Đà Lạt",
+        category: "roots",
+        categoryName: "Củ quả sạch",
+        price: 58000,
+        unit: "túi 3 trái (500g)",
+        farm: "Lâm Hà GreenTech Farm",
+        plantingDate: "2026-08-10",
+        harvestDate: "2026-10-18",
+        status: "Đã thu hoạch",
+        cert: "GlobalGAP",
+        image: "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?auto=format&fit=crop&w=700&q=80",
+        engineer: "KS. Nguyễn Hoàng Nam",
+        waterPh: "6.4 pH",
+        nitrate: "< 100 mg/kg",
+        coldChainTemp: "7.0°C",
+        timeline: [
+          { stage: "Gieo trồng giá thể xơ dừa", date: "10/08/2026", desc: "Giống ớt ngọt nhập khẩu Hà Lan, vỏ giòn không cay nhiều vitamin C." },
+          { stage: "Bẫy côn trùng Pheromone", date: "12/09/2026", desc: "Kiểm soát sâu bướm bằng bẫy dính màu vàng và pheromone sinh học." },
+          { stage: "Thu hái khi đạt 90% màu", date: "18/10/2026", desc: "Thu hái đúng độ chín tự nhiên để giữ lượng Carotene cao nhất." }
+        ]
+      },
+      {
+        id: 7,
+        code: "BATCH-KAL-2607",
+        name: "Cải Xoăn Khủng Long Kale Mỹ",
+        category: "greens",
+        categoryName: "Rau xanh hữu cơ",
+        price: 48000,
+        unit: "bó 350g",
+        farm: "Đà Lạt Smart Greenhouses",
+        plantingDate: "2026-08-25",
+        harvestDate: "2026-10-19",
+        status: "Đang thu hoạch",
+        cert: "Organic EU",
+        image: "https://images.unsplash.com/photo-1524179091875-bf99a9a6fa57?auto=format&fit=crop&w=700&q=80",
+        engineer: "KS. Đỗ Thùy Trang",
+        waterPh: "6.3 pH",
+        nitrate: "< 75 mg/kg",
+        coldChainTemp: "4.0°C",
+        timeline: [
+          { stage: "Canh tác trên luống hữu cơ cao", date: "25/08/2026", desc: "Đất trộn mùn vỏ cây thông ủ hoai và than hoạt tính sinh học." },
+          { stage: "Tưới phun sương hạ nhiệt", date: "15/09/2026", desc: "Tự động hạ nhiệt khi nắng gắt để giữ độ giòn và màu xanh thẫm." },
+          { stage: "Thu hoạch lá bẹ", date: "19/10/2026", desc: "Chỉ thu hoạch những phiến lá tươi non bánh tẻ giàu chất chống oxy hóa." }
+        ]
+      },
+      {
+        id: 8,
+        code: "BATCH-POM-2608",
+        name: "Bưởi Da Xanh Ruột Hồng Bến Tre",
+        category: "fruits",
+        categoryName: "Trái cây nhiệt đới",
+        price: 92000,
+        unit: "trái 1.2 - 1.4kg",
+        farm: "Vườn Sinh Thái Châu Thành, Bến Tre",
+        plantingDate: "2026-04-10",
+        harvestDate: "2026-10-15",
+        status: "Đã thu hoạch",
+        cert: "VietGAP",
+        image: "https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?auto=format&fit=crop&w=700&q=80",
+        engineer: "KS. Huỳnh Văn Út",
+        waterPh: "7.0 pH (Nước ngọt phù sa)",
+        nitrate: "< 35 mg/kg",
+        coldChainTemp: "12.0°C",
+        timeline: [
+          { stage: "Nuôi kiến vàng khống chế sâu hại", date: "10/04/2026", desc: "Ứng dụng thiên địch kiến vàng bản địa bảo vệ múi bưởi không dùng hóa chất." },
+          { stage: "Bọc túi bảo vệ trái bưởi", date: "15/06/2026", desc: "Bọc giấy chuyên dụng chống ruồi đục quả và rám nắng mặt trời." },
+          { stage: "Thu hoạch đạt độ chín cây", date: "15/10/2026", desc: "Bưởi tép mọng ráo nước, ngọt thanh không hạt." }
+        ]
+      }
+    ];
+
+    /**
+     * CART STATE
+     */
+    let cart = [];
+    let currentCategory = 'all';
+    let searchQuery = '';
+
+    // Init App
+    document.addEventListener("DOMContentLoaded", () => {
+      renderProducts();
+      renderAdminTable();
+      updateCartUI();
+      startIoTSimulation();
+    });
+
+    /**
+     * Switch view between Storefront and Admin Dashboard
+     */
+    function switchView(view) {
+      const storefrontView = document.getElementById("storefrontView");
+      const adminView = document.getElementById("adminView");
+      const storefrontTabBtn = document.getElementById("storefrontTabBtn");
+      const adminTabBtn = document.getElementById("adminTabBtn");
+
+      if (view === 'storefront') {
+        storefrontView.classList.remove("hidden");
+        adminView.classList.add("hidden");
+        
+        storefrontTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm";
+        adminTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        adminView.classList.remove("hidden");
+        storefrontView.classList.add("hidden");
+        
+        adminTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm";
+        storefrontTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+        renderAdminTable();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    /**
+     * RENDER PRODUCTS IN STOREFRONT
+     */
+    function renderProducts() {
+      const productGrid = document.getElementById("productGrid");
+      const emptyState = document.getElementById("emptyCatalogState");
+      
+      const filtered = agriculturalBatches.filter(item => {
+        const matchCategory = currentCategory === 'all' || item.category === currentCategory;
+        const q = searchQuery.toLowerCase().trim();
+        const matchSearch = !q || 
+          item.name.toLowerCase().includes(q) || 
+          item.code.toLowerCase().includes(q) ||
+          item.farm.toLowerCase().includes(q);
+        return matchCategory && matchSearch;
+      });
+
+      if (filtered.length === 0) {
+        productGrid.innerHTML = '';
+        emptyState.classList.remove("hidden");
+        return;
+      }
+
+      emptyState.classList.add("hidden");
+
+      productGrid.innerHTML = filtered.map(item => `
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-farm transition-all duration-300 flex flex-col overflow-hidden group hover:-translate-y-1">
+          
+          <!-- Image Container with badges -->
+          <div class="relative overflow-hidden h-48 bg-slate-100">
+            <img 
+              src="${item.image}" 
+              alt="${item.name}" 
+              class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+            <!-- Certification Badge -->
+            <div class="absolute top-3 left-3 flex flex-col gap-1.5">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-600 text-white shadow-md">
+                <i class="fa-solid fa-award mr-1"></i> ${item.cert}
+              </span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900/80 text-white backdrop-blur-xs">
+                ${item.code}
+              </span>
+            </div>
+
+            <!-- Temperature Cold Chain Indicator -->
+            <div class="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-semibold text-cyan-800 shadow-sm flex items-center gap-1">
+              <i class="fa-solid fa-snowflake text-cyan-500"></i> ${item.coldChainTemp}
+            </div>
+          </div>
+
+          <!-- Product Content -->
+          <div class="p-5 flex-grow flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+                <span>${item.categoryName}</span>
+                <span class="text-emerald-700 font-medium"><i class="fa-solid fa-seedling mr-1"></i>${item.status}</span>
+              </div>
+              
+              <h3 class="text-base font-bold text-slate-900 group-hover:text-emerald-700 transition-colors line-clamp-1 mb-1">
+                ${item.name}
+              </h3>
+
+              <p class="text-xs text-slate-500 flex items-center gap-1.5 mb-3">
+                <i class="fa-solid fa-location-dot text-emerald-600"></i>
+                <span class="truncate">${item.farm}</span>
+              </p>
+            </div>
+
+            <!-- Price & Actions -->
+            <div class="pt-3 border-t border-slate-100">
+              <div class="flex items-baseline justify-between mb-3">
+                <span class="text-xs text-slate-400">Giá nông trại:</span>
+                <div class="text-right">
+                  <span class="text-lg font-black text-emerald-700">${formatCurrency(item.price)}</span>
+                  <span class="text-xs text-slate-500 font-normal"> / ${item.unit}</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <!-- Action 1: Add to Cart -->
+                <button 
+                  onclick="addToCart(${item.id})" 
+                  class="w-full py-2.5 px-3 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-cart-plus"></i>
+                  Thêm giỏ
+                </button>
+
+                <!-- Action 2: Open Trace Modal -->
+                <button 
+                  onclick="openTraceModal('${item.code}')" 
+                  class="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-qrcode text-emerald-600"></i>
+                  Truy xuất
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      `).join('');
+    }
+
+    /**
+     * RENDER ADMIN BATCHES TABLE
+     */
+    function renderAdminTable() {
+      const tableBody = document.getElementById("adminBatchTableBody");
+      const countEl = document.getElementById("adminBatchCount");
+      const kpiTotalBatches = document.getElementById("kpiTotalBatches");
+      
+      countEl.innerText = agriculturalBatches.length;
+      kpiTotalBatches.innerText = `${agriculturalBatches.length} Lô`;
+
+      tableBody.innerHTML = agriculturalBatches.map(item => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="px-5 py-4 font-mono font-bold text-slate-900 text-xs">
+            <span class="bg-slate-100 px-2 py-1 rounded border border-slate-200">${item.code}</span>
+          </td>
+          <td class="px-5 py-4">
+            <div class="flex items-center gap-3">
+              <img src="${item.image}" alt="${item.name}" class="w-9 h-9 rounded-lg object-cover border border-slate-200">
+              <div>
+                <p class="font-bold text-slate-800 text-xs">${item.name}</p>
+                <p class="text-[11px] text-slate-400">${item.categoryName} • ${item.cert}</p>
+              </div>
+            </div>
+          </td>
+          <td class="px-5 py-4 text-xs text-slate-600">
+            ${item.farm}
+          </td>
+          <td class="px-5 py-4 text-xs text-slate-500 font-mono">
+            ${item.harvestDate}
+          </td>
+          <td class="px-5 py-4 text-xs font-bold text-emerald-700">
+            ${formatCurrency(item.price)}
+          </td>
+          <td class="px-5 py-4">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${item.status.includes('Đang') ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+              <span class="w-1.5 h-1.5 rounded-full mr-1.5 ${item.status.includes('Đang') ? 'bg-amber-500' : 'bg-emerald-500'}"></span>
+              ${item.status}
+            </span>
+          </td>
+          <td class="px-5 py-4 text-right space-x-2">
+            <button 
+              onclick="openTraceModal('${item.code}')" 
+              class="p-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+              title="Xem hộ chiếu và mã QR">
+              <i class="fa-solid fa-qrcode"></i>
+            </button>
+            <button 
+              onclick="deleteBatch(${item.id})" 
+              class="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+              title="Xóa lô hàng">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    /**
+     * FILTER PRODUCTS BY CATEGORY
+     */
+    function filterByCategory(category) {
+      currentCategory = category;
+      
+      const pills = document.querySelectorAll("#categoryFilterContainer .cat-pill");
+      pills.forEach(pill => {
+        if (pill.dataset.cat === category) {
+          pill.className = "cat-pill active px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-emerald-600 text-white shadow-sm whitespace-nowrap";
+        } else {
+          pill.className = "cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 whitespace-nowrap";
+        }
+      });
+
+      renderProducts();
+    }
+
+    /**
+     * SEARCH INPUT HANDLER
+     */
+    function handleSearch(query) {
+      searchQuery = query;
+      const clearBtn = document.getElementById("clearSearchBtn");
+      
+      if (query.trim().length > 0) {
+        clearBtn.classList.remove("hidden");
+      } else {
+        clearBtn.classList.add("hidden");
+      }
+      
+      renderProducts();
+    }
+
+    function clearSearch() {
+      searchQuery = '';
+      const input = document.getElementById("globalSearchInput");
+      if (input) input.value = '';
+      document.getElementById("clearSearchBtn").classList.add("hidden");
+      renderProducts();
+    }
+
+    function openQuickTracePrompt() {
+      const code = prompt("Nhập mã lô nông sản cần kiểm định (Ví dụ: BATCH-TOM-2601):", "BATCH-TOM-2601");
+      if (code && code.trim()) {
+        openTraceModal(code.trim().toUpperCase());
+      }
+    }
+
+    /**
+     * MODAL: DIGITAL PRODUCE PASSPORT
+     */
+    function openTraceModal(batchCode) {
+      const item = agriculturalBatches.find(b => b.code.toUpperCase() === batchCode.toUpperCase()) || agriculturalBatches[0];
+
+      document.getElementById("modalProduceName").innerText = item.name;
+      document.getElementById("modalBatchCode").innerText = item.code;
+      document.getElementById("modalCertBadge").innerText = item.cert;
+      document.getElementById("modalHarvestDate").innerText = item.harvestDate;
+      document.getElementById("modalFarmLocation").innerText = item.farm;
+      document.getElementById("modalEngineer").innerText = item.engineer;
+      document.getElementById("modalPh").innerText = item.waterPh;
+      document.getElementById("modalNitrate").innerText = item.nitrate;
+      document.getElementById("modalColdChain").innerText = item.coldChainTemp;
+
+      // QR Code Generation (Dynamic via QRServer CDN with fallback)
+      const qrContainer = document.getElementById("modalQrCodeImg");
+      const qrData = encodeURIComponent(`https://nongsanlanh.vn/trace/${item.code}`);
+      qrContainer.innerHTML = `
+        <img 
+          src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}&color=16-163-74" 
+          alt="QR Code ${item.code}" 
+          class="w-full h-full object-contain p-1"
+        />
+      `;
+
+      // Timeline Rendering
+      const timelineContainer = document.getElementById("modalTimelineContainer");
+      if (item.timeline && item.timeline.length > 0) {
+        timelineContainer.innerHTML = item.timeline.map((step, idx) => `
+          <div class="relative pl-6 pb-2 timeline-item">
+            <div class="timeline-dot absolute left-0 top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-sm flex items-center justify-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-bold text-slate-800">${step.stage}</span>
+                <span class="font-mono text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded">${step.date}</span>
+              </div>
+              <p class="text-[11px] text-slate-600 leading-relaxed">${step.desc}</p>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        timelineContainer.innerHTML = `
+          <p class="text-xs text-slate-500">Đang đồng bộ nhật ký canh tác từ cảm biến IoT...</p>
+        `;
+      }
+
+      document.getElementById("tracePassportModal").classList.remove("hidden");
+    }
+
+    function closeTraceModal() {
+      document.getElementById("tracePassportModal").classList.add("hidden");
+    }
+
+    /**
+     * MODAL: ADD NEW BATCH (ADMIN)
+     */
+    function openAddBatchModal() {
+      document.getElementById("formBatchCode").value = `BATCH-FARM-${Math.floor(1000 + Math.random() * 9000)}`;
+      document.getElementById("addBatchModal").classList.remove("hidden");
+    }
+
+    function closeAddBatchModal() {
+      document.getElementById("addBatchModal").classList.add("hidden");
+      document.getElementById("newBatchForm").reset();
+    }
+
+    function handleCreateBatch(e) {
+      e.preventDefault();
+
+      const name = document.getElementById("formName").value;
+      const category = document.getElementById("formCategory").value;
+      const code = document.getElementById("formBatchCode").value.toUpperCase();
+      const price = parseInt(document.getElementById("formPrice").value);
+      const unit = document.getElementById("formUnit").value;
+      const farm = document.getElementById("formFarm").value;
+      const cert = document.getElementById("formCert").value;
+      const customImg = document.getElementById("formImage").value;
+
+      const categoryNames = {
+        greens: "Rau xanh hữu cơ",
+        roots: "Củ quả sạch",
+        fruits: "Trái cây nhiệt đới"
+      };
+
+      const defaultImages = {
+        greens: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=80",
+        roots: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=700&q=80",
+        fruits: "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=700&q=80"
+      };
+
+      const newBatch = {
+        id: Date.now(),
+        code: code,
+        name: name,
+        category: category,
+        categoryName: categoryNames[category],
+        price: price,
+        unit: unit,
+        farm: farm,
+        plantingDate: new Date().toISOString().split('T')[0],
+        harvestDate: new Date().toISOString().split('T')[0],
+        status: "Đang canh tác",
+        cert: cert,
+        image: customImg.trim() || defaultImages[category],
+        engineer: "Kỹ sư Giám sát Hệ thống",
+        waterPh: "6.5 pH (Tự động châm)",
+        nitrate: "< 95 mg/kg (Chuẩn an toàn)",
+        coldChainTemp: "5.0°C (Dự kiến)",
+        timeline: [
+          { 
+            stage: "Khởi tạo lô canh tác mới", 
+            date: new Date().toLocaleDateString('vi-VN'), 
+            desc: `Đã kích hoạt hệ thống dinh dưỡng nhà màng cho lô ${code}.` 
+          }
+        ]
+      };
+
+      agriculturalBatches.unshift(newBatch);
+
+      renderProducts();
+      renderAdminTable();
+      closeAddBatchModal();
+      showToast(`Đã thêm thành công lô nông sản ${code}!`, "success");
+    }
+
+    function deleteBatch(id) {
+      if (confirm("Bạn có chắc chắn muốn xóa lô nông sản này khỏi hệ thống?")) {
+        agriculturalBatches = agriculturalBatches.filter(b => b.id !== id);
+        renderProducts();
+        renderAdminTable();
+        showToast("Đã xóa lô hàng thành công.", "info");
+      }
+    }
+
+    /**
+     * SHOPPING CART FUNCTIONS
+     */
+    function toggleCartDrawer(open) {
+      const drawer = document.getElementById("cartDrawer");
+      const backdrop = document.getElementById("cartDrawerBackdrop");
+
+      if (open) {
+        backdrop.classList.remove("opacity-0", "pointer-events-none");
+        backdrop.classList.add("opacity-100", "pointer-events-auto");
+        drawer.classList.remove("translate-x-full");
+      } else {
+        backdrop.classList.remove("opacity-100", "pointer-events-auto");
+        backdrop.classList.add("opacity-0", "pointer-events-none");
+        drawer.classList.add("translate-x-full");
+      }
+    }
+
+    function addToCart(productId) {
+      const product = agriculturalBatches.find(p => p.id === productId);
+      if (!product) return;
+
+      const existing = cart.find(item => item.id === productId);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ ...product, quantity: 1 });
+      }
+
+      updateCartUI();
+      showToast(`Đã thêm ${product.name} vào giỏ!`, "success");
+    }
+
+    function updateCartQuantity(productId, delta) {
+      const item = cart.find(i => i.id === productId);
+      if (!item) return;
+
+      item.quantity += delta;
+      if (item.quantity <= 0) {
+        cart = cart.filter(i => i.id !== productId);
+      }
+
+      updateCartUI();
+    }
+
+    function removeFromCart(productId) {
+      cart = cart.filter(i => i.id !== productId);
+      updateCartUI();
+      showToast("Đã bỏ sản phẩm khỏi giỏ.", "info");
+    }
+
+    function updateCartUI() {
+      const cartBadge = document.getElementById("cartBadgeCount");
+      const cartItemCountHeader = document.getElementById("cartItemCountHeader");
+      const cartItemsList = document.getElementById("cartItemsList");
+      const emptyCartView = document.getElementById("emptyCartView");
+      const cartFooter = document.getElementById("cartFooter");
+
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      cartBadge.innerText = totalItems;
+      cartItemCountHeader.innerText = `${totalItems} món`;
+
+      if (cart.length === 0) {
+        cartItemsList.classList.add("hidden");
+        cartFooter.classList.add("hidden");
+        emptyCartView.classList.remove("hidden");
+        return;
+      }
+
+      cartItemsList.classList.remove("hidden");
+      cartFooter.classList.remove("hidden");
+      emptyCartView.classList.add("hidden");
+
+      let subtotal = 0;
+
+      cartItemsList.innerHTML = cart.map(item => {
+        const itemTotal = item.price * item.quantity;
+        subtotal += itemTotal;
+
+        return `
+          <div class="py-3 flex items-center justify-between gap-3">
+            <img src="${item.image}" alt="${item.name}" class="w-14 h-14 rounded-xl object-cover border border-slate-200 flex-shrink-0">
+            
+            <div class="flex-grow min-w-0">
+              <h4 class="font-bold text-slate-800 text-xs truncate">${item.name}</h4>
+              <p class="text-[11px] text-slate-400 font-mono">${item.code}</p>
+              <p class="text-xs font-bold text-emerald-700">${formatCurrency(item.price)} <span class="text-[10px] text-slate-400 font-normal">/ ${item.unit}</span></p>
+            </div>
+
+            <!-- Quantity Controls -->
+            <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+              <button onclick="updateCartQuantity(${item.id}, -1)" class="w-6 h-6 rounded bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold transition-colors">
+                <i class="fa-solid fa-minus text-[9px]"></i>
+              </button>
+              <span class="w-5 text-center text-xs font-bold text-slate-800">${item.quantity}</span>
+              <button onclick="updateCartQuantity(${item.id}, 1)" class="w-6 h-6 rounded bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold transition-colors">
+                <i class="fa-solid fa-plus text-[9px]"></i>
+              </button>
+            </div>
+
+            <!-- Remove Button -->
+            <button onclick="removeFromCart(${item.id})" class="text-slate-400 hover:text-rose-500 p-1 text-xs transition-colors">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById("cartSubtotal").innerText = formatCurrency(subtotal);
+      
+      const shipping = subtotal >= 150000 ? 0 : 25000;
+      document.getElementById("cartShipping").innerText = shipping === 0 ? "Miễn phí" : formatCurrency(shipping);
+      document.getElementById("cartGrandTotal").innerText = formatCurrency(subtotal + shipping);
+    }
+
+    function checkoutCart() {
+      if (cart.length === 0) return;
+      alert("Đơn hàng chuỗi lạnh của bạn đã được tiếp nhận thành công!\nMã kiểm tra vận chuyển: SHIP-COLD-2026\nĐội ngũ Nông Sản Lành sẽ giao hàng trong vòng 2 giờ.");
+      cart = [];
+      updateCartUI();
+      toggleCartDrawer(false);
+      showToast("Đặt hàng thành công! Đang điều phối xe lạnh.", "success");
+    }
+
+    /**
+     * REALTIME IOT SENSOR SIMULATION
+     * Tạo dao động số liệu nhỏ để trải nghiệm người dùng sống động
+     */
+    function startIoTSimulation() {
+      setInterval(() => {
+        const temp = (24.2 + (Math.random() * 0.8)).toFixed(1);
+        const hum = (73 + (Math.random() * 2.5)).toFixed(1);
+        const soil = (67.5 + (Math.random() * 2)).toFixed(1);
+        const light = Math.floor(32000 + Math.random() * 800);
+
+        const tempEl = document.getElementById("sensorTemp");
+        const humEl = document.getElementById("sensorHumidity");
+        const soilEl = document.getElementById("sensorSoil");
+        const lightEl = document.getElementById("sensorLight");
+        const syncTimeEl = document.getElementById("iotLastSyncTime");
+
+        if (tempEl) tempEl.innerText = temp;
+        if (humEl) humEl.innerText = hum;
+        if (soilEl) soilEl.innerText = soil;
+        if (lightEl) lightEl.innerText = light.toLocaleString();
+
+        const now = new Date();
+        if (syncTimeEl) {
+          syncTimeEl.innerText = now.toTimeString().split(' ')[0];
+        }
+      }, 4000);
+    }
+
+    /**
+     * TOAST NOTIFICATION HELPER
+     */
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+
+      const icons = {
+        success: "fa-circle-check text-emerald-500",
+        info: "fa-circle-info text-blue-500",
+        warning: "fa-triangle-exclamation text-amber-500"
+      };
+
+      toast.className = "flex items-center gap-2.5 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-xl text-xs font-medium border border-slate-700 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto";
+      toast.innerHTML = `
+        <i class="fa-solid ${icons[type] || icons.info} text-sm"></i>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+
+      // Animate in
+      setTimeout(() => {
+        toast.classList.remove("translate-y-2", "opacity-0");
+      }, 50);
+
+      // Animate out
+      setTimeout(() => {
+        toast.classList.add("opacity-0", "translate-y-2");
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function formatCurrency(number) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
+    }
+  </script>
+
+</body>
+</html>
