@@ -3,4 +3,6 @@ uvicorn[standard]
 SQLAlchemy
 alembic
 psycopg[binary]
-httpx2
+httpx
+pyjwt
+argon2-cffi
