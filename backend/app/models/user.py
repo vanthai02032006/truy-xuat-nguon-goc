@@ -8,13 +8,20 @@ from app.core.database import Base
 
 
 class UserRole(str, enum.Enum):
-    MEMBER = "member"
-    ADMIN = "admin"
-    INSPECTOR = (
-        "inspector"  # Cán bộ kiểm tra (xem được mọi tổ chức nhưng chỉ ở chế độ đọc)
+    # 3 Vai trò cốt lõi của hệ thống
+    ADMIN = "admin"  # Quản trị viên hệ thống (cấu hình, tài khoản, phân quyền, sao lưu)
+    FARM_OWNER = "farm_owner"  # Chủ nông trại (quản lý kinh doanh, tài chính, duyệt chi, bán hàng)
+    SUPERVISOR = (
+        "supervisor"  # Giám sát nông trại (nhật ký canh tác, chấm công, đề xuất vật tư)
     )
-    FARMER = "farmer"  # Vai trò vùng trồng (khai báo thửa đất, ghi nhận thu hoạch)
-    VUNG_TRONG = "vung_trong"  # Bí danh tiếng Việt cho vai trò vùng trồng
+
+    # Vai trò kế thừa / tương thích ngược
+    OWNER = "owner"
+    FIELD_MANAGER = "field_manager"
+    MEMBER = "member"
+    INSPECTOR = "inspector"
+    FARMER = "farmer"
+    VUNG_TRONG = "vung_trong"
 
 
 class User(Base):

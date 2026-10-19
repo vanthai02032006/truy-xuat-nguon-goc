@@ -67,6 +67,26 @@ def get_current_user(
     return user
 
 
+ADMIN_ROLES = {UserRole.ADMIN.value, "admin"}
+OWNER_ROLES = {
+    UserRole.ADMIN.value,
+    UserRole.FARM_OWNER.value,
+    "admin",
+    "farm_owner",
+    "owner",
+}
+SUPERVISOR_ROLES = {
+    UserRole.ADMIN.value,
+    UserRole.FARM_OWNER.value,
+    UserRole.SUPERVISOR.value,
+    "admin",
+    "farm_owner",
+    "owner",
+    "supervisor",
+    "field_manager",
+}
+
+
 def require_roles(*allowed_roles: str):
     """
     Dependency kiểm tra vai trò người dùng (RBAC).
@@ -82,6 +102,30 @@ def require_roles(*allowed_roles: str):
         return current_user
 
     return role_checker
+
+
+def require_farm_owner_or_admin(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    """Yêu cầu vai trò Chủ nông trại hoặc Quản trị viên hệ thống."""
+    if current_user.role not in OWNER_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ Chủ nông trại hoặc Quản trị viên mới có quyền thực hiện thao tác này.",
+        )
+    return current_user
+
+
+def require_field_supervisor_or_above(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    """Yêu cầu vai trò Giám sát nông trại, Chủ nông trại hoặc Quản trị viên."""
+    if current_user.role not in SUPERVISOR_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Yêu cầu vai trò Giám sát nông trại, Chủ nông trại hoặc Quản trị viên.",
+        )
+    return current_user
 
 
 def check_default_deny(

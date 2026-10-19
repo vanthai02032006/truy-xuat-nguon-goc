@@ -78,17 +78,23 @@ def create_land_plot(
             detail="Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc).",
         )
 
-    # 2. Kiểm tra vai trò được phép khai báo thửa đất (vùng trồng / nông dân / quản trị / thành viên HTX)
+    # 2. Kiểm tra vai trò được phép khai báo thửa đất
     allowed_roles = [
+        UserRole.FARM_OWNER.value,
+        UserRole.SUPERVISOR.value,
+        UserRole.ADMIN.value,
         UserRole.FARMER.value,
         UserRole.VUNG_TRONG.value,
-        UserRole.ADMIN.value,
         UserRole.MEMBER.value,
+        "farm_owner",
+        "owner",
+        "supervisor",
+        "field_manager",
     ]
     if current_user.role not in allowed_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Chỉ tài khoản vai trò vùng trồng mới có quyền khai báo thửa đất (vai trò hiện tại: {current_user.role}).",
+            detail=f"Chỉ tài khoản vai trò vùng trồng/nông trại mới có quyền khai báo thửa đất (vai trò hiện tại: {current_user.role}).",
         )
 
     # 3. Kiểm tra tổ chức của người dùng
@@ -143,7 +149,20 @@ def update_land_plot(
 @router.delete("/{plot_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_land_plot(
     plot: Annotated[LandPlot, Depends(verify_land_plot_access)],
+    current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    """Xóa thửa đất."""
+    """Xóa thửa đất (Chỉ Chủ nông trại hoặc Quản trị viên hệ thống có quyền)."""
+    allowed_roles = {
+        UserRole.ADMIN.value,
+        UserRole.FARM_OWNER.value,
+        "admin",
+        "farm_owner",
+        "owner",
+    }
+    if current_user.role not in allowed_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ Chủ nông trại hoặc Quản trị viên mới có quyền xóa thửa đất.",
+        )
     LandPlotRepository.delete(db, plot)
