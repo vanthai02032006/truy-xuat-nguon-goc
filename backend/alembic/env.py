@@ -3,6 +3,7 @@ import os
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from app.core.database import Base
 
 config = context.config
 
@@ -15,7 +16,7 @@ config.set_main_option(
     database_url.replace("%", "%%")
 )
 
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def run_migrations_offline():
