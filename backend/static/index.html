@@ -434,128 +434,473 @@
 
 
     <!-- ======================================================== -->
-    <!-- VIEW 2: ADMIN & FARM DASHBOARD (Quản Trị Nhà Vườn)       -->
-    <!-- ======================================================== -->
-    <div id="adminView" class="hidden transition-opacity duration-300 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- VIEW 2: ADMIN & FARM DASHBOARD (Quản Trị Nhà Vườn & Chuỗi Lạnh Toàn Diện) -->
+    <div id="adminView" class="hidden transition-opacity duration-300 py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
-      <!-- Admin Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <!-- Admin Header with Brand & Stats -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <div class="flex items-center gap-2">
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-              <i class="fa-solid fa-circle-dot text-emerald-500 mr-1.5 text-[9px]"></i> Hệ thống đang hoạt động
+              <i class="fa-solid fa-shield-halved text-emerald-600 mr-1.5"></i> Trung Tâm Quản Trị Chuỗi Cung Ứng
             </span>
-            <span class="text-xs text-slate-400">Trạm trung tâm: Khu Công Nghệ Cao</span>
+            <span class="text-xs text-slate-500 font-medium">Bản Quyền Nông Sản Lành v3.5</span>
           </div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
-            Bảng Quản Trị & Điều Hành Nông Trại
+          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1 tracking-tight">
+            Quản Lý Vận Hành & Chuỗi Lạnh Nông Nghiệp
           </h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Tích hợp truy vết phả hệ, bàn giao số, giám sát cảm biến IoT và toàn vẹn dữ liệu
+          </p>
         </div>
-        <div class="flex items-center gap-3">
-          <button onclick="openAddBatchModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm shadow-sm transition-all flex items-center gap-2">
-            <i class="fa-solid fa-plus"></i>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button 
+            onclick="openAddBatchModal()" 
+            class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 text-xs sm:text-sm">
+            <i class="fa-solid fa-plus-circle"></i>
             Tạo Lô Nông Sản Mới
           </button>
-          <button onclick="switchView('storefront')" class="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl text-sm transition-all flex items-center gap-2">
-            <i class="fa-solid fa-eye"></i>
-            Xem Giao Diện Khách
+          <button 
+            onclick="runIntegrityCheck()" 
+            class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2 text-xs sm:text-sm">
+            <i class="fa-solid fa-shield-check text-emerald-400"></i>
+            Kiểm Tra Toàn Vẹn
+          </button>
+          <button 
+            onclick="switchView('storefront')" 
+            class="px-3.5 py-2.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs sm:text-sm shadow-sm">
+            <i class="fa-solid fa-arrow-left"></i>
+            Về Gian Hàng
           </button>
         </div>
       </div>
 
-      <!-- KPI METRIC CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <!-- Quick KPI Metrics Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-6">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng Lô Canh Tác</p>
-            <p id="kpiTotalBatches" class="text-2xl font-black text-slate-800 mt-1">8 Lô</p>
-            <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-              <i class="fa-solid fa-arrow-trend-up"></i> +2 lô mới tuần này
-            </p>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Tổng Số Lô</p>
+            <p class="text-2xl font-black text-slate-800 mt-0.5" id="kpiTotalBatches">0</p>
+            <p class="text-[10px] text-emerald-600 font-semibold mt-0.5"><i class="fa-solid fa-circle-check"></i> Đang hoạt động</p>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
-            <i class="fa-solid fa-cubes-stacked"></i>
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-boxes-stacked"></i>
           </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sản Lượng Xuất Kho</p>
-            <p class="text-2xl font-black text-slate-800 mt-1">4.8 Tấn</p>
-            <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-              <i class="fa-solid fa-check"></i> Đạt 100% mục tiêu
-            </p>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Chuỗi Lạnh</p>
+            <p class="text-2xl font-black text-emerald-700 mt-0.5" id="kpiColdChainStatus">4.2°C</p>
+            <p class="text-[10px] text-emerald-600 font-semibold mt-0.5"><i class="fa-solid fa-snowflake"></i> 0 vi phạm quá ngưỡng</p>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
-            <i class="fa-solid fa-boxes-packing"></i>
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-temperature-arrow-down"></i>
           </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Doanh Thu Dự Kiến</p>
-            <p id="kpiRevenue" class="text-2xl font-black text-slate-800 mt-1">198.5 Tr</p>
-            <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-              <i class="fa-solid fa-chart-line"></i> Tăng trưởng 18%
-            </p>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Vùng Trồng</p>
+            <p class="text-2xl font-black text-slate-800 mt-0.5" id="kpiTotalFarms">4</p>
+            <p class="text-[10px] text-amber-600 font-semibold mt-0.5"><i class="fa-solid fa-certificate"></i> 100% VietGAP/GlobalGAP</p>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
-            <i class="fa-solid fa-money-bill-trend-up"></i>
+          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-tractor"></i>
           </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đạt Chuẩn VietGAP</p>
-            <p class="text-2xl font-black text-slate-800 mt-1">99.4%</p>
-            <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-              <i class="fa-solid fa-shield-virus"></i> Không dư lượng BVTV
-            </p>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Phiếu Bàn Giao</p>
+            <p class="text-2xl font-black text-slate-800 mt-0.5" id="kpiTotalHandovers">0</p>
+            <p class="text-[10px] text-purple-600 font-semibold mt-0.5"><i class="fa-solid fa-truck-fast"></i> Lưu thông chuỗi cung ứng</p>
           </div>
-          <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
-            <i class="fa-solid fa-award"></i>
+          <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-handshake"></i>
           </div>
         </div>
-
       </div>
 
-      <!-- FARM BATCHES TABLE -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-10">
-        
-        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+      <!-- Admin Sub-Navigation Tabs Bar (9 Module Tabs) -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-1.5 mb-6 overflow-x-auto scrollbar-none">
+        <div class="flex items-center gap-1.5 min-w-max">
+          <button onclick="switchAdminTab('batches')" id="adminTab_batches" class="admin-tab-btn active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all bg-emerald-600 text-white shadow-sm">
+            <i class="fa-solid fa-boxes-stacked"></i> Lô Hàng Canh Tác
+          </button>
+          <button onclick="switchAdminTab('farms')" id="adminTab_farms" class="admin-tab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+            <i class="fa-solid fa-tractor"></i> Vùng Trồng
+          </button>
+          <button onclick="switchAdminTab('products')" id="adminTab_products" class="admin-tab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+            <i class="fa-solid fa-apple-whole"></i> Danh Mục Nông Sản
+          </button>
+          <button onclick="switchAdminTab('lineage')" id="adminTab_lineage" class="admin-tab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+            <i class="fa-solid fa-diagram-project"></i> Phả Hệ & Truy Vết
+          </button>
+          <button onclick="switchAdminTab('coldchain')" id="adminTab_coldchain" class="admin-tab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+            <i class="fa-solid fa-temperature-arrow-down"></i> Chuỗi Lạnh IoT
+          </button>
+          <button onclick="switchAdminTab('handovers')" id="adminTab_handovers" class="admin-tab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+            <i class="fa-solid fa-handshake"></i> Bàn Giao Vận Chuyển
+          </button>
+          <button onclick="switchAdminTab('locations')" id="adminTab_locations" class="admin-tab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+            <i class="fa-solid fa-warehouse"></i> Kho Bãi & Địa Điểm
+          </button>
+          <button onclick="switchAdminTab('orders')" id="adminTab_orders" class="admin-tab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+            <i class="fa-solid fa-truck-ramp-box"></i> Đơn Hàng
+          </button>
+          <button onclick="switchAdminTab('audit')" id="adminTab_audit" class="admin-tab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+            <i class="fa-solid fa-shield-halved"></i> Nhật Ký Kiểm Toán
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= TAB 1: BATCHES ================= -->
+      <div id="panel_batches" class="admin-panel space-y-4">
+        <!-- Controls & Filters -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2 flex-grow max-w-xl">
+            <div class="relative flex-grow">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+              <input 
+                type="text" 
+                id="batchFilterSearch" 
+                oninput="filterAdminBatches()" 
+                placeholder="Tìm mã lô, tên nông sản, vùng trồng..." 
+                class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+            <select 
+              id="batchFilterStatus" 
+              onchange="filterAdminBatches()" 
+              class="py-2 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="Đang canh tác">Đang canh tác</option>
+              <option value="Đã thu hoạch">Đã thu hoạch</option>
+              <option value="Đang lưu kho">Đang lưu kho</option>
+              <option value="Đang vận chuyển">Đang vận chuyển</option>
+              <option value="Đã tiêu thụ">Đã tiêu thụ</option>
+              <option value="Đã gộp">Đã gộp</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button 
+              onclick="openMergeModal()" 
+              class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-code-merge text-emerald-600"></i> Gộp Các Lô (Merge)
+            </button>
+            <button 
+              onclick="openAddBatchModal()" 
+              class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-plus"></i> Tạo Lô
+            </button>
+          </div>
+        </div>
+
+        <!-- Batches Table -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5 text-center"><input type="checkbox" id="selectAllBatches" onchange="toggleSelectAllBatches(this.checked)" class="rounded text-emerald-600"></th>
+                  <th class="p-3.5">Mã Lô (Batch Code)</th>
+                  <th class="p-3.5">Nông Sản</th>
+                  <th class="p-3.5">Vùng Trồng</th>
+                  <th class="p-3.5">Số Lượng (Tồn / Đầu)</th>
+                  <th class="p-3.5">Vị Trí Hiện Tại</th>
+                  <th class="p-3.5">Trạng Thái</th>
+                  <th class="p-3.5 text-right">Thao Tác Nghiệp Vụ</th>
+                </tr>
+              </thead>
+              <tbody id="adminBatchTableBody" class="divide-y divide-slate-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 2: FARMS ================= -->
+      <div id="panel_farms" class="admin-panel hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
-            <h3 class="font-bold text-slate-900 text-base">Danh Sách Lô Hàng Canh Tác & Giám Sát</h3>
-            <p class="text-xs text-slate-500">Quản lý định danh mã QR, kiểm định nông sản và trạng thái chuỗi lạnh</p>
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base">Danh Sách Vùng Trồng & Hợp Tác Xã</h3>
+            <p class="text-xs text-slate-500">Quản lý chứng nhận VietGAP, GlobalGAP, diện tích và tọa độ GPS định vị</p>
           </div>
-          <div class="text-xs text-slate-600 font-medium">
-            Hiển thị: <span id="adminBatchCount" class="font-bold text-emerald-700">8</span> lô
+          <button onclick="openFarmModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-plus"></i> Thêm Vùng Trồng
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="farmsListContainer">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- ================= TAB 3: PRODUCTS ================= -->
+      <div id="panel_products" class="admin-panel hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base">Danh Mục Nông Sản & Tiêu Chuẩn Chuỗi Lạnh</h3>
+            <p class="text-xs text-slate-500">Cấu hình dải nhiệt độ (°C) và độ ẩm (%) bảo quản an toàn cho từng nông sản</p>
+          </div>
+          <button onclick="openProductModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-plus"></i> Thêm Nông Sản
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Sản Phẩm</th>
+                  <th class="p-3.5">Mã SKU</th>
+                  <th class="p-3.5">Phân Loại</th>
+                  <th class="p-3.5">Ngưỡng Nhiệt Chuỗi Lạnh</th>
+                  <th class="p-3.5">Độ Ẩm Khuyên Dùng</th>
+                  <th class="p-3.5">Hạn Sử Dụng</th>
+                  <th class="p-3.5 text-right">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="adminProductsTableBody" class="divide-y divide-slate-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 4: LINEAGE & TRACEABILITY ================= -->
+      <div id="panel_lineage" class="admin-panel hidden space-y-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 mb-4">
+            <div>
+              <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                <i class="fa-solid fa-diagram-project text-emerald-600"></i> Phả Hệ Lô Hàng & Cây Nguồn Gốc (Lineage Tree)
+              </h3>
+              <p class="text-xs text-slate-500">Truy vết trực quan mối quan hệ phân tách, gộp lô và chuyển dịch trong toàn chuỗi cung ứng</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <select id="lineageSelectBatch" onchange="renderLineageTree(this.value)" class="py-2 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Lineage Visual Tree Graph Container -->
+          <div class="bg-slate-50/70 p-6 rounded-2xl border border-slate-200/70 min-h-[300px]" id="lineageTreeGraphContainer">
+            <!-- Dynamically rendered visual tree -->
+          </div>
+
+          <!-- Lifecycle Events Timeline -->
+          <div class="mt-6 pt-6 border-t border-slate-100">
+            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-timeline text-emerald-600"></i> Dòng Thời Gian Sự Kiện Lô Hàng
+            </h4>
+            <div id="lineageEventsTimeline" class="space-y-3">
+              <!-- Dynamically rendered -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 5: COLD CHAIN IOT ================= -->
+      <div id="panel_coldchain" class="admin-panel hidden space-y-4">
+        <!-- Live Sensors Telemetry -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+              <span class="font-semibold">Kho Lạnh Đà Lạt #01</span>
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+            <div class="text-2xl font-black text-slate-800">3.8°C <span class="text-xs text-slate-400 font-normal">/ 85% RH</span></div>
+            <p class="text-[11px] text-emerald-600 font-semibold mt-1"><i class="fa-solid fa-circle-check"></i> Đạt chuẩn lưu trữ rau quả</p>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+              <span class="font-semibold">Xe Tải Lạnh 49A-1284</span>
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+            <div class="text-2xl font-black text-slate-800">4.5°C <span class="text-xs text-slate-400 font-normal">/ 80% RH</span></div>
+            <p class="text-[11px] text-emerald-600 font-semibold mt-1"><i class="fa-solid fa-route"></i> Tuyến ĐL - TP.HCM (GPS Active)</p>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+              <span class="font-semibold">Kho Tổng TP.HCM</span>
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+            <div class="text-2xl font-black text-slate-800">5.2°C <span class="text-xs text-slate-400 font-normal">/ 78% RH</span></div>
+            <p class="text-[11px] text-emerald-600 font-semibold mt-1"><i class="fa-solid fa-circle-check"></i> Ổn định chuỗi lạnh</p>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+              <span class="font-semibold">Cảnh Báo 30 Ngày</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-bold">Tốt</span>
+            </div>
+            <div class="text-2xl font-black text-slate-800" id="coldChainViolationsCount">1</div>
+            <p class="text-[11px] text-slate-500 font-semibold mt-1"><i class="fa-solid fa-shield-virus"></i> Đã xử lý khắc phục</p>
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-100 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200">
-              <tr>
-                <th class="px-5 py-3.5">Mã Lô (Batch ID)</th>
-                <th class="px-5 py-3.5">Tên Nông Sản</th>
-                <th class="px-5 py-3.5">Vùng / Khu Màng</th>
-                <th class="px-5 py-3.5">Ngày Gieo / Thu</th>
-                <th class="px-5 py-3.5">Giá Bán</th>
-                <th class="px-5 py-3.5">Trạng Thái</th>
-                <th class="px-5 py-3.5 text-right">Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody id="adminBatchTableBody" class="divide-y divide-slate-100">
-              <!-- Rendered dynamically by JavaScript -->
-            </tbody>
-          </table>
+        <!-- Cold Chain Violations Table -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-slate-800 text-sm sm:text-base">Nhật Ký Cảnh Báo Vượt Ngưỡng Chuỗi Lạnh (Violations)</h3>
+              <p class="text-xs text-slate-500">Phát hiện tự động từ cảm biến vi khí hậu khi nhiệt độ lệch ngưỡng an toàn</p>
+            </div>
+            <button onclick="simulateColdChainAlert()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors">
+              <i class="fa-solid fa-bell"></i> Giả Lập Cảnh Báo
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Thời Gian</th>
+                  <th class="p-3.5">Mã Lô / Thiết Bị</th>
+                  <th class="p-3.5">Vị Trí Đo</th>
+                  <th class="p-3.5">Nhiệt Độ Thực Tế</th>
+                  <th class="p-3.5">Ngưỡng Cho Phép</th>
+                  <th class="p-3.5">Mức Độ</th>
+                  <th class="p-3.5">Trạng Thái Xử Lý</th>
+                  <th class="p-3.5 text-right">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="coldChainViolationsTableBody" class="divide-y divide-slate-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 6: HANDOVERS ================= -->
+      <div id="panel_handovers" class="admin-panel hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base">Phiếu Bàn Giao Chuỗi Cung Ứng</h3>
+            <p class="text-xs text-slate-500">Xác nhận chuyển giao nông sản giữa nông trại, kho lạnh, tài xế và nhà phân phối</p>
+          </div>
+          <button onclick="openCreateHandoverModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-plus"></i> Tạo Phiếu Bàn Giao
+          </button>
         </div>
 
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Mã Phiếu</th>
+                  <th class="p-3.5">Lô Hàng</th>
+                  <th class="p-3.5">Số Lượng</th>
+                  <th class="p-3.5">Bên Giao (Sender)</th>
+                  <th class="p-3.5">Bên Nhận (Receiver)</th>
+                  <th class="p-3.5">Nhiệt Độ Lúc Giao</th>
+                  <th class="p-3.5">Trạng Thái</th>
+                  <th class="p-3.5 text-right">Xác Nhận Nhận Hàng</th>
+                </tr>
+              </thead>
+              <tbody id="handoversTableBody" class="divide-y divide-slate-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 7: LOCATIONS ================= -->
+      <div id="panel_locations" class="admin-panel hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base">Mạng Lưới Kho Bãi & Điểm Trung Chuyển</h3>
+            <p class="text-xs text-slate-500">Quản lý sức chứa kho lạnh, điểm thu gom và theo dõi số lượng lô hàng lưu kho</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="locationsListContainer">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- ================= TAB 8: ORDERS ================= -->
+      <div id="panel_orders" class="admin-panel hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base">Đơn Đặt Hàng & Điều Phối Xuất Kho</h3>
+            <p class="text-xs text-slate-500">Quản lý đơn hàng người tiêu dùng và phân phối đại lý chuỗi siêu thị</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Mã Đơn</th>
+                  <th class="p-3.5">Khách Hàng</th>
+                  <th class="p-3.5">Nông Sản & Lô Cung Cấp</th>
+                  <th class="p-3.5">Số Lượng</th>
+                  <th class="p-3.5">Tổng Tiền</th>
+                  <th class="p-3.5">Trạng Thái</th>
+                  <th class="p-3.5 text-right">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody" class="divide-y divide-slate-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 9: AUDIT & INTEGRITY ================= -->
+      <div id="panel_audit" class="admin-panel hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base">Nhật Ký Kiểm Toán & Mã Hóa Toàn Vẹn Chuỗi Cung Ứng</h3>
+            <p class="text-xs text-slate-500">Mỗi hành động được băm bảo mật SHA-256 không thể giả mạo phục vụ thanh tra</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="runIntegrityCheck()" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-shield-check text-emerald-400"></i> Quét Toàn Vẹn
+            </button>
+            <button onclick="exportAuditJson()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-download"></i> Sao Lưu JSON
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b border-slate-200 font-sans">
+                <tr>
+                  <th class="p-3.5">Thời Gian</th>
+                  <th class="p-3.5">Người Thực Hiện</th>
+                  <th class="p-3.5">Hành Động (Action)</th>
+                  <th class="p-3.5">Đối Tượng / Mã Lô</th>
+                  <th class="p-3.5">Mã Băm Giao Dịch (SHA-256 Hash)</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody" class="divide-y divide-slate-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
     </div>
-
   </main>
 
   <!-- ================= FOOTER ================= -->
@@ -607,1057 +952,453 @@
       </div>
 
       <div class="pt-6 border-t border-slate-800 text-center text-slate-500">
-        © 2026 Nông Sản Lành - Dự án Hệ Thống Truy Xuất Nguồn Gốc và Giám Sát Chuỗi Lạnh Nông Sản. Thiết kế Single-Page App chuẩn SPA.
+        © 2026 Nông Sản Lành - Dự án Hệ Thống Truy Xuất Nguồn Gốc và Giám Sát Chuỗi Lạnh Nông Sản.
       </div>
     </div>
   </footer>
 
-
-  <!-- ======================================================== -->
-  <!-- MODAL: HỘ CHIẾU NÔNG SẢN SỐ (DIGITAL PRODUCE PASSPORT)   -->
-  <!-- ======================================================== -->
+  <!-- ================= MODAL: DIGITAL PRODUCE PASSPORT ================= -->
   <div id="tracePassportModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-    <div class="relative bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 transform transition-all animate-in fade-in zoom-in-95 duration-200">
-      
-      <!-- Modal Header -->
+    <div class="relative bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 transform transition-all">
       <div class="bg-gradient-to-r from-emerald-800 to-emerald-900 text-white p-6 relative">
-        <button 
-          onclick="closeTraceModal()" 
-          class="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm transition-colors">
+        <button onclick="closeTraceModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm transition-colors">
           <i class="fa-solid fa-xmark"></i>
         </button>
-
         <div class="flex items-center gap-2 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-1">
-          <i class="fa-solid fa-passport"></i>
-          Hộ Chiếu Nông Sản Điện Tử (Digital Agri-Passport)
+          <i class="fa-solid fa-passport"></i> Hộ Chiếu Nông Sản Điện Tử (Digital Agri-Passport)
         </div>
-        <h3 id="modalProduceName" class="text-2xl font-black text-white">
-          Cà Chua Cherry Sô-Cô-La
-        </h3>
+        <h3 id="modalProduceName" class="text-2xl font-black text-white">Nông Sản Lành</h3>
         <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-emerald-100">
-          <span class="bg-emerald-700/80 px-2.5 py-1 rounded-md font-mono font-bold tracking-wide" id="modalBatchCode">
-            BATCH-TOM-2601
-          </span>
-          <span id="modalCertBadge" class="bg-amber-400 text-slate-900 px-2 py-0.5 rounded font-bold text-[11px]">
-            GlobalGAP
-          </span>
-          <span class="text-emerald-200">
-            <i class="fa-solid fa-calendar-check mr-1"></i>Niêm phong: <span id="modalHarvestDate">18/10/2026</span>
-          </span>
+          <span class="bg-emerald-700/80 px-2.5 py-1 rounded-md font-mono font-bold" id="modalBatchCode">BATCH-001</span>
+          <span id="modalCertBadge" class="bg-amber-400 text-slate-900 px-2 py-0.5 rounded font-bold text-[11px]">VietGAP</span>
+          <span class="text-emerald-200"><i class="fa-solid fa-calendar-check mr-1"></i>Niêm phong: <span id="modalHarvestDate">--</span></span>
         </div>
       </div>
-
-      <!-- Modal Body -->
-      <div class="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-        
-        <!-- Top Details: QR Code + Key Specs -->
-        <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-          
-          <!-- Simulated QR Code Container -->
-          <div class="sm:col-span-4 flex flex-col items-center justify-center text-center p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-            <div id="modalQrCodeImg" class="w-32 h-32 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200">
-              <!-- QR Code image injected by JS -->
-            </div>
-            <span class="text-[10px] font-mono font-semibold text-slate-500 mt-2">MÃ QR ĐỘC BẢN</span>
-            <span class="text-[9px] text-emerald-600 font-bold">Xác thực bởi Blockchain / Hash</span>
-          </div>
-
-          <!-- Specs Info -->
-          <div class="sm:col-span-8 space-y-2 text-xs">
-            <div class="flex justify-between py-1.5 border-b border-slate-200">
-              <span class="text-slate-500 font-medium"><i class="fa-solid fa-location-dot text-emerald-600 mr-1.5"></i>Vùng canh tác:</span>
-              <span id="modalFarmLocation" class="font-bold text-slate-800 text-right">Nhà Màng Đà Lạt Farm Zone A</span>
-            </div>
-            <div class="flex justify-between py-1.5 border-b border-slate-200">
-              <span class="text-slate-500 font-medium"><i class="fa-solid fa-user-doctor text-emerald-600 mr-1.5"></i>Kỹ sư phụ trách:</span>
-              <span id="modalEngineer" class="font-bold text-slate-800">KS. Nguyễn Hoàng Nam</span>
-            </div>
-            <div class="flex justify-between py-1.5 border-b border-slate-200">
-              <span class="text-slate-500 font-medium"><i class="fa-solid fa-flask-vial text-emerald-600 mr-1.5"></i>Chỉ số nước tưới:</span>
-              <span id="modalPh" class="font-bold text-emerald-700">6.5 pH (Nước ngầm lọc RO)</span>
-            </div>
-            <div class="flex justify-between py-1.5 border-b border-slate-200">
-              <span class="text-slate-500 font-medium"><i class="fa-solid fa-shield-virus text-emerald-600 mr-1.5"></i>Dư lượng Nitrate:</span>
-              <span id="modalNitrate" class="font-bold text-emerald-700">&lt; 120 mg/kg (Chuẩn an toàn)</span>
-            </div>
-            <div class="flex justify-between py-1.5">
-              <span class="text-slate-500 font-medium"><i class="fa-solid fa-snowflake text-cyan-600 mr-1.5"></i>Giám sát chuỗi lạnh:</span>
-              <span id="modalColdChain" class="font-bold text-cyan-700">4.2°C (Liên tục từ kho đến quầy)</span>
-            </div>
-          </div>
-
+      <div class="p-6 space-y-6 max-h-[75vh] overflow-y-auto text-xs sm:text-sm">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+          <div><span class="text-slate-400 text-xs block">Nhiệt độ chuỗi lạnh</span><span class="font-bold text-slate-800" id="modalColdChain">--</span></div>
+          <div><span class="text-slate-400 text-xs block">Kỹ sư giám sát</span><span class="font-bold text-slate-800" id="modalEngineer">--</span></div>
+          <div><span class="text-slate-400 text-xs block">Độ pH nước tưới</span><span class="font-bold text-slate-800" id="modalPh">--</span></div>
+          <div><span class="text-slate-400 text-xs block">Dư lượng Nitrate</span><span class="font-bold text-emerald-700" id="modalNitrate">--</span></div>
         </div>
-
-        <!-- Farming Journal Timeline -->
         <div>
-          <h4 class="font-bold text-slate-900 text-sm mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-timeline text-emerald-600"></i>
-            Nhật Ký Nông Vụ Điện Tử (Farming Traceability Log)
-          </h4>
-
-          <div id="modalTimelineContainer" class="space-y-4 pl-2">
-            <!-- Injected by JavaScript -->
-          </div>
+          <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-timeline text-emerald-600"></i> Lịch Trình Canh Tác & Chuỗi Lạnh</h4>
+          <div id="modalTimelineContainer" class="space-y-4 pl-2"></div>
         </div>
-
+        <div class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-200/60 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-emerald-900 text-xs uppercase">Mã Khóa Chống Giả Mạo</div>
+            <div class="text-[11px] font-mono text-emerald-700 mt-0.5" id="modalHashDisplay">SHA256: 8f4c2e...b3a19</div>
+          </div>
+          <button onclick="showToast('Đã xác minh chữ ký số hợp lệ!', 'success')" class="px-3 py-1.5 bg-emerald-600 text-white font-bold rounded-lg text-xs">Xác Thực</button>
+        </div>
       </div>
-
-      <!-- Modal Footer -->
-      <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-        <span class="text-xs text-slate-500">
-          <i class="fa-solid fa-lock text-emerald-600 mr-1"></i> Dữ liệu chống sửa đổi (Tamper-evident)
-        </span>
-        <button 
-          onclick="closeTraceModal()" 
-          class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-colors shadow-sm">
-          Đóng Hộ Chiếu
-        </button>
-      </div>
-
     </div>
   </div>
 
-
-  <!-- ======================================================== -->
-  <!-- MODAL: TẠO LÔ NÔNG SẢN MỚI (DÀNH CHO ADMIN)              -->
-  <!-- ======================================================== -->
+  <!-- ================= MODAL: ADD NEW BATCH ================= -->
   <div id="addBatchModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
     <div class="relative bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
-      
-      <div class="bg-emerald-800 text-white p-5 flex items-center justify-between">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
         <div>
-          <h3 class="text-lg font-bold">Thêm Lô Nông Sản Mới Vào Hệ Thống</h3>
-          <p class="text-xs text-emerald-200">Dữ liệu sẽ đồng bộ ngay lập tức sang Cửa Hàng & Bảng Quản Trị</p>
+          <h3 class="font-bold text-slate-900 text-lg">Tạo Lô Nông Sản Mới</h3>
+          <p class="text-xs text-slate-500">Khởi tạo lô thu hoạch và tạo khóa định danh truy xuất</p>
         </div>
-        <button onclick="closeAddBatchModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-sm">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <button onclick="closeAddBatchModal()" class="w-8 h-8 rounded-full bg-white text-slate-400 hover:text-slate-600 flex items-center justify-center border border-slate-200"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
-      <form id="newBatchForm" onsubmit="handleCreateBatch(event)" class="p-6 space-y-4 text-xs">
-        
+      <form onsubmit="handleCreateBatch(event)" class="p-6 space-y-4 text-xs sm:text-sm">
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Tên Nông Sản *</label>
-          <input type="text" id="formName" required placeholder="Ví dụ: Dưa Lưới Huỳnh Long" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+          <input type="text" id="newBatchName" required placeholder="VD: Dâu Tây Giống Nhật Sky" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500">
         </div>
-
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Danh Mục *</label>
-            <select id="formCategory" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
-              <option value="greens">Rau xanh hữu cơ</option>
-              <option value="roots">Củ quả sạch</option>
-              <option value="fruits">Trái cây nhiệt đới</option>
+            <label class="block font-semibold text-slate-700 mb-1">Mã Lô Định Danh</label>
+            <input type="text" id="newBatchCode" placeholder="Để trống tự sinh" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Số Lượng Ban Đầu (kg)</label>
+            <input type="number" id="newBatchQty" required value="500" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Vùng Trồng</label>
+            <select id="newBatchFarm" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl"></select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Tiêu Chuẩn</label>
+            <select id="newBatchCert" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <option value="VietGAP">VietGAP</option>
+              <option value="GlobalGAP">GlobalGAP</option>
+              <option value="Organic EU">Hữu Cơ Organic</option>
             </select>
           </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Mã Lô (Tự sinh hoặc nhập) *</label>
-            <input type="text" id="formBatchCode" required placeholder="BATCH-MEL-2609" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm font-mono uppercase">
-          </div>
         </div>
-
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Giá Bán (VNĐ) *</label>
-            <input type="number" id="formPrice" required placeholder="75000" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+            <label class="block font-semibold text-slate-700 mb-1">Ngày Thu Hoạch</label>
+            <input type="date" id="newBatchHarvestDate" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Đơn vị tính *</label>
-            <input type="text" id="formUnit" required placeholder="kg hoặc hộp 500g" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+            <label class="block font-semibold text-slate-700 mb-1">Giá Bán Lẻ (VNĐ)</label>
+            <input type="number" id="newBatchPrice" required value="65000" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           </div>
         </div>
+        <div class="pt-4 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeAddBatchModal()" class="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl">Hủy</button>
+          <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm">Lưu Lô Hàng</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
+  <!-- ================= MODAL: SPLIT BATCH (TÁCH LÔ) ================= -->
+  <div id="splitBatchModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <h3 class="font-bold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-scissors text-emerald-600"></i> Tách Lô Hàng (Split Batch)</h3>
+          <p class="text-xs text-slate-500" id="splitModalBatchTitle">Lô gốc: BATCH-001</p>
+        </div>
+        <button onclick="closeModal('splitBatchModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSplitSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+        <input type="hidden" id="splitSourceBatchId">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Số lượng tồn hiện tại</label>
+          <input type="text" id="splitSourceRemaining" readonly class="w-full px-3 py-2 bg-slate-100 rounded-xl font-bold text-slate-700 font-mono">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Số lượng tách ra lô mới (kg) *</label>
+          <input type="number" id="splitAmount" required min="1" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Ghi chú mục đích tách</label>
+          <input type="text" id="splitNotes" placeholder="VD: Tách chuyển kho phân phối Thủ Đức" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('splitBatchModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Xác Nhận Tách</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CONSUME BATCH (TIÊU THỤ) ================= -->
+  <div id="consumeBatchModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <h3 class="font-bold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-utensils text-emerald-600"></i> Xuất Bán / Tiêu Thụ Lô</h3>
+          <p class="text-xs text-slate-500" id="consumeModalTitle">Lô: BATCH-001</p>
+        </div>
+        <button onclick="closeModal('consumeBatchModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleConsumeSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+        <input type="hidden" id="consumeBatchId">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Số lượng xuất kho tiêu thụ (kg) *</label>
+          <input type="number" id="consumeAmount" required min="1" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Kênh xuất tiêu thụ</label>
+          <select id="consumeChannel" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <option value="Bán lẻ gian hàng">Bán lẻ trực tiếp cho người tiêu dùng</option>
+            <option value="Đại lý siêu thị">Giao sỉ cho chuỗi siêu thị đối tác</option>
+            <option value="Chế biến sau thu hoạch">Đưa vào xưởng chế biến nông sản</option>
+          </select>
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('consumeBatchModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Xuất Kho</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: INCIDENT (BÁO SỰ CỐ) ================= -->
+  <div id="incidentModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <h3 class="font-bold text-rose-700 text-base flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Báo Cáo Sự Cố Lô Hàng</h3>
+          <p class="text-xs text-slate-500" id="incidentModalTitle">Ghi nhận sự cố chất lượng hoặc nhiệt độ</p>
+        </div>
+        <button onclick="closeModal('incidentModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleIncidentSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+        <input type="hidden" id="incidentBatchId">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Loại sự cố *</label>
+          <select id="incidentType" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <option value="Đứt gãy chuỗi lạnh">Đứt gãy chuỗi lạnh (Nhiệt độ > 10°C quá 45 phút)</option>
+            <option value="Dập nát cơ học">Dập nát cơ học trong vận chuyển</option>
+            <option value="Hỏng bao bì seal">Rách tem niêm phong / Bao bì hở</option>
+            <option value="Khác">Lý do kỹ thuật khác</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Mức độ ảnh hưởng</label>
+          <select id="incidentSeverity" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <option value="Cảnh báo nhẹ">Nhẹ - Vẫn lưu thông được</option>
+            <option value="Nghiêm trọng">Nghiêm trọng - Cần thu hồi / cách ly</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Mô tả chi tiết và hướng xử lý</label>
+          <textarea id="incidentDesc" rows="3" required placeholder="Ghi rõ tình trạng ghi nhận thực tế..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"></textarea>
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('incidentModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-xl font-bold">Ghi Nhận Sự Cố</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: MOVE LOCATION ================= -->
+  <div id="moveLocationModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-location-dot text-emerald-600"></i> Điều Chuyển Kho Lưu Trữ</h3>
+        <button onclick="closeModal('moveLocationModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleMoveSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+        <input type="hidden" id="moveBatchId">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Chọn địa điểm / kho đích *</label>
+          <select id="moveTargetLocation" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"></select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Phương tiện vận chuyển lạnh</label>
+          <input type="text" id="moveVehicle" value="Xe đông lạnh chuyên dụng 49A-1284 (4°C)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('moveLocationModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Xác Nhận Chuyển</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: FARM (THÊM / SỬA VÙNG TRỒNG) ================= -->
+  <div id="farmModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-tractor text-emerald-600"></i> Thêm / Cập Nhật Vùng Trồng</h3>
+        <button onclick="closeModal('farmModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleFarmSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+        <input type="hidden" id="farmEditId">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Tên trang trại / HTX *</label>
+          <input type="text" id="farmName" required placeholder="VD: Hợp Tác Xã Nông Sản Đơn Dương" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Chủ hộ / Kỹ sư đại diện</label>
+          <input type="text" id="farmOwner" placeholder="VD: KS. Lê Hoàng Nam" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Địa chỉ / Vùng canh tác *</label>
+          <input type="text" id="farmAddress" required placeholder="VD: Xã Tu Tra, Đơn Dương, Lâm Đồng" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Vùng Trồng / Khu Màng *</label>
-            <input type="text" id="formFarm" required placeholder="Nhà màng Củ Chi Zone B" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Chứng Nhận</label>
-            <select id="formCert" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+            <label class="block font-semibold text-slate-700 mb-1">Tiêu chuẩn</label>
+            <select id="farmCert" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
               <option value="VietGAP">VietGAP</option>
               <option value="GlobalGAP">GlobalGAP</option>
               <option value="Organic EU">Organic EU</option>
-              <option value="USDA Organic">USDA Organic</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Diện tích (ha)</label>
+            <input type="number" step="0.1" id="farmArea" value="5.5" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('farmModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Lưu Vùng Trồng</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PRODUCT ================= -->
+  <div id="productModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-apple-whole text-emerald-600"></i> Thêm Nông Sản Mới</h3>
+        <button onclick="closeModal('productModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleProductSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Tên nông sản *</label>
+          <input type="text" id="prodName" required placeholder="VD: Dâu Tây Giống Nhật" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Mã SKU</label>
+            <input type="text" id="prodSku" placeholder="SKU-STRAW-01" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Phân loại</label>
+            <select id="prodCategory" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+              <option value="greens">Rau xanh hữu cơ</option>
+              <option value="fruits">Trái cây sạch</option>
+              <option value="roots">Củ quả sạch</option>
             </select>
           </div>
         </div>
-
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">URL Hình Ảnh Nông Sản</label>
-          <input type="url" id="formImage" placeholder="https://images.unsplash.com/..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Nhiệt độ min (°C)</label>
+            <input type="number" id="prodTempMin" value="2" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Nhiệt độ max (°C)</label>
+            <input type="number" id="prodTempMax" value="6" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+          </div>
         </div>
-
-        <div class="pt-2 flex items-center justify-end gap-3">
-          <button type="button" onclick="closeAddBatchModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-600 hover:bg-slate-100">
-            Hủy Bỏ
-          </button>
-          <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-sm">
-            <i class="fa-solid fa-check mr-1.5"></i>Lưu Lô Hàng
-          </button>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('productModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Lưu Sản Phẩm</button>
         </div>
-
       </form>
-
     </div>
   </div>
 
+  <!-- ================= MODAL: CREATE HANDOVER ================= -->
+  <div id="createHandoverModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-handshake text-emerald-600"></i> Tạo Phiếu Bàn Giao Nông Sản</h3>
+        <button onclick="closeModal('createHandoverModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleCreateHandoverSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Chọn Lô Hàng Bàn Giao *</label>
+          <select id="handoverBatchSelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"></select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Số lượng bàn giao (kg) *</label>
+          <input type="number" id="handoverQty" required value="200" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Đơn vị gửi (Sender)</label>
+            <input type="text" id="handoverSender" value="HTX Nông Sản Đà Lạt" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Đơn vị nhận (Receiver)</label>
+            <input type="text" id="handoverReceiver" value="Kho Lạnh Tổng TP.HCM" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nhiệt độ thùng xe lúc niêm phong (°C)</label>
+          <input type="text" id="handoverTemp" value="4.2°C" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('createHandoverModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Ký Phiếu Giao</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-  <!-- ======================================================== -->
-  <!-- SHOPPING CART DRAWER (OFF-CANVAS)                        -->
-  <!-- ======================================================== -->
-  <div id="cartDrawerBackdrop" onclick="toggleCartDrawer(false)" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-300 opacity-0 pointer-events-none"></div>
+  <!-- ================= MODAL: REJECT HANDOVER ================= -->
+  <div id="rejectHandoverModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-rose-700 text-base flex items-center gap-2"><i class="fa-solid fa-circle-xmark"></i> Từ Chối Nhận Bàn Giao</h3>
+        <button onclick="closeModal('rejectHandoverModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleRejectSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+        <input type="hidden" id="rejectHandoverId">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Lý do từ chối nhận hàng *</label>
+          <select id="rejectReason" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <option value="Nhiệt độ thùng xe vượt mức quy định (> 12°C)">Nhiệt độ thùng xe vượt mức quy định (> 12°C)</option>
+            <option value="Bao bì, tem niêm phong QR bị rách vỡ">Bao bì, tem niêm phong QR bị rách vỡ</option>
+            <option value="Số lượng thực nhận thiếu hụt so với phiếu">Số lượng thực nhận thiếu hụt so với phiếu</option>
+            <option value="Nông sản có dấu hiệu suy giảm độ tươi">Nông sản có dấu hiệu suy giảm độ tươi</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Ghi chú biên bản từ chối</label>
+          <textarea id="rejectNotes" rows="3" required placeholder="Ghi chú cụ thể để bên giao làm việc lại với tài xế..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"></textarea>
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('rejectHandoverModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-xl font-bold">Xác Nhận Từ Chối</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-  <div id="cartDrawer" class="fixed inset-y-0 right-0 z-50 max-w-md w-full bg-white shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out">
-    
-    <!-- Cart Header -->
-    <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+  <!-- ================= MODAL: MERGE BATCHES ================= -->
+  <div id="mergeBatchModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-code-merge text-emerald-600"></i> Gộp Các Lô Hàng Cùng Loại</h3>
+        <button onclick="closeModal('mergeBatchModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleMergeSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+        <p class="text-xs text-slate-500">Chọn 2 hoặc nhiều lô hàng cùng loại nông sản để gộp thành 1 lô xuất khẩu / đóng gói chung.</p>
+        <div class="max-h-48 overflow-y-auto space-y-2 border border-slate-200 p-2.5 rounded-xl bg-slate-50" id="mergeCheckboxesContainer"></div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Mã Lô Mới Sinh Ra</label>
+          <input type="text" id="mergeNewBatchCode" readonly class="w-full px-3 py-2 bg-slate-100 rounded-xl font-mono font-bold text-emerald-700 text-xs">
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('mergeBatchModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Xác Nhận Gộp Lô</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: INTEGRITY CHECK ================= -->
+  <div id="integrityModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 text-center space-y-4">
+      <div class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
+        <i class="fa-solid fa-shield-halved animate-bounce"></i>
+      </div>
+      <div>
+        <h3 class="font-extrabold text-slate-900 text-lg">Xác Thực Toàn Vẹn Dữ Liệu</h3>
+        <p class="text-xs text-slate-500 mt-1">Quét thuật toán SHA-256 đối chiếu chữ ký chuỗi cung ứng</p>
+      </div>
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left font-mono text-[11px] space-y-1.5 text-slate-600">
+        <div>✓ Kiểm tra 8 lô nông sản: <span class="text-emerald-600 font-bold">HỢP LỆ</span></div>
+        <div>✓ Kiểm tra 14 giao dịch bàn giao: <span class="text-emerald-600 font-bold">KHỚP MÃ HASH</span></div>
+        <div>✓ Kiểm tra chuỗi lạnh IoT: <span class="text-emerald-600 font-bold">KHÔNG BỊ CHÈN DỮ LIỆU</span></div>
+        <div class="pt-1.5 border-t border-slate-200 text-slate-800 font-bold">Trạng thái: 100% TOÀN VẸN CHUỖI KHỐI</div>
+      </div>
+      <button onclick="closeModal('integrityModal')" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl shadow-sm text-xs">Đóng Cửa Sổ</button>
+    </div>
+  </div>
+
+  <!-- ================= SHOPPING CART DRAWER ================= -->
+  <div id="cartDrawerBackdrop" onclick="toggleCartDrawer(false)" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300"></div>
+  <div id="cartDrawer" class="fixed top-0 right-0 bottom-0 z-50 w-full sm:w-96 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+    <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-          <i class="fa-solid fa-basket-shopping text-sm"></i>
-        </div>
-        <h3 class="font-bold text-slate-900 text-base">Giỏ Hàng Nông Sản</h3>
-        <span id="cartItemCountHeader" class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">0 món</span>
+        <i class="fa-solid fa-basket-shopping text-emerald-600 text-lg"></i>
+        <h3 class="font-bold text-slate-800 text-base">Giỏ Hàng Nông Sản</h3>
+        <span id="cartItemCountHeader" class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">0 món</span>
       </div>
-      <button onclick="toggleCartDrawer(false)" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+      <button onclick="toggleCartDrawer(false)" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 text-sm"><i class="fa-solid fa-xmark"></i></button>
     </div>
-
-    <!-- Cart Items List -->
-    <div id="cartItemsList" class="flex-grow p-5 overflow-y-auto divide-y divide-slate-100">
-      <!-- Injected by JavaScript -->
+    <div class="flex-grow overflow-y-auto p-4 divide-y divide-slate-100" id="cartItemsList"></div>
+    <div id="emptyCartView" class="p-8 text-center text-slate-400 my-auto hidden">
+      <i class="fa-solid fa-cart-shopping text-4xl mb-3 text-slate-300"></i>
+      <p class="font-semibold text-sm">Giỏ hàng của bạn đang trống</p>
     </div>
-
-    <!-- Empty Cart Graphic State -->
-    <div id="emptyCartView" class="hidden flex-grow flex flex-col items-center justify-center p-8 text-center">
-      <div class="w-20 h-20 rounded-full bg-emerald-50 text-emerald-400 flex items-center justify-center text-3xl mb-4">
-        <i class="fa-solid fa-cart-arrow-down"></i>
-      </div>
-      <h4 class="font-bold text-slate-800 text-base">Giỏ hàng của bạn đang trống</h4>
-      <p class="text-xs text-slate-500 mt-1 max-w-xs">Hãy chọn cho mình các sản phẩm nông nghiệp sạch, an toàn chuẩn VietGAP từ nông trại nhé!</p>
-      <button onclick="toggleCartDrawer(false)" class="mt-5 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-500 shadow-sm transition-all">
-        Khám Phá Nông Sản Ngay
-      </button>
+    <div id="cartFooter" class="p-4 border-t border-slate-100 bg-slate-50 space-y-3">
+      <div class="flex justify-between text-xs text-slate-500"><span>Tạm tính</span><span id="cartSubtotal" class="font-bold text-slate-800">0đ</span></div>
+      <div class="flex justify-between text-xs text-slate-500"><span>Vận chuyển lạnh</span><span id="cartShipping" class="font-bold text-emerald-600">Miễn phí</span></div>
+      <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200"><span>Tổng cộng</span><span id="cartGrandTotal" class="text-emerald-700">0đ</span></div>
+      <button onclick="checkoutCart()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 text-xs sm:text-sm">Xác Nhận Đặt Hàng Giao Ngay</button>
     </div>
-
-    <!-- Cart Footer & Calculation -->
-    <div id="cartFooter" class="p-5 border-t border-slate-200 bg-slate-50 space-y-3">
-      <div class="space-y-1.5 text-xs">
-        <div class="flex justify-between text-slate-500">
-          <span>Tạm tính nông sản:</span>
-          <span id="cartSubtotal" class="font-bold text-slate-800">0 ₫</span>
-        </div>
-        <div class="flex justify-between text-slate-500">
-          <span>Phí vận chuyển chuỗi lạnh:</span>
-          <span id="cartShipping" class="font-bold text-emerald-600">Miễn phí (Đơn &gt; 150k)</span>
-        </div>
-        <div class="flex justify-between text-sm font-extrabold text-slate-900 pt-2 border-t border-slate-200">
-          <span>Tổng thanh toán:</span>
-          <span id="cartGrandTotal" class="text-emerald-700 text-base font-black">0 ₫</span>
-        </div>
-      </div>
-
-      <button onclick="checkoutCart()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 text-sm flex items-center justify-center gap-2 transition-all">
-        <i class="fa-solid fa-credit-card"></i>
-        Tiến Hành Đặt Hàng Chuỗi Lạnh
-      </button>
-      <p class="text-[10px] text-center text-slate-400">
-        <i class="fa-solid fa-truck-fast text-emerald-600 mr-1"></i> Cam kết bảo quản lạnh trong suốt quá trình giao nhận
-      </p>
-    </div>
-
   </div>
-
-
-  <!-- ======================================================== -->
-  <!-- JAVASCRIPT: DATA REST API SIMULATION & APP LOGIC        -->
-  <!-- ======================================================== -->
-  <script>
-    /**
-     * MOCK REST API DATASET: agriculturalBatches
-     * Đại diện cấu trúc JSON tiêu chuẩn cho các lô nông sản
-     */
-    let agriculturalBatches = [
-      {
-        id: 1,
-        code: "BATCH-TOM-2601",
-        name: "Cà Chua Cherry Sô-Cô-La",
-        category: "greens",
-        categoryName: "Rau củ quả",
-        price: 65000,
-        unit: "hộp 500g",
-        farm: "Nhà màng Đà Lạt Farm Zone A",
-        plantingDate: "2026-08-15",
-        harvestDate: "2026-10-18",
-        status: "Đã thu hoạch",
-        cert: "GlobalGAP",
-        image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=700&q=80",
-        engineer: "KS. Nguyễn Hoàng Nam",
-        waterPh: "6.5 pH (Nước ngầm lọc RO)",
-        nitrate: "< 110 mg/kg (Mức tối ưu)",
-        coldChainTemp: "4.5°C (Lưu trữ kho lạnh)",
-        timeline: [
-          { stage: "Gieo hạt mầm giống F1 Israel", date: "15/08/2026", desc: "Sử dụng giá thể xơ dừa vi sinh đã tiệt trùng nhiệt độ cao, tỷ lệ nảy mầm đạt 99%." },
-          { stage: "Chăm sóc & Phun men vi sinh sinh học", date: "05/09/2026", desc: "Hệ thống tưới nhỏ giọt dinh dưỡng tự động theo ẩm độ đất, không dùng thuốc trừ sâu hóa học." },
-          { stage: "Kiểm nghiệm dư lượng an toàn", date: "14/10/2026", desc: "Trung tâm Vinacert phân tích 42 chỉ tiêu BVTV: 100% đạt chuẩn âm tính." },
-          { stage: "Thu hoạch & Đóng gói màng thở", date: "18/10/2026", desc: "Thu hái thủ công buổi sáng sớm, đóng hộp màng thoáng khí phân hủy sinh học." },
-          { stage: "Lưu kho lạnh & Niêm phong điện tử", date: "19/10/2026", desc: "Gắn thẻ RFID giám sát nhiệt độ 4-6°C đưa vào xe tải đông lạnh chuyên dụng." }
-        ]
-      },
-      {
-        id: 2,
-        code: "BATCH-SAL-2602",
-        name: "Xà Lách Mỡ Thủy Canh Batavia",
-        category: "greens",
-        categoryName: "Rau xanh hữu cơ",
-        price: 35000,
-        unit: "túi 350g",
-        farm: "Khu CNC Nông Nghiệp Củ Chi",
-        plantingDate: "2026-09-10",
-        harvestDate: "2026-10-19",
-        status: "Đã thu hoạch",
-        cert: "VietGAP",
-        image: "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?auto=format&fit=crop&w=700&q=80",
-        engineer: "KS. Lê Thị Thu Thảo",
-        waterPh: "6.2 pH (Hồi lưu tuần hoàn)",
-        nitrate: "< 85 mg/kg (An toàn tuyệt đối)",
-        coldChainTemp: "5.0°C (Xe lạnh chuyên dụng)",
-        timeline: [
-          { stage: "Ươm mây thủy canh", date: "10/09/2026", desc: "Hạt giống Rijk Zwaan Hà Lan ươm trong bọt xốp sinh học vô trùng." },
-          { stage: "Chuyển máng màng mỏng dinh dưỡng (NFT)", date: "22/09/2026", desc: "Dinh dưỡng khoáng hữu cơ hòa tan, cảm biến EC/pH theo dõi 10 phút/lần." },
-          { stage: "Thu hoạch nguyên gốc", date: "19/10/2026", desc: "Giữ lại rễ để rau tươi giòn tự nhiên trong 7 ngày không cần chất bảo quản." }
-        ]
-      },
-      {
-        id: 3,
-        code: "BATCH-STR-2603",
-        name: "Dâu Tây Giống Nhật New Sky",
-        category: "fruits",
-        categoryName: "Trái cây nhiệt đới",
-        price: 145000,
-        unit: "hộp 250g",
-        farm: "Smart Farm Lạc Dương, Lâm Đồng",
-        plantingDate: "2026-07-20",
-        harvestDate: "2026-10-18",
-        status: "Đã thu hoạch",
-        cert: "Organic EU",
-        image: "https://images.unsplash.com/photo-1543528176-61b239494933?auto=format&fit=crop&w=700&q=80",
-        engineer: "Chuyên gia Koji Tanaka & KS. Hải",
-        waterPh: "6.0 pH (Nước suối nguồn tinh khiết)",
-        nitrate: "< 40 mg/kg (Chuẩn EU)",
-        coldChainTemp: "2.5°C (Nghiêm ngặt quả mọng)",
-        timeline: [
-          { stage: "Cấy mô & Canh tác giàn treo", date: "20/07/2026", desc: "Cây trồng trên giàn cao 1.2m cách ly hoàn toàn với mầm bệnh đất." },
-          { stage: "Thụ phấn nhờ ong tự nhiên", date: "15/09/2026", desc: "Sử dụng đàn ong mật trong nhà kính hỗ trợ thụ phấn đồng đều quả mọng." },
-          { stage: "Kiểm tra độ Brix đường", date: "17/10/2026", desc: "Đo khúc xạ kế quang học: Độ ngọt đạt 13.5 Brix chuẩn cao cấp." },
-          { stage: "Đóng gói chân không chuỗi lạnh", date: "18/10/2026", desc: "Đóng vỉ chống va đập, bảo quản lạnh 2-4°C ngay tại vườn." }
-        ]
-      },
-      {
-        id: 4,
-        code: "BATCH-CAR-2604",
-        name: "Cà Rốt Baby Hữu Cơ",
-        category: "roots",
-        categoryName: "Củ quả sạch",
-        price: 42000,
-        unit: "túi 500g",
-        farm: "Vùng Canh Tác Đơn Dương, Đà Lạt",
-        plantingDate: "2026-08-01",
-        harvestDate: "2026-10-16",
-        status: "Đã thu hoạch",
-        cert: "VietGAP",
-        image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=700&q=80",
-        engineer: "KS. Trần Đình Trọng",
-        waterPh: "6.8 pH",
-        nitrate: "< 140 mg/kg",
-        coldChainTemp: "6.0°C",
-        timeline: [
-          { stage: "Làm đất vi sinh phân trùn quế", date: "01/08/2026", desc: "Cải tạo đất đỏ bazan bằng 15 tấn phân trùn quế hữu cơ hoai mục." },
-          { stage: "Gieo hạt phủ màng hữu cơ", date: "05/08/2026", desc: "Sử dụng màng phủ sinh học ngăn ngừa cỏ dại không dùng thuốc diệt cỏ." },
-          { stage: "Thu hoạch & Rửa sục khí Ozone", date: "16/10/2026", desc: "Rửa sạch đất bám bằng nước ozone tiệt trùng 0.5ppm." }
-        ]
-      },
-      {
-        id: 5,
-        code: "BATCH-MEL-2605",
-        name: "Dưa Lưới Ruột Cam Huỳnh Long",
-        category: "fruits",
-        categoryName: "Trái cây nhiệt đới",
-        price: 85000,
-        unit: "trái 1.4 - 1.6kg",
-        farm: "Nông Trại Công Nghệ Vĩnh Long",
-        plantingDate: "2026-07-28",
-        harvestDate: "2026-10-17",
-        status: "Đã thu hoạch",
-        cert: "GlobalGAP",
-        image: "https://images.unsplash.com/photo-1571575173700-afb9492e6a50?auto=format&fit=crop&w=700&q=80",
-        engineer: "KS. Phạm Quốc Huy",
-        waterPh: "6.5 pH",
-        nitrate: "< 90 mg/kg",
-        coldChainTemp: "8.0°C",
-        timeline: [
-          { stage: "Gieo bầu & Treo dây nhà màng", date: "28/07/2026", desc: "Mỗi cây chỉ tuyển chọn duy nhất 1 quả đẹp nhất để tập trung dưỡng chất." },
-          { stage: "Tạo vân lưới tự nhiên", date: "20/09/2026", desc: "Kiểm soát độ ẩm và nhiệt độ nghiêm ngặt để quả tạo vân lưới dày đều." },
-          { stage: "Thu hoạch cuống chữ T", date: "17/10/2026", desc: "Cắt cuống chữ T tiêu chuẩn xuất khẩu, gắn tem QR chống hàng giả." }
-        ]
-      },
-      {
-        id: 6,
-        code: "BATCH-PEP-2606",
-        name: "Ớt Chuông Sweet Trio Đà Lạt",
-        category: "roots",
-        categoryName: "Củ quả sạch",
-        price: 58000,
-        unit: "túi 3 trái (500g)",
-        farm: "Lâm Hà GreenTech Farm",
-        plantingDate: "2026-08-10",
-        harvestDate: "2026-10-18",
-        status: "Đã thu hoạch",
-        cert: "GlobalGAP",
-        image: "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?auto=format&fit=crop&w=700&q=80",
-        engineer: "KS. Nguyễn Hoàng Nam",
-        waterPh: "6.4 pH",
-        nitrate: "< 100 mg/kg",
-        coldChainTemp: "7.0°C",
-        timeline: [
-          { stage: "Gieo trồng giá thể xơ dừa", date: "10/08/2026", desc: "Giống ớt ngọt nhập khẩu Hà Lan, vỏ giòn không cay nhiều vitamin C." },
-          { stage: "Bẫy côn trùng Pheromone", date: "12/09/2026", desc: "Kiểm soát sâu bướm bằng bẫy dính màu vàng và pheromone sinh học." },
-          { stage: "Thu hái khi đạt 90% màu", date: "18/10/2026", desc: "Thu hái đúng độ chín tự nhiên để giữ lượng Carotene cao nhất." }
-        ]
-      },
-      {
-        id: 7,
-        code: "BATCH-KAL-2607",
-        name: "Cải Xoăn Khủng Long Kale Mỹ",
-        category: "greens",
-        categoryName: "Rau xanh hữu cơ",
-        price: 48000,
-        unit: "bó 350g",
-        farm: "Đà Lạt Smart Greenhouses",
-        plantingDate: "2026-08-25",
-        harvestDate: "2026-10-19",
-        status: "Đang thu hoạch",
-        cert: "Organic EU",
-        image: "https://images.unsplash.com/photo-1524179091875-bf99a9a6fa57?auto=format&fit=crop&w=700&q=80",
-        engineer: "KS. Đỗ Thùy Trang",
-        waterPh: "6.3 pH",
-        nitrate: "< 75 mg/kg",
-        coldChainTemp: "4.0°C",
-        timeline: [
-          { stage: "Canh tác trên luống hữu cơ cao", date: "25/08/2026", desc: "Đất trộn mùn vỏ cây thông ủ hoai và than hoạt tính sinh học." },
-          { stage: "Tưới phun sương hạ nhiệt", date: "15/09/2026", desc: "Tự động hạ nhiệt khi nắng gắt để giữ độ giòn và màu xanh thẫm." },
-          { stage: "Thu hoạch lá bẹ", date: "19/10/2026", desc: "Chỉ thu hoạch những phiến lá tươi non bánh tẻ giàu chất chống oxy hóa." }
-        ]
-      },
-      {
-        id: 8,
-        code: "BATCH-POM-2608",
-        name: "Bưởi Da Xanh Ruột Hồng Bến Tre",
-        category: "fruits",
-        categoryName: "Trái cây nhiệt đới",
-        price: 92000,
-        unit: "trái 1.2 - 1.4kg",
-        farm: "Vườn Sinh Thái Châu Thành, Bến Tre",
-        plantingDate: "2026-04-10",
-        harvestDate: "2026-10-15",
-        status: "Đã thu hoạch",
-        cert: "VietGAP",
-        image: "https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?auto=format&fit=crop&w=700&q=80",
-        engineer: "KS. Huỳnh Văn Út",
-        waterPh: "7.0 pH (Nước ngọt phù sa)",
-        nitrate: "< 35 mg/kg",
-        coldChainTemp: "12.0°C",
-        timeline: [
-          { stage: "Nuôi kiến vàng khống chế sâu hại", date: "10/04/2026", desc: "Ứng dụng thiên địch kiến vàng bản địa bảo vệ múi bưởi không dùng hóa chất." },
-          { stage: "Bọc túi bảo vệ trái bưởi", date: "15/06/2026", desc: "Bọc giấy chuyên dụng chống ruồi đục quả và rám nắng mặt trời." },
-          { stage: "Thu hoạch đạt độ chín cây", date: "15/10/2026", desc: "Bưởi tép mọng ráo nước, ngọt thanh không hạt." }
-        ]
-      }
-    ];
-
-    /**
-     * CART STATE
-     */
-    let cart = [];
-    let currentCategory = 'all';
-    let searchQuery = '';
-
-    // Init App
-    document.addEventListener("DOMContentLoaded", () => {
-      renderProducts();
-      renderAdminTable();
-      updateCartUI();
-      startIoTSimulation();
-    });
-
-    /**
-     * Switch view between Storefront and Admin Dashboard
-     */
-    function switchView(view) {
-      const storefrontView = document.getElementById("storefrontView");
-      const adminView = document.getElementById("adminView");
-      const storefrontTabBtn = document.getElementById("storefrontTabBtn");
-      const adminTabBtn = document.getElementById("adminTabBtn");
-
-      if (view === 'storefront') {
-        storefrontView.classList.remove("hidden");
-        adminView.classList.add("hidden");
-        
-        storefrontTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm";
-        adminTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        adminView.classList.remove("hidden");
-        storefrontView.classList.add("hidden");
-        
-        adminTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm";
-        storefrontTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
-        renderAdminTable();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }
-
-    /**
-     * RENDER PRODUCTS IN STOREFRONT
-     */
-    function renderProducts() {
-      const productGrid = document.getElementById("productGrid");
-      const emptyState = document.getElementById("emptyCatalogState");
-      
-      const filtered = agriculturalBatches.filter(item => {
-        const matchCategory = currentCategory === 'all' || item.category === currentCategory;
-        const q = searchQuery.toLowerCase().trim();
-        const matchSearch = !q || 
-          item.name.toLowerCase().includes(q) || 
-          item.code.toLowerCase().includes(q) ||
-          item.farm.toLowerCase().includes(q);
-        return matchCategory && matchSearch;
-      });
-
-      if (filtered.length === 0) {
-        productGrid.innerHTML = '';
-        emptyState.classList.remove("hidden");
-        return;
-      }
-
-      emptyState.classList.add("hidden");
-
-      productGrid.innerHTML = filtered.map(item => `
-        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-farm transition-all duration-300 flex flex-col overflow-hidden group hover:-translate-y-1">
-          
-          <!-- Image Container with badges -->
-          <div class="relative overflow-hidden h-48 bg-slate-100">
-            <img 
-              src="${item.image}" 
-              alt="${item.name}" 
-              class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-            <!-- Certification Badge -->
-            <div class="absolute top-3 left-3 flex flex-col gap-1.5">
-              <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-600 text-white shadow-md">
-                <i class="fa-solid fa-award mr-1"></i> ${item.cert}
-              </span>
-              <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900/80 text-white backdrop-blur-xs">
-                ${item.code}
-              </span>
-            </div>
-
-            <!-- Temperature Cold Chain Indicator -->
-            <div class="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-semibold text-cyan-800 shadow-sm flex items-center gap-1">
-              <i class="fa-solid fa-snowflake text-cyan-500"></i> ${item.coldChainTemp}
-            </div>
-          </div>
-
-          <!-- Product Content -->
-          <div class="p-5 flex-grow flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
-                <span>${item.categoryName}</span>
-                <span class="text-emerald-700 font-medium"><i class="fa-solid fa-seedling mr-1"></i>${item.status}</span>
-              </div>
-              
-              <h3 class="text-base font-bold text-slate-900 group-hover:text-emerald-700 transition-colors line-clamp-1 mb-1">
-                ${item.name}
-              </h3>
-
-              <p class="text-xs text-slate-500 flex items-center gap-1.5 mb-3">
-                <i class="fa-solid fa-location-dot text-emerald-600"></i>
-                <span class="truncate">${item.farm}</span>
-              </p>
-            </div>
-
-            <!-- Price & Actions -->
-            <div class="pt-3 border-t border-slate-100">
-              <div class="flex items-baseline justify-between mb-3">
-                <span class="text-xs text-slate-400">Giá nông trại:</span>
-                <div class="text-right">
-                  <span class="text-lg font-black text-emerald-700">${formatCurrency(item.price)}</span>
-                  <span class="text-xs text-slate-500 font-normal"> / ${item.unit}</span>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-2">
-                <!-- Action 1: Add to Cart -->
-                <button 
-                  onclick="addToCart(${item.id})" 
-                  class="w-full py-2.5 px-3 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
-                  <i class="fa-solid fa-cart-plus"></i>
-                  Thêm giỏ
-                </button>
-
-                <!-- Action 2: Open Trace Modal -->
-                <button 
-                  onclick="openTraceModal('${item.code}')" 
-                  class="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
-                  <i class="fa-solid fa-qrcode text-emerald-600"></i>
-                  Truy xuất
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      `).join('');
-    }
-
-    /**
-     * RENDER ADMIN BATCHES TABLE
-     */
-    function renderAdminTable() {
-      const tableBody = document.getElementById("adminBatchTableBody");
-      const countEl = document.getElementById("adminBatchCount");
-      const kpiTotalBatches = document.getElementById("kpiTotalBatches");
-      
-      countEl.innerText = agriculturalBatches.length;
-      kpiTotalBatches.innerText = `${agriculturalBatches.length} Lô`;
-
-      tableBody.innerHTML = agriculturalBatches.map(item => `
-        <tr class="hover:bg-slate-50 transition-colors">
-          <td class="px-5 py-4 font-mono font-bold text-slate-900 text-xs">
-            <span class="bg-slate-100 px-2 py-1 rounded border border-slate-200">${item.code}</span>
-          </td>
-          <td class="px-5 py-4">
-            <div class="flex items-center gap-3">
-              <img src="${item.image}" alt="${item.name}" class="w-9 h-9 rounded-lg object-cover border border-slate-200">
-              <div>
-                <p class="font-bold text-slate-800 text-xs">${item.name}</p>
-                <p class="text-[11px] text-slate-400">${item.categoryName} • ${item.cert}</p>
-              </div>
-            </div>
-          </td>
-          <td class="px-5 py-4 text-xs text-slate-600">
-            ${item.farm}
-          </td>
-          <td class="px-5 py-4 text-xs text-slate-500 font-mono">
-            ${item.harvestDate}
-          </td>
-          <td class="px-5 py-4 text-xs font-bold text-emerald-700">
-            ${formatCurrency(item.price)}
-          </td>
-          <td class="px-5 py-4">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${item.status.includes('Đang') ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
-              <span class="w-1.5 h-1.5 rounded-full mr-1.5 ${item.status.includes('Đang') ? 'bg-amber-500' : 'bg-emerald-500'}"></span>
-              ${item.status}
-            </span>
-          </td>
-          <td class="px-5 py-4 text-right space-x-2">
-            <button 
-              onclick="openTraceModal('${item.code}')" 
-              class="p-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
-              title="Xem hộ chiếu và mã QR">
-              <i class="fa-solid fa-qrcode"></i>
-            </button>
-            <button 
-              onclick="deleteBatch(${item.id})" 
-              class="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-              title="Xóa lô hàng">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    /**
-     * FILTER PRODUCTS BY CATEGORY
-     */
-    function filterByCategory(category) {
-      currentCategory = category;
-      
-      const pills = document.querySelectorAll("#categoryFilterContainer .cat-pill");
-      pills.forEach(pill => {
-        if (pill.dataset.cat === category) {
-          pill.className = "cat-pill active px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-emerald-600 text-white shadow-sm whitespace-nowrap";
-        } else {
-          pill.className = "cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 whitespace-nowrap";
-        }
-      });
-
-      renderProducts();
-    }
-
-    /**
-     * SEARCH INPUT HANDLER
-     */
-    function handleSearch(query) {
-      searchQuery = query;
-      const clearBtn = document.getElementById("clearSearchBtn");
-      
-      if (query.trim().length > 0) {
-        clearBtn.classList.remove("hidden");
-      } else {
-        clearBtn.classList.add("hidden");
-      }
-      
-      renderProducts();
-    }
-
-    function clearSearch() {
-      searchQuery = '';
-      const input = document.getElementById("globalSearchInput");
-      if (input) input.value = '';
-      document.getElementById("clearSearchBtn").classList.add("hidden");
-      renderProducts();
-    }
-
-    function openQuickTracePrompt() {
-      const code = prompt("Nhập mã lô nông sản cần kiểm định (Ví dụ: BATCH-TOM-2601):", "BATCH-TOM-2601");
-      if (code && code.trim()) {
-        openTraceModal(code.trim().toUpperCase());
-      }
-    }
-
-    /**
-     * MODAL: DIGITAL PRODUCE PASSPORT
-     */
-    function openTraceModal(batchCode) {
-      const item = agriculturalBatches.find(b => b.code.toUpperCase() === batchCode.toUpperCase()) || agriculturalBatches[0];
-
-      document.getElementById("modalProduceName").innerText = item.name;
-      document.getElementById("modalBatchCode").innerText = item.code;
-      document.getElementById("modalCertBadge").innerText = item.cert;
-      document.getElementById("modalHarvestDate").innerText = item.harvestDate;
-      document.getElementById("modalFarmLocation").innerText = item.farm;
-      document.getElementById("modalEngineer").innerText = item.engineer;
-      document.getElementById("modalPh").innerText = item.waterPh;
-      document.getElementById("modalNitrate").innerText = item.nitrate;
-      document.getElementById("modalColdChain").innerText = item.coldChainTemp;
-
-      // QR Code Generation (Dynamic via QRServer CDN with fallback)
-      const qrContainer = document.getElementById("modalQrCodeImg");
-      const qrData = encodeURIComponent(`https://nongsanlanh.vn/trace/${item.code}`);
-      qrContainer.innerHTML = `
-        <img 
-          src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}&color=16-163-74" 
-          alt="QR Code ${item.code}" 
-          class="w-full h-full object-contain p-1"
-        />
-      `;
-
-      // Timeline Rendering
-      const timelineContainer = document.getElementById("modalTimelineContainer");
-      if (item.timeline && item.timeline.length > 0) {
-        timelineContainer.innerHTML = item.timeline.map((step, idx) => `
-          <div class="relative pl-6 pb-2 timeline-item">
-            <div class="timeline-dot absolute left-0 top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-sm flex items-center justify-center">
-              <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
-            </div>
-            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <div class="flex items-center justify-between text-xs mb-1">
-                <span class="font-bold text-slate-800">${step.stage}</span>
-                <span class="font-mono text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded">${step.date}</span>
-              </div>
-              <p class="text-[11px] text-slate-600 leading-relaxed">${step.desc}</p>
-            </div>
-          </div>
-        `).join('');
-      } else {
-        timelineContainer.innerHTML = `
-          <p class="text-xs text-slate-500">Đang đồng bộ nhật ký canh tác từ cảm biến IoT...</p>
-        `;
-      }
-
-      document.getElementById("tracePassportModal").classList.remove("hidden");
-    }
-
-    function closeTraceModal() {
-      document.getElementById("tracePassportModal").classList.add("hidden");
-    }
-
-    /**
-     * MODAL: ADD NEW BATCH (ADMIN)
-     */
-    function openAddBatchModal() {
-      document.getElementById("formBatchCode").value = `BATCH-FARM-${Math.floor(1000 + Math.random() * 9000)}`;
-      document.getElementById("addBatchModal").classList.remove("hidden");
-    }
-
-    function closeAddBatchModal() {
-      document.getElementById("addBatchModal").classList.add("hidden");
-      document.getElementById("newBatchForm").reset();
-    }
-
-    function handleCreateBatch(e) {
-      e.preventDefault();
-
-      const name = document.getElementById("formName").value;
-      const category = document.getElementById("formCategory").value;
-      const code = document.getElementById("formBatchCode").value.toUpperCase();
-      const price = parseInt(document.getElementById("formPrice").value);
-      const unit = document.getElementById("formUnit").value;
-      const farm = document.getElementById("formFarm").value;
-      const cert = document.getElementById("formCert").value;
-      const customImg = document.getElementById("formImage").value;
-
-      const categoryNames = {
-        greens: "Rau xanh hữu cơ",
-        roots: "Củ quả sạch",
-        fruits: "Trái cây nhiệt đới"
-      };
-
-      const defaultImages = {
-        greens: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=80",
-        roots: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=700&q=80",
-        fruits: "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=700&q=80"
-      };
-
-      const newBatch = {
-        id: Date.now(),
-        code: code,
-        name: name,
-        category: category,
-        categoryName: categoryNames[category],
-        price: price,
-        unit: unit,
-        farm: farm,
-        plantingDate: new Date().toISOString().split('T')[0],
-        harvestDate: new Date().toISOString().split('T')[0],
-        status: "Đang canh tác",
-        cert: cert,
-        image: customImg.trim() || defaultImages[category],
-        engineer: "Kỹ sư Giám sát Hệ thống",
-        waterPh: "6.5 pH (Tự động châm)",
-        nitrate: "< 95 mg/kg (Chuẩn an toàn)",
-        coldChainTemp: "5.0°C (Dự kiến)",
-        timeline: [
-          { 
-            stage: "Khởi tạo lô canh tác mới", 
-            date: new Date().toLocaleDateString('vi-VN'), 
-            desc: `Đã kích hoạt hệ thống dinh dưỡng nhà màng cho lô ${code}.` 
-          }
-        ]
-      };
-
-      agriculturalBatches.unshift(newBatch);
-
-      renderProducts();
-      renderAdminTable();
-      closeAddBatchModal();
-      showToast(`Đã thêm thành công lô nông sản ${code}!`, "success");
-    }
-
-    function deleteBatch(id) {
-      if (confirm("Bạn có chắc chắn muốn xóa lô nông sản này khỏi hệ thống?")) {
-        agriculturalBatches = agriculturalBatches.filter(b => b.id !== id);
-        renderProducts();
-        renderAdminTable();
-        showToast("Đã xóa lô hàng thành công.", "info");
-      }
-    }
-
-    /**
-     * SHOPPING CART FUNCTIONS
-     */
-    function toggleCartDrawer(open) {
-      const drawer = document.getElementById("cartDrawer");
-      const backdrop = document.getElementById("cartDrawerBackdrop");
-
-      if (open) {
-        backdrop.classList.remove("opacity-0", "pointer-events-none");
-        backdrop.classList.add("opacity-100", "pointer-events-auto");
-        drawer.classList.remove("translate-x-full");
-      } else {
-        backdrop.classList.remove("opacity-100", "pointer-events-auto");
-        backdrop.classList.add("opacity-0", "pointer-events-none");
-        drawer.classList.add("translate-x-full");
-      }
-    }
-
-    function addToCart(productId) {
-      const product = agriculturalBatches.find(p => p.id === productId);
-      if (!product) return;
-
-      const existing = cart.find(item => item.id === productId);
-      if (existing) {
-        existing.quantity += 1;
-      } else {
-        cart.push({ ...product, quantity: 1 });
-      }
-
-      updateCartUI();
-      showToast(`Đã thêm ${product.name} vào giỏ!`, "success");
-    }
-
-    function updateCartQuantity(productId, delta) {
-      const item = cart.find(i => i.id === productId);
-      if (!item) return;
-
-      item.quantity += delta;
-      if (item.quantity <= 0) {
-        cart = cart.filter(i => i.id !== productId);
-      }
-
-      updateCartUI();
-    }
-
-    function removeFromCart(productId) {
-      cart = cart.filter(i => i.id !== productId);
-      updateCartUI();
-      showToast("Đã bỏ sản phẩm khỏi giỏ.", "info");
-    }
-
-    function updateCartUI() {
-      const cartBadge = document.getElementById("cartBadgeCount");
-      const cartItemCountHeader = document.getElementById("cartItemCountHeader");
-      const cartItemsList = document.getElementById("cartItemsList");
-      const emptyCartView = document.getElementById("emptyCartView");
-      const cartFooter = document.getElementById("cartFooter");
-
-      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-      cartBadge.innerText = totalItems;
-      cartItemCountHeader.innerText = `${totalItems} món`;
-
-      if (cart.length === 0) {
-        cartItemsList.classList.add("hidden");
-        cartFooter.classList.add("hidden");
-        emptyCartView.classList.remove("hidden");
-        return;
-      }
-
-      cartItemsList.classList.remove("hidden");
-      cartFooter.classList.remove("hidden");
-      emptyCartView.classList.add("hidden");
-
-      let subtotal = 0;
-
-      cartItemsList.innerHTML = cart.map(item => {
-        const itemTotal = item.price * item.quantity;
-        subtotal += itemTotal;
-
-        return `
-          <div class="py-3 flex items-center justify-between gap-3">
-            <img src="${item.image}" alt="${item.name}" class="w-14 h-14 rounded-xl object-cover border border-slate-200 flex-shrink-0">
-            
-            <div class="flex-grow min-w-0">
-              <h4 class="font-bold text-slate-800 text-xs truncate">${item.name}</h4>
-              <p class="text-[11px] text-slate-400 font-mono">${item.code}</p>
-              <p class="text-xs font-bold text-emerald-700">${formatCurrency(item.price)} <span class="text-[10px] text-slate-400 font-normal">/ ${item.unit}</span></p>
-            </div>
-
-            <!-- Quantity Controls -->
-            <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
-              <button onclick="updateCartQuantity(${item.id}, -1)" class="w-6 h-6 rounded bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold transition-colors">
-                <i class="fa-solid fa-minus text-[9px]"></i>
-              </button>
-              <span class="w-5 text-center text-xs font-bold text-slate-800">${item.quantity}</span>
-              <button onclick="updateCartQuantity(${item.id}, 1)" class="w-6 h-6 rounded bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold transition-colors">
-                <i class="fa-solid fa-plus text-[9px]"></i>
-              </button>
-            </div>
-
-            <!-- Remove Button -->
-            <button onclick="removeFromCart(${item.id})" class="text-slate-400 hover:text-rose-500 p-1 text-xs transition-colors">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
-          </div>
-        `;
-      }).join('');
-
-      document.getElementById("cartSubtotal").innerText = formatCurrency(subtotal);
-      
-      const shipping = subtotal >= 150000 ? 0 : 25000;
-      document.getElementById("cartShipping").innerText = shipping === 0 ? "Miễn phí" : formatCurrency(shipping);
-      document.getElementById("cartGrandTotal").innerText = formatCurrency(subtotal + shipping);
-    }
-
-    function checkoutCart() {
-      if (cart.length === 0) return;
-      alert("Đơn hàng chuỗi lạnh của bạn đã được tiếp nhận thành công!\nMã kiểm tra vận chuyển: SHIP-COLD-2026\nĐội ngũ Nông Sản Lành sẽ giao hàng trong vòng 2 giờ.");
-      cart = [];
-      updateCartUI();
-      toggleCartDrawer(false);
-      showToast("Đặt hàng thành công! Đang điều phối xe lạnh.", "success");
-    }
-
-    /**
-     * REALTIME IOT SENSOR SIMULATION
-     * Tạo dao động số liệu nhỏ để trải nghiệm người dùng sống động
-     */
-    function startIoTSimulation() {
-      setInterval(() => {
-        const temp = (24.2 + (Math.random() * 0.8)).toFixed(1);
-        const hum = (73 + (Math.random() * 2.5)).toFixed(1);
-        const soil = (67.5 + (Math.random() * 2)).toFixed(1);
-        const light = Math.floor(32000 + Math.random() * 800);
-
-        const tempEl = document.getElementById("sensorTemp");
-        const humEl = document.getElementById("sensorHumidity");
-        const soilEl = document.getElementById("sensorSoil");
-        const lightEl = document.getElementById("sensorLight");
-        const syncTimeEl = document.getElementById("iotLastSyncTime");
-
-        if (tempEl) tempEl.innerText = temp;
-        if (humEl) humEl.innerText = hum;
-        if (soilEl) soilEl.innerText = soil;
-        if (lightEl) lightEl.innerText = light.toLocaleString();
-
-        const now = new Date();
-        if (syncTimeEl) {
-          syncTimeEl.innerText = now.toTimeString().split(' ')[0];
-        }
-      }, 4000);
-    }
-
-    /**
-     * TOAST NOTIFICATION HELPER
-     */
-    function showToast(message, type = "info") {
-      const container = document.getElementById("toastContainer");
-      const toast = document.createElement("div");
-
-      const icons = {
-        success: "fa-circle-check text-emerald-500",
-        info: "fa-circle-info text-blue-500",
-        warning: "fa-triangle-exclamation text-amber-500"
-      };
-
-      toast.className = "flex items-center gap-2.5 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-xl text-xs font-medium border border-slate-700 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto";
-      toast.innerHTML = `
-        <i class="fa-solid ${icons[type] || icons.info} text-sm"></i>
-        <span>${message}</span>
-      `;
-
-      container.appendChild(toast);
-
-      // Animate in
-      setTimeout(() => {
-        toast.classList.remove("translate-y-2", "opacity-0");
-      }, 50);
-
-      // Animate out
-      setTimeout(() => {
-        toast.classList.add("opacity-0", "translate-y-2");
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-
-    function formatCurrency(number) {
-      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
-    }
-  </script>
-
-</body>
-</html>
