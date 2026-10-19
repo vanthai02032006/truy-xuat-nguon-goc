@@ -74,11 +74,11 @@ Hệ thống sẽ tự động:
 4. Khởi động Backend FastAPI và Frontend.
 
 ### Điểm truy cập dịch vụ:
-- **Trang chủ Backend API**: [http://localhost:8000](http://localhost:8000) (Trả về HTTP 200: `{"message": "Hệ thống truy xuất nguồn gốc..."}`)
-- **Kiểm tra sức khỏe (Health Check)**: [http://localhost:8000/health](http://localhost:8000/health) (Trả về HTTP 200: `{"status": "ok"}`)
-- **Tài liệu API tương tác (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Frontend App**: [http://localhost:3000](http://localhost:3000)
-- **Giao diện Nông Sản Lành (Single-File SPA)**: Mở trực tiếp [index.html](index.html) bằng trình duyệt hoặc qua cổng web server.
+- **Tên miền Staging (DuckDNS)**: [http://nong-san-lanh-k18-n4.duckdns.org](http://nong-san-lanh-k18-n4.duckdns.org) (Tự động chuyển hướng sang `/app/`)
+- **Giao diện Web Nông Sản Lành (SPA)**: [http://nong-san-lanh-k18-n4.duckdns.org/app/](http://nong-san-lanh-k18-n4.duckdns.org/app/)
+- **Tài liệu API tương tác (Swagger UI)**: [http://nong-san-lanh-k18-n4.duckdns.org/docs](http://nong-san-lanh-k18-n4.duckdns.org/docs)
+- **Kiểm tra sức khỏe (Health Check)**: [http://nong-san-lanh-k18-n4.duckdns.org/health](http://nong-san-lanh-k18-n4.duckdns.org/health)
+- **Truy cập cục bộ (Localhost)**: [http://localhost](http://localhost) (mặc định cổng 80, hoặc cổng chỉ định qua biến `APP_PORT`)
 
 ---
 
