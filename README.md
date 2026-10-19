@@ -59,19 +59,26 @@ truyxuatnguongoc/
 
 ---
 
-## 2. Hướng dẫn Khởi chạy
+## 2. Hướng dẫn Khởi chạy (Chạy bằng 1 lệnh - Story S-01)
 
-### Cách 1: Khởi chạy bằng Docker Compose (Khuyên dùng)
+Theo tiêu chí nghiệm thu của **Story S-01** (*Khung ứng dụng chạy được trên máy cá nhân bằng một lệnh*), máy chỉ cần cài sẵn **Docker** và **Git**, khởi động toàn bộ hệ thống bằng một lệnh duy nhất:
+
 ```bash
-# Sao chép file cấu hình môi trường
-cp backend/.env.example backend/.env
-
-# Khởi động toàn bộ dịch vụ (PostgreSQL, Backend, Frontend)
-docker compose up -d --build
+docker compose up --build
 ```
-- **Backend API**: [http://localhost:8000](http://localhost:8000)
-- **API Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+Hệ thống sẽ tự động:
+1. Khởi động PostgreSQL 16 và kiểm tra healthcheck.
+2. Tự động chạy toàn bộ Database Migrations (`alembic upgrade head`) khi database còn trống.
+3. Kiểm tra biến môi trường bắt buộc (dừng ngay và báo lỗi rõ ràng nếu thiếu).
+4. Khởi động Backend FastAPI và Frontend.
+
+### Điểm truy cập dịch vụ:
+- **Trang chủ Backend API**: [http://localhost:8000](http://localhost:8000) (Trả về HTTP 200: `{"message": "Hệ thống truy xuất nguồn gốc..."}`)
+- **Kiểm tra sức khỏe (Health Check)**: [http://localhost:8000/health](http://localhost:8000/health) (Trả về HTTP 200: `{"status": "ok"}`)
+- **Tài liệu API tương tác (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Frontend App**: [http://localhost:3000](http://localhost:3000)
+- **Giao diện Nông Sản Lành (Single-File SPA)**: Mở trực tiếp [index.html](index.html) bằng trình duyệt hoặc qua cổng web server.
 
 ---
 
