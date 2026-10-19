@@ -1,6 +1,27 @@
+# Environment files
 .env
+.env.local
+.env.*.local
+*.env
+
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
 .venv/
+env/
+venv/
 .pytest_cache/
+.ruff_cache/
+*.egg-info/
 
+# Frontend / Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db

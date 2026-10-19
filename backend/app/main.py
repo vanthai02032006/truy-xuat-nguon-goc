@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 
+from app.core.config import settings
+
 app = FastAPI(
-    title="Truy xuất nguồn gốc và giám sát chuỗi lạnh nông sản",
-    version="1.0.0"
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
 )
 
 
@@ -11,11 +13,10 @@ def home():
     return {
         "project": "Truy xuất nguồn gốc và giám sát chuỗi lạnh nông sản",
         "team": "Khối 18 N4",
-        "status": "ok"
+        "status": "ok",
     }
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
