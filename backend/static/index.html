@@ -1402,3 +1402,1481 @@
       <button onclick="checkoutCart()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 text-xs sm:text-sm">Xác Nhận Đặt Hàng Giao Ngay</button>
     </div>
   </div>
+
+  <script>
+    /**
+     * NÔNG SẢN LÀNH - UNIFIED CLIENT STATE & DATA ENGINE
+     * Lưu trữ bền vững bằng localStorage, đầy đủ 9 module nghiệp vụ chuẩn
+     */
+    const STORAGE_KEY = "nong_san_lanh_state_v35";
+
+    // Initial Database (Rich pre-populated real-world data)
+    const initialDatabase = {
+      farms: [
+        { id: 1, name: "Đà Lạt Smart Greenhouses", owner: "KS. Đỗ Thùy Trang", address: "Xã Đạ Sar, Huyện Lạc Dương, Lâm Đồng", cert: "GlobalGAP", area: 8.5, lat: "11.9404", lng: "108.4583" },
+        { id: 2, name: "Nông Trại Hữu Cơ Đơn Dương", owner: "KS. Trần Quốc Hùng", address: "Thôn Lạc Nghiệp, Huyện Đơn Dương, Lâm Đồng", cert: "Organic EU", area: 12.0, lat: "11.7821", lng: "108.5714" },
+        { id: 3, name: "Vườn Chuyên Canh Bưởi Bến Tre", owner: "KS. Huỳnh Văn Út", address: "Xã An Khánh, Huyện Châu Thành, Bến Tre", cert: "VietGAP", area: 15.0, lat: "10.2789", lng: "106.3211" },
+        { id: 4, name: "Khu Nông Nghiệp CNC Củ Chi", owner: "KS. Nguyễn Hoàng Nam", address: "Ấp 1, Xã Phạm Văn Cội, Củ Chi, TP.HCM", cert: "VietGAP", area: 6.2, lat: "11.0823", lng: "106.5124" }
+      ],
+      products: [
+        { id: 1, name: "Cà Chua Cherry Chocolate", sku: "SKU-TOM-01", category: "greens", categoryName: "Rau xanh hữu cơ", unit: "hộp 500g", tempMin: 10, tempMax: 15, humidity: 85, shelfDays: 14 },
+        { id: 2, name: "Dâu Tây Giống Nhật Sky", sku: "SKU-STRAW-02", category: "fruits", categoryName: "Trái cây sạch", unit: "hộp 330g", tempMin: 2, tempMax: 6, humidity: 90, shelfDays: 7 },
+        { id: 3, name: "Xà Lách Thuỷ Canh Thủy Tinh", sku: "SKU-LETT-03", category: "greens", categoryName: "Rau xanh hữu cơ", unit: "cây 300g", tempMin: 4, tempMax: 8, humidity: 95, shelfDays: 10 },
+        { id: 4, name: "Dưa Lưới Fuji Ruột Cam", sku: "SKU-MELON-04", category: "fruits", categoryName: "Trái cây sạch", unit: "trái 1.4-1.6kg", tempMin: 7, tempMax: 12, humidity: 80, shelfDays: 21 },
+        { id: 5, name: "Ớt Chuông Sweet Trio Đà Lạt", sku: "SKU-PEP-05", category: "roots", categoryName: "Củ quả sạch", unit: "túi 3 trái (500g)", tempMin: 7, tempMax: 10, humidity: 85, shelfDays: 18 },
+        { id: 6, name: "Cải Xoăn Khủng Long Kale Mỹ", sku: "SKU-KAL-06", category: "greens", categoryName: "Rau xanh hữu cơ", unit: "bó 350g", tempMin: 2, tempMax: 5, humidity: 95, shelfDays: 12 },
+        { id: 7, name: "Bưởi Da Xanh Ruột Hồng Bến Tre", sku: "SKU-POM-07", category: "fruits", categoryName: "Trái cây sạch", unit: "trái 1.2-1.4kg", tempMin: 10, tempMax: 14, humidity: 80, shelfDays: 30 }
+      ],
+      locations: [
+        { id: 1, name: "Kho Lạnh Đà Lạt #01", type: "Kho mát thu gom (4-8°C)", address: "QL20, Phường 11, TP. Đà Lạt", capacity: "50 tấn", currentBatches: 3 },
+        { id: 2, name: "Kho Tổng Phân Phối TP.HCM", type: "Kho lạnh phân phối (2-6°C)", address: "Đường số 7, KCN Vĩnh Lộc, Bình Chánh, TP.HCM", capacity: "120 tấn", currentBatches: 4 },
+        { id: 3, name: "Trạm Trung Chuyển Củ Chi", type: "Kho sơ chế & Đóng gói", address: "Xã Phạm Văn Cội, Củ Chi, TP.HCM", capacity: "30 tấn", currentBatches: 2 }
+      ],
+      batches: [
+        {
+          id: 1,
+          code: "BATCH-TOM-2601",
+          name: "Cà Chua Cherry Sô-Cô-La",
+          category: "greens",
+          price: 65000,
+          unit: "hộp 500g",
+          farm: "Đà Lạt Smart Greenhouses",
+          initialQty: 800,
+          remainingQty: 540,
+          plantingDate: "2026-07-15",
+          harvestDate: "2026-10-18",
+          location: "Kho Lạnh Đà Lạt #01",
+          status: "Đang lưu kho",
+          cert: "GlobalGAP",
+          image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=700&q=80",
+          engineer: "KS. Đỗ Thùy Trang",
+          waterPh: "6.2 pH",
+          nitrate: "< 45 mg/kg",
+          coldChainTemp: "12.0°C",
+          parentCode: null,
+          hash: "a4f89d71c2e04f9b876a1d8e20349f76a5b6c7d8e9f0123456789abcdef01234",
+          timeline: [
+            { stage: "Gieo hạt giống chuẩn F1", date: "15/07/2026", desc: "Hạt giống nhập khẩu Israel nảy mầm trong phòng nuôi cấy vô trùng." },
+            { stage: "Tưới nhỏ giọt hồi lưu", date: "10/08/2026", desc: "Dinh dưỡng A/B tự động pha bằng máy châm phân thông minh." },
+            { stage: "Thu hoạch & Niêm phong", date: "18/10/2026", desc: "Thu hái sáng sớm, làm mát sơ bộ về 12°C trước khi đóng hộp." }
+          ]
+        },
+        {
+          id: 2,
+          code: "BATCH-STRAW-2602",
+          name: "Dâu Tây Giống Nhật Sky",
+          category: "fruits",
+          price: 185000,
+          unit: "hộp 330g",
+          farm: "Đà Lạt Smart Greenhouses",
+          initialQty: 400,
+          remainingQty: 260,
+          plantingDate: "2026-08-01",
+          harvestDate: "2026-10-19",
+          location: "Kho Tổng Phân Phối TP.HCM",
+          status: "Đang lưu kho",
+          cert: "Organic EU",
+          image: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&w=700&q=80",
+          engineer: "KS. Trần Quốc Hùng",
+          waterPh: "6.0 pH",
+          nitrate: "< 20 mg/kg",
+          coldChainTemp: "3.5°C",
+          parentCode: null,
+          hash: "b9c8d7e6f5a43210123456789abcdef0123456789abcdef0123456789abcdef0",
+          timeline: [
+            { stage: "Trồng giàn treo cách ly", date: "01/08/2026", desc: "Giàn cách mặt đất 1.2m tránh ẩm mốc và côn trùng đất." },
+            { stage: "Thụ phấn ong Bumblebee", date: "05/09/2026", desc: "100% thụ phấn tự nhiên giúp quả tròn đều mọng nước." },
+            { stage: "Thu hoạch chuỗi lạnh 4°C", date: "19/10/2026", desc: "Vận chuyển xe lạnh chuyên dụng giữ nguyên cuống xanh." }
+          ]
+        },
+        {
+          id: 3,
+          code: "BATCH-LETT-2603",
+          name: "Xà Lách Thuỷ Canh Thủy Tinh",
+          category: "greens",
+          price: 35000,
+          unit: "cây 300g",
+          farm: "Khu Nông Nghiệp CNC Củ Chi",
+          initialQty: 1000,
+          remainingQty: 820,
+          plantingDate: "2026-09-10",
+          harvestDate: "2026-10-17",
+          location: "Trạm Trung Chuyển Củ Chi",
+          status: "Đang lưu kho",
+          cert: "VietGAP",
+          image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=80",
+          engineer: "KS. Nguyễn Hoàng Nam",
+          waterPh: "6.5 pH",
+          nitrate: "< 80 mg/kg",
+          coldChainTemp: "5.0°C",
+          parentCode: null,
+          hash: "c3d4e5f6a7b8c9d0e1f23456789abcdef0123456789abcdef0123456789abcdef",
+          timeline: [
+            { stage: "Gieo màng mút hữu cơ", date: "10/09/2026", desc: "Hệ thống màng dinh dưỡng NFT tuần hoàn khép kín." },
+            { stage: "Kiểm tra dư lượng 0 ngày", date: "16/10/2026", desc: "Xét nghiệm test nhanh không phát hiện kim loại nặng." },
+            { stage: "Bảo quản túi thở chuyên dụng", date: "17/10/2026", desc: "Đóng gói khí quyển cải tiến MAP duy trì độ giòn 10 ngày." }
+          ]
+        },
+        {
+          id: 4,
+          code: "BATCH-MEL-2605",
+          name: "Dưa Lưới Fuji Ruột Cam",
+          category: "fruits",
+          price: 125000,
+          unit: "trái 1.4 - 1.6kg",
+          farm: "Nông Trại Hữu Cơ Đơn Dương",
+          initialQty: 500,
+          remainingQty: 410,
+          plantingDate: "2026-07-28",
+          harvestDate: "2026-10-17",
+          location: "Kho Lạnh Đà Lạt #01",
+          status: "Đang lưu kho",
+          cert: "GlobalGAP",
+          image: "https://images.unsplash.com/photo-1571575179703-492a40fb61db?auto=format&fit=crop&w=700&q=80",
+          engineer: "KS. Đỗ Thùy Trang",
+          waterPh: "6.1 pH",
+          nitrate: "< 50 mg/kg",
+          coldChainTemp: "9.0°C",
+          parentCode: null,
+          hash: "d4e5f6a7b8c9d0e1f23456789abcdef0123456789abcdef0123456789abcdef01",
+          timeline: [
+            { stage: "Gieo bầu & Treo dây nhà màng", date: "28/07/2026", desc: "Mỗi cây chỉ tuyển chọn duy nhất 1 quả đẹp nhất." },
+            { stage: "Tạo vân lưới tự nhiên", date: "20/09/2026", desc: "Kiểm soát độ ẩm và nhiệt độ nghiêm ngặt." },
+            { stage: "Thu hoạch cuống chữ T", date: "17/10/2026", desc: "Cắt cuống chữ T tiêu chuẩn xuất khẩu." }
+          ]
+        }
+      ],
+      handovers: [
+        { id: 1, code: "HND-2601", batchCode: "BATCH-STRAW-2602", productName: "Dâu Tây Giống Nhật Sky", qty: 140, sender: "Đà Lạt Smart Greenhouses", receiver: "Kho Tổng Phân Phối TP.HCM", temp: "3.8°C", date: "2026-10-19 08:30", status: "Accepted" },
+        { id: 2, code: "HND-2602", batchCode: "BATCH-TOM-2601", productName: "Cà Chua Cherry Chocolate", qty: 260, sender: "Đà Lạt Smart Greenhouses", receiver: "Kho Tổng Phân Phối TP.HCM", temp: "11.5°C", date: "2026-10-19 14:15", status: "Pending" }
+      ],
+      violations: [
+        { id: 1, time: "2026-10-18 11:20", target: "Xe Lạnh 49A-1284", location: "Đèo Bảo Lộc", actualTemp: "13.2°C", allowedRange: "2°C - 6°C", severity: "Cảnh báo vàng", resolved: true, action: "Khởi động lốc máy phụ, nhiệt độ về 4.5°C sau 15p" }
+      ],
+      orders: [
+        { id: "ORD-9901", customer: "Chị Minh Thư (Thủ Đức)", product: "Dâu Tây Giống Nhật Sky (2 hộp)", qty: 2, total: 370000, status: "Đang giao hàng (Xe lạnh)" },
+        { id: "ORD-9902", customer: "Siêu Thị An Nam Gourmet", product: "Cà Chua Cherry Sô-Cô-La (50 hộp)", qty: 50, total: 3250000, status: "Đã xác nhận" }
+      ],
+      auditLogs: [
+        { time: "2026-10-19 14:15:20", user: "KS. Đỗ Thùy Trang", action: "TẠO PHIẾU BÀN GIAO", target: "HND-2602 (Lô BATCH-TOM-2601)", hash: "e5f6a7b8c9d0e1f23456789abcdef0123456789abcdef0123456789abcdef0123" },
+        { time: "2026-10-19 10:45:00", user: "Hệ thống IoT", action: "ĐỒNG BỘ NHIỆT ĐỘ", target: "Kho Lạnh Đà Lạt #01 (3.8°C)", hash: "f6a7b8c9d0e1f23456789abcdef0123456789abcdef0123456789abcdef01234" },
+        { time: "2026-10-18 16:30:10", user: "KS. Trần Quốc Hùng", action: "KHỞI TẠO LÔ NÔNG SẢN", target: "BATCH-STRAW-2602 (400kg)", hash: "a7b8c9d0e1f23456789abcdef0123456789abcdef0123456789abcdef012345" }
+      ]
+    };
+
+    // Load or initialize DB
+    function getDb() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialDatabase));
+        return JSON.parse(JSON.stringify(initialDatabase));
+      }
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return JSON.parse(JSON.stringify(initialDatabase));
+      }
+    }
+
+    function saveDb(db) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    }
+
+    // State Variables
+    let appDb = getDb();
+    let currentAdminTab = "batches";
+    let cart = [];
+    let currentCategory = 'all';
+    let searchQuery = '';
+    let selectedBatchCodes = new Set();
+
+    // DOM Ready
+    document.addEventListener("DOMContentLoaded", () => {
+      renderProducts();
+      renderAdminAll();
+      updateCartUI();
+      startIoTSimulation();
+      populateSelectOptions();
+    });
+
+    /**
+     * TOP LEVEL NAVIGATION (Storefront vs Admin Suite)
+     */
+    function switchView(view) {
+      const storefrontView = document.getElementById("storefrontView");
+      const adminView = document.getElementById("adminView");
+      const storefrontTabBtn = document.getElementById("storefrontTabBtn");
+      const adminTabBtn = document.getElementById("adminTabBtn");
+
+      if (view === 'storefront') {
+        storefrontView.classList.remove("hidden");
+        adminView.classList.add("hidden");
+        storefrontTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm";
+        adminTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        adminView.classList.remove("hidden");
+        storefrontView.classList.add("hidden");
+        adminTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm";
+        storefrontTabBtn.className = "px-3.5 py-1.5 rounded-full transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+        renderAdminAll();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    /**
+     * ADMIN SUB-TAB SWITCHER (9 MODULES)
+     */
+    function switchAdminTab(tabName) {
+      currentAdminTab = tabName;
+      const tabs = ['batches', 'farms', 'products', 'lineage', 'coldchain', 'handovers', 'locations', 'orders', 'audit'];
+      
+      tabs.forEach(t => {
+        const btn = document.getElementById(`adminTab_${t}`);
+        const panel = document.getElementById(`panel_${t}`);
+        if (t === tabName) {
+          if (btn) {
+            btn.className = "admin-tab-btn active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all bg-emerald-600 text-white shadow-sm";
+          }
+          if (panel) panel.classList.remove("hidden");
+        } else {
+          if (btn) {
+            btn.className = "admin-tab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all text-slate-600 hover:bg-slate-100";
+          }
+          if (panel) panel.classList.add("hidden");
+        }
+      });
+
+      if (tabName === 'lineage') {
+        const firstBatch = appDb.batches[0]?.code;
+        if (firstBatch) renderLineageTree(firstBatch);
+      }
+    }
+
+    /**
+     * RENDER ALL ADMIN PANELS
+     */
+    function renderAdminAll() {
+      appDb = getDb();
+      updateKpis();
+      renderAdminBatches();
+      renderAdminFarms();
+      renderAdminProducts();
+      renderAdminHandovers();
+      renderAdminLocations();
+      renderAdminOrders();
+      renderAdminViolations();
+      renderAdminAudit();
+      populateSelectOptions();
+    }
+
+    function updateKpis() {
+      document.getElementById("kpiTotalBatches").innerText = appDb.batches.length;
+      document.getElementById("kpiTotalFarms").innerText = appDb.farms.length;
+      document.getElementById("kpiTotalHandovers").innerText = appDb.handovers.length;
+    }
+
+    /**
+     * MODULE 1: BATCHES
+     */
+    function renderAdminBatches(filteredList = null) {
+      const tbody = document.getElementById("adminBatchTableBody");
+      const list = filteredList || appDb.batches;
+
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">Không tìm thấy lô nông sản nào</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(b => {
+        const isChecked = selectedBatchCodes.has(b.code) ? 'checked' : '';
+        const statusColors = {
+          "Đang canh tác": "bg-blue-100 text-blue-700",
+          "Đã thu hoạch": "bg-amber-100 text-amber-700",
+          "Đang lưu kho": "bg-emerald-100 text-emerald-700",
+          "Đang vận chuyển": "bg-purple-100 text-purple-700",
+          "Đã tiêu thụ": "bg-slate-200 text-slate-600",
+          "Đã gộp": "bg-rose-100 text-rose-700"
+        };
+        const badgeClass = statusColors[b.status] || "bg-slate-100 text-slate-700";
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition-colors">
+            <td class="p-3.5 text-center">
+              <input type="checkbox" ${isChecked} onchange="toggleSelectBatch('${b.code}', this.checked)" class="rounded text-emerald-600">
+            </td>
+            <td class="p-3.5">
+              <div class="font-mono font-bold text-slate-900">${b.code}</div>
+              <div class="text-[10px] text-slate-400">${b.cert || 'VietGAP'} • ${b.harvestDate}</div>
+            </td>
+            <td class="p-3.5 font-semibold text-slate-800">${b.name}</td>
+            <td class="p-3.5 text-slate-600">${b.farm}</td>
+            <td class="p-3.5">
+              <span class="font-bold text-emerald-700">${b.remainingQty}</span> / <span class="text-slate-400">${b.initialQty} kg</span>
+            </td>
+            <td class="p-3.5 text-slate-600">${b.location || 'Kho Lạnh Đà Lạt #01'}</td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">
+                ${b.status}
+              </span>
+            </td>
+            <td class="p-3.5 text-right">
+              <div class="flex items-center justify-end gap-1">
+                <button onclick="openSplitModal(${b.id})" title="Tách Lô" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100"><i class="fa-solid fa-scissors"></i></button>
+                <button onclick="openConsumeModal(${b.id})" title="Xuất Bán / Tiêu Thụ" class="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100"><i class="fa-solid fa-utensils"></i></button>
+                <button onclick="openIncidentModal(${b.id})" title="Báo Sự Cố" class="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100"><i class="fa-solid fa-triangle-exclamation"></i></button>
+                <button onclick="openMoveModal(${b.id})" title="Chuyển Kho" class="p-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100"><i class="fa-solid fa-location-dot"></i></button>
+                <button onclick="viewBatchLineage('${b.code}')" title="Phả Hệ" class="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-diagram-project"></i></button>
+                <button onclick="deleteBatch(${b.id})" title="Xoá Lô" class="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100"><i class="fa-solid fa-trash-can"></i></button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterAdminBatches() {
+      const q = (document.getElementById("batchFilterSearch")?.value || "").toLowerCase().trim();
+      const status = document.getElementById("batchFilterStatus")?.value || "all";
+
+      const filtered = appDb.batches.filter(b => {
+        const matchQ = !q || b.code.toLowerCase().includes(q) || b.name.toLowerCase().includes(q) || b.farm.toLowerCase().includes(q);
+        const matchStatus = status === 'all' || b.status === status;
+        return matchQ && matchStatus;
+      });
+
+      renderAdminBatches(filtered);
+    }
+
+    function toggleSelectBatch(code, checked) {
+      if (checked) selectedBatchCodes.add(code);
+      else selectedBatchCodes.delete(code);
+    }
+
+    function toggleSelectAllBatches(checked) {
+      if (checked) {
+        appDb.batches.forEach(b => selectedBatchCodes.add(b.code));
+      } else {
+        selectedBatchCodes.clear();
+      }
+      renderAdminBatches();
+    }
+
+    /**
+     * MODULE 2: FARMS
+     */
+    function renderAdminFarms() {
+      const container = document.getElementById("farmsListContainer");
+      container.innerHTML = appDb.farms.map(f => `
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                ${f.cert}
+              </span>
+              <span class="text-xs font-semibold text-slate-400"><i class="fa-solid fa-ruler-combined mr-1"></i>${f.area} ha</span>
+            </div>
+            <h4 class="text-base font-bold text-slate-800">${f.name}</h4>
+            <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot text-rose-500 mr-1.5"></i>${f.address}</p>
+            <p class="text-xs text-slate-600 font-medium"><i class="fa-solid fa-user-tie text-slate-400 mr-1.5"></i>Đại diện: ${f.owner}</p>
+          </div>
+          <div class="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span class="text-slate-400 font-mono text-[11px]">GPS: ${f.lat}, ${f.lng}</span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="editFarm(${f.id})" class="px-2.5 py-1 text-slate-600 hover:text-emerald-600 font-semibold">Sửa</button>
+              <button onclick="deleteFarm(${f.id})" class="px-2.5 py-1 text-rose-600 hover:text-rose-700 font-semibold">Xoá</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /**
+     * MODULE 3: PRODUCTS
+     */
+    function renderAdminProducts() {
+      const tbody = document.getElementById("adminProductsTableBody");
+      tbody.innerHTML = appDb.products.map(p => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="p-3.5 font-bold text-slate-800">${p.name}</td>
+          <td class="p-3.5 font-mono text-slate-500">${p.sku}</td>
+          <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-slate-100 font-medium text-slate-600">${p.categoryName}</span></td>
+          <td class="p-3.5 font-semibold text-emerald-700">${p.tempMin}°C - ${p.tempMax}°C</td>
+          <td class="p-3.5 text-slate-600">${p.humidity}% RH</td>
+          <td class="p-3.5 text-slate-600">${p.shelfDays} ngày</td>
+          <td class="p-3.5 text-right">
+            <button onclick="deleteProduct(${p.id})" class="text-rose-600 hover:text-rose-700 font-semibold">Xoá</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    /**
+     * MODULE 4: LINEAGE TREE (PHẢ HỆ)
+     */
+    function renderLineageTree(batchCode) {
+      const batch = appDb.batches.find(b => b.code === batchCode) || appDb.batches[0];
+      if (!batch) return;
+
+      document.getElementById("lineageSelectBatch").value = batch.code;
+      const graphBox = document.getElementById("lineageTreeGraphContainer");
+
+      // Find children
+      const children = appDb.batches.filter(b => b.parentCode === batch.code);
+
+      let childrenHtml = '';
+      if (children.length > 0) {
+        childrenHtml = `
+          <div class="w-full flex flex-col items-center mt-4">
+            <div class="w-0.5 h-6 bg-emerald-300"></div>
+            <div class="text-[10px] font-bold text-emerald-600 uppercase bg-emerald-100 px-2 py-0.5 rounded-full mb-2">Đã Tách Ra ${children.length} Lô Con</div>
+            <div class="flex flex-wrap items-center justify-center gap-4">
+              ${children.map(c => `
+                <div class="bg-white p-3.5 rounded-xl border border-emerald-300 shadow-sm text-left max-w-[200px]">
+                  <div class="font-mono font-bold text-emerald-800 text-xs">${c.code}</div>
+                  <div class="text-[11px] font-semibold text-slate-700 truncate">${c.name}</div>
+                  <div class="text-[10px] text-slate-500 mt-1">SL: <span class="font-bold text-slate-800">${c.remainingQty} kg</span></div>
+                  <div class="text-[10px] text-emerald-600 font-medium">${c.location}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        childrenHtml = `
+          <div class="mt-4 text-[11px] text-slate-400 italic">
+            Chưa có nhánh phân tách lô con. Lô nguyên khối đang lưu thông.
+          </div>
+        `;
+      }
+
+      graphBox.innerHTML = `
+        <div class="flex flex-col items-center">
+          <!-- Parent Badge if exists -->
+          ${batch.parentCode ? `
+            <div class="bg-slate-200 text-slate-700 px-3 py-1 rounded-lg text-xs font-mono font-bold mb-2">
+              <i class="fa-solid fa-turn-up text-slate-400 mr-1"></i> Tách từ Lô Cha: ${batch.parentCode}
+            </div>
+            <div class="w-0.5 h-4 bg-slate-300 mb-2"></div>
+          ` : ''}
+
+          <!-- Root Active Batch Node Card -->
+          <div class="bg-white rounded-2xl border-2 border-emerald-500 p-4 shadow-farm text-center max-w-sm w-full relative">
+            <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white uppercase tracking-wider">
+              Lô Đang Xem Phả Hệ
+            </span>
+            <div class="text-sm font-mono font-black text-slate-900 mt-1">${batch.code}</div>
+            <div class="text-xs font-bold text-emerald-700">${batch.name}</div>
+            <div class="text-[11px] text-slate-500 mt-1">${batch.farm}</div>
+            <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-100 text-[11px]">
+              <div><span class="text-slate-400 block">Số lượng còn:</span><b class="text-emerald-700">${batch.remainingQty} kg</b></div>
+              <div><span class="text-slate-400 block">Nhiệt độ đo:</span><b class="text-slate-800">${batch.coldChainTemp}</b></div>
+            </div>
+          </div>
+
+          <!-- Children Subtree -->
+          ${childrenHtml}
+        </div>
+      `;
+
+      // Timeline events
+      const timelineBox = document.getElementById("lineageEventsTimeline");
+      timelineBox.innerHTML = (batch.timeline || []).map((t, idx) => `
+        <div class="flex items-start gap-3 p-3 bg-white rounded-xl border border-slate-200/80">
+          <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+            ${idx + 1}
+          </div>
+          <div class="flex-grow">
+            <div class="flex items-center justify-between">
+              <h5 class="font-bold text-slate-800 text-xs">${t.stage}</h5>
+              <span class="text-[10px] text-slate-400 font-mono">${t.date}</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">${t.desc}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function viewBatchLineage(code) {
+      switchAdminTab('lineage');
+      renderLineageTree(code);
+    }
+
+    /**
+     * MODULE 5: COLD CHAIN & VIOLATIONS
+     */
+    function renderAdminViolations() {
+      const tbody = document.getElementById("coldChainViolationsTableBody");
+      document.getElementById("coldChainViolationsCount").innerText = appDb.violations.length;
+
+      if (appDb.violations.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">Không có vi phạm nào trong 30 ngày qua</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = appDb.violations.map(v => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3.5 font-mono text-slate-500">${v.time}</td>
+          <td class="p-3.5 font-bold text-slate-800">${v.target}</td>
+          <td class="p-3.5 text-slate-600">${v.location}</td>
+          <td class="p-3.5 font-bold text-rose-600">${v.actualTemp}</td>
+          <td class="p-3.5 text-slate-500">${v.allowedRange}</td>
+          <td class="p-3.5"><span class="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-100 text-amber-800">${v.severity}</span></td>
+          <td class="p-3.5 text-emerald-700 font-medium">${v.action}</td>
+          <td class="p-3.5 text-right">
+            <button onclick="resolveViolation(${v.id})" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px]">Đã Xử Lý</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function simulateColdChainAlert() {
+      const newV = {
+        id: Date.now(),
+        time: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        target: "Kho Lạnh Đà Lạt #01",
+        location: "Khu vực cửa xuất hàng",
+        actualTemp: "14.8°C",
+        allowedRange: "4°C - 8°C",
+        severity: "Báo động đỏ",
+        resolved: false,
+        action: "Cảnh báo mở cửa quá lâu - Đã đóng cửa bảo ôn"
+      };
+      appDb.violations.unshift(newV);
+      saveDb(appDb);
+      renderAdminViolations();
+      showToast("CẢNH BÁO: Phát hiện vi phạm nhiệt độ kho lạnh (>14°C)!", "warning");
+    }
+
+    function resolveViolation(id) {
+      appDb.violations = appDb.violations.filter(v => v.id !== id);
+      saveDb(appDb);
+      renderAdminViolations();
+      showToast("Đã đóng nhật ký xử lý vi phạm.", "success");
+    }
+
+    /**
+     * MODULE 6: HANDOVERS
+     */
+    function renderAdminHandovers() {
+      const tbody = document.getElementById("handoversTableBody");
+      tbody.innerHTML = appDb.handovers.map(h => {
+        let actionButtons = '';
+        if (h.status === 'Pending') {
+          actionButtons = `
+            <button onclick="acceptHandover(${h.id})" class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg font-bold text-[11px] mr-1">Chấp Nhận</button>
+            <button onclick="openRejectHandoverModal(${h.id})" class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-lg font-bold text-[11px]">Từ Chối</button>
+          `;
+        } else if (h.status === 'Accepted') {
+          actionButtons = `<span class="text-emerald-700 font-bold text-[11px]"><i class="fa-solid fa-circle-check"></i> Đã Tiếp Nhận</span>`;
+        } else {
+          actionButtons = `<span class="text-rose-600 font-bold text-[11px]"><i class="fa-solid fa-circle-xmark"></i> Bị Từ Chối</span>`;
+        }
+
+        const badgeClass = h.status === 'Accepted' ? 'bg-emerald-100 text-emerald-800' : (h.status === 'Pending' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800');
+
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3.5 font-mono font-bold text-slate-800">${h.code}</td>
+            <td class="p-3.5">
+              <span class="font-bold text-slate-800">${h.batchCode}</span>
+              <div class="text-[10px] text-slate-400">${h.productName}</div>
+            </td>
+            <td class="p-3.5 font-bold text-slate-700">${h.qty} kg</td>
+            <td class="p-3.5 text-slate-600">${h.sender}</td>
+            <td class="p-3.5 text-slate-600">${h.receiver}</td>
+            <td class="p-3.5 font-mono text-emerald-700 font-semibold">${h.temp}</td>
+            <td class="p-3.5"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${badgeClass}">${h.status}</span></td>
+            <td class="p-3.5 text-right">${actionButtons}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function acceptHandover(id) {
+      const h = appDb.handovers.find(x => x.id === id);
+      if (!h) return;
+      h.status = "Accepted";
+
+      // Move batch location to receiver
+      const b = appDb.batches.find(x => x.code === h.batchCode);
+      if (b) {
+        b.location = h.receiver;
+      }
+
+      addAuditLog("CHẤP NHẬN BÀN GIAO", `Tiếp nhận lô ${h.batchCode} (${h.qty}kg) từ ${h.sender}`);
+      saveDb(appDb);
+      renderAdminAll();
+      showToast(`Đã tiếp nhận bàn giao phiếu ${h.code} thành công!`, "success");
+    }
+
+    function openRejectHandoverModal(id) {
+      document.getElementById("rejectHandoverId").value = id;
+      openModal("rejectHandoverModal");
+    }
+
+    function handleRejectSubmit(e) {
+      e.preventDefault();
+      const id = parseInt(document.getElementById("rejectHandoverId").value);
+      const reason = document.getElementById("rejectReason").value;
+      const notes = document.getElementById("rejectNotes").value;
+
+      const h = appDb.handovers.find(x => x.id === id);
+      if (h) {
+        h.status = "Rejected";
+        h.rejectReason = `${reason}: ${notes}`;
+        addAuditLog("TỪ CHỐI BÀN GIAO", `Từ chối lô ${h.batchCode} - Lý do: ${reason}`);
+      }
+
+      saveDb(appDb);
+      closeModal("rejectHandoverModal");
+      renderAdminAll();
+      showToast("Đã lập biên bản từ chối nhận bàn giao lô hàng.", "warning");
+    }
+
+    /**
+     * MODULE 7: LOCATIONS
+     */
+    function renderAdminLocations() {
+      const container = document.getElementById("locationsListContainer");
+      container.innerHTML = appDb.locations.map(loc => `
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">${loc.type}</span>
+            <span class="text-xs font-semibold text-slate-500">Sức chứa: ${loc.capacity}</span>
+          </div>
+          <h4 class="text-base font-bold text-slate-800">${loc.name}</h4>
+          <p class="text-xs text-slate-500"><i class="fa-solid fa-map-pin text-rose-500 mr-1.5"></i>${loc.address}</p>
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+            <span>Đang lưu trữ: <b class="text-emerald-700">${loc.currentBatches} lô</b></span>
+            <button onclick="switchAdminTab('batches')" class="text-emerald-600 font-semibold hover:underline">Xem lô</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /**
+     * MODULE 8: ORDERS
+     */
+    function renderAdminOrders() {
+      const tbody = document.getElementById("ordersTableBody");
+      tbody.innerHTML = appDb.orders.map(o => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3.5 font-mono font-bold text-slate-800">${o.id}</td>
+          <td class="p-3.5 font-semibold text-slate-800">${o.customer}</td>
+          <td class="p-3.5 text-slate-600">${o.product}</td>
+          <td class="p-3.5 font-bold text-slate-700">${o.qty}</td>
+          <td class="p-3.5 font-bold text-emerald-700">${formatCurrency(o.total)}</td>
+          <td class="p-3.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">${o.status}</span></td>
+          <td class="p-3.5 text-right">
+            <button onclick="showToast('Đã xác nhận điều phối xe lạnh!', 'success')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-xs">Điều Phối</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    /**
+     * MODULE 9: AUDIT & INTEGRITY
+     */
+    function renderAdminAudit() {
+      const tbody = document.getElementById("auditTableBody");
+      tbody.innerHTML = appDb.auditLogs.map(a => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3.5 text-slate-500">${a.time}</td>
+          <td class="p-3.5 font-bold text-slate-800 font-sans">${a.user}</td>
+          <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-slate-100 font-semibold text-slate-700">${a.action}</span></td>
+          <td class="p-3.5 font-sans text-slate-700">${a.target}</td>
+          <td class="p-3.5 text-slate-400 text-[10px] truncate max-w-xs" title="${a.hash}">${a.hash}</td>
+        </tr>
+      `).join('');
+    }
+
+    function addAuditLog(action, target) {
+      const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      const fakeHash = Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
+      appDb.auditLogs.unshift({
+        time: now,
+        user: "Quản trị viên (Admin)",
+        action: action,
+        target: target,
+        hash: fakeHash
+      });
+    }
+
+    function runIntegrityCheck() {
+      openModal("integrityModal");
+      addAuditLog("KIỂM TRA TOÀN VẸN", "Quét SHA-256 toàn chuỗi dữ liệu (Hợp lệ 100%)");
+      saveDb(appDb);
+      renderAdminAudit();
+    }
+
+    function exportAuditJson() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appDb, null, 2));
+      const dl = document.createElement('a');
+      dl.setAttribute("href", dataStr);
+      dl.setAttribute("download", `nong_san_lanh_backup_${Date.now()}.json`);
+      dl.click();
+      showToast("Đã tải xuống bản sao lưu JSON toàn hệ thống!", "success");
+    }
+
+    /**
+     * MODAL LOGIC & ACTIONS
+     */
+    function openModal(id) {
+      document.getElementById(id)?.classList.remove("hidden");
+    }
+    function closeModal(id) {
+      document.getElementById(id)?.classList.add("hidden");
+    }
+
+    // Populate dropdown selects across forms
+    function populateSelectOptions() {
+      const farmSelect = document.getElementById("newBatchFarm");
+      if (farmSelect) {
+        farmSelect.innerHTML = appDb.farms.map(f => `<option value="${f.name}">${f.name} (${f.cert})</option>`).join('');
+      }
+
+      const moveSelect = document.getElementById("moveTargetLocation");
+      if (moveSelect) {
+        moveSelect.innerHTML = appDb.locations.map(l => `<option value="${l.name}">${l.name}</option>`).join('');
+      }
+
+      const handoverSelect = document.getElementById("handoverBatchSelect");
+      if (handoverSelect) {
+        handoverSelect.innerHTML = appDb.batches.map(b => `<option value="${b.code}">${b.code} - ${b.name} (Tồn: ${b.remainingQty}kg)</option>`).join('');
+      }
+
+      const lineageSelect = document.getElementById("lineageSelectBatch");
+      if (lineageSelect) {
+        lineageSelect.innerHTML = appDb.batches.map(b => `<option value="${b.code}">${b.code} - ${b.name}</option>`).join('');
+      }
+    }
+
+    // Split Batch Logic
+    function openSplitModal(id) {
+      const b = appDb.batches.find(x => x.id === id);
+      if (!b) return;
+      document.getElementById("splitSourceBatchId").value = b.id;
+      document.getElementById("splitModalBatchTitle").innerText = `Lô gốc: ${b.code} (${b.name})`;
+      document.getElementById("splitSourceRemaining").value = `${b.remainingQty} kg`;
+      document.getElementById("splitAmount").max = b.remainingQty;
+      openModal("splitBatchModal");
+    }
+
+    function handleSplitSubmit(e) {
+      e.preventDefault();
+      const id = parseInt(document.getElementById("splitSourceBatchId").value);
+      const splitAmount = parseFloat(document.getElementById("splitAmount").value);
+      const notes = document.getElementById("splitNotes").value;
+
+      const source = appDb.batches.find(x => x.id === id);
+      if (!source || splitAmount > source.remainingQty) {
+        alert("Số lượng tách không hợp lệ hoặc lớn hơn số tồn!");
+        return;
+      }
+
+      // Reduce source
+      source.remainingQty -= splitAmount;
+
+      // Create new child batch
+      const newChildCode = `${source.code}-S${Date.now().toString().slice(-3)}`;
+      const childBatch = {
+        id: Date.now(),
+        code: newChildCode,
+        name: source.name,
+        category: source.category,
+        price: source.price,
+        unit: source.unit,
+        farm: source.farm,
+        initialQty: splitAmount,
+        remainingQty: splitAmount,
+        plantingDate: source.plantingDate,
+        harvestDate: source.harvestDate,
+        location: source.location,
+        status: "Đang lưu kho",
+        cert: source.cert,
+        image: source.image,
+        engineer: source.engineer,
+        waterPh: source.waterPh,
+        nitrate: source.nitrate,
+        coldChainTemp: source.coldChainTemp,
+        parentCode: source.code,
+        hash: Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+        timeline: [
+          ...(source.timeline || []),
+          { stage: "Tách từ lô " + source.code, date: new Date().toISOString().split('T')[0], desc: notes || `Tách số lượng ${splitAmount}kg phục vụ phân phối.` }
+        ]
+      };
+
+      appDb.batches.unshift(childBatch);
+      addAuditLog("TÁCH LÔ NÔNG SẢN", `Tách ${splitAmount}kg từ ${source.code} tạo lô mới ${newChildCode}`);
+      saveDb(appDb);
+      closeModal("splitBatchModal");
+      renderAdminAll();
+      showToast(`Đã tách thành công lô mới ${newChildCode} (${splitAmount}kg)!`, "success");
+    }
+
+    // Merge Batches Logic
+    function openMergeModal() {
+      const container = document.getElementById("mergeCheckboxesContainer");
+      container.innerHTML = appDb.batches.map(b => `
+        <label class="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 text-xs cursor-pointer hover:bg-slate-50">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" value="${b.code}" name="mergeBatchCheck" class="rounded text-emerald-600">
+            <span class="font-mono font-bold text-slate-800">${b.code}</span>
+            <span class="text-slate-600">(${b.name})</span>
+          </div>
+          <span class="font-bold text-emerald-700">${b.remainingQty} kg</span>
+        </label>
+      `).join('');
+
+      document.getElementById("mergeNewBatchCode").value = `BATCH-MRG-${Date.now().toString().slice(-4)}`;
+      openModal("mergeBatchModal");
+    }
+
+    function handleMergeSubmit(e) {
+      e.preventDefault();
+      const checkboxes = document.querySelectorAll('input[name="mergeBatchCheck"]:checked');
+      if (checkboxes.length < 2) {
+        alert("Vui lòng chọn ít nhất 2 lô nông sản để gộp!");
+        return;
+      }
+
+      const codes = Array.from(checkboxes).map(c => c.value);
+      const selected = appDb.batches.filter(b => codes.includes(b.code));
+
+      // Check product consistency
+      const firstName = selected[0].name;
+      const allSame = selected.every(b => b.name === firstName);
+      if (!allSame) {
+        alert("Chỉ được gộp các lô có cùng loại nông sản!");
+        return;
+      }
+
+      let totalQty = 0;
+      selected.forEach(b => {
+        totalQty += b.remainingQty;
+        b.remainingQty = 0;
+        b.status = "Đã gộp";
+      });
+
+      const newCode = document.getElementById("mergeNewBatchCode").value;
+      const mergedBatch = {
+        id: Date.now(),
+        code: newCode,
+        name: selected[0].name,
+        category: selected[0].category,
+        price: selected[0].price,
+        unit: selected[0].unit,
+        farm: selected[0].farm,
+        initialQty: totalQty,
+        remainingQty: totalQty,
+        plantingDate: selected[0].plantingDate,
+        harvestDate: new Date().toISOString().split('T')[0],
+        location: selected[0].location,
+        status: "Đang lưu kho",
+        cert: selected[0].cert,
+        image: selected[0].image,
+        engineer: selected[0].engineer,
+        waterPh: selected[0].waterPh,
+        nitrate: selected[0].nitrate,
+        coldChainTemp: selected[0].coldChainTemp,
+        parentCode: codes.join(", "),
+        hash: Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+        timeline: [
+          { stage: "Gộp lô tổng hợp", date: new Date().toISOString().split('T')[0], desc: `Gộp từ các lô: ${codes.join(", ")} với tổng số lượng ${totalQty}kg.` }
+        ]
+      };
+
+      appDb.batches.unshift(mergedBatch);
+      addAuditLog("GỘP LÔ NÔNG SẢN", `Gộp ${codes.join(", ")} thành lô mới ${newCode} (${totalQty}kg)`);
+      saveDb(appDb);
+      closeModal("mergeBatchModal");
+      renderAdminAll();
+      showToast(`Đã gộp thành công lô ${newCode} với tổng số ${totalQty}kg!`, "success");
+    }
+
+    // Consume Batch Logic
+    function openConsumeModal(id) {
+      const b = appDb.batches.find(x => x.id === id);
+      if (!b) return;
+      document.getElementById("consumeBatchId").value = b.id;
+      document.getElementById("consumeModalTitle").innerText = `Lô: ${b.code} (${b.name}) - Tồn: ${b.remainingQty}kg`;
+      document.getElementById("consumeAmount").max = b.remainingQty;
+      openModal("consumeBatchModal");
+    }
+
+    function handleConsumeSubmit(e) {
+      e.preventDefault();
+      const id = parseInt(document.getElementById("consumeBatchId").value);
+      const amount = parseFloat(document.getElementById("consumeAmount").value);
+      const channel = document.getElementById("consumeChannel").value;
+
+      const b = appDb.batches.find(x => x.id === id);
+      if (!b || amount > b.remainingQty) {
+        alert("Số lượng tiêu thụ vượt quá số tồn kho!");
+        return;
+      }
+
+      b.remainingQty -= amount;
+      if (b.remainingQty <= 0) {
+        b.status = "Đã tiêu thụ";
+      }
+
+      addAuditLog("XUẤT KHO TIÊU THỤ", `Xuất ${amount}kg từ lô ${b.code} qua kênh ${channel}`);
+      saveDb(appDb);
+      closeModal("consumeBatchModal");
+      renderAdminAll();
+      showToast(`Đã xuất kho tiêu thụ ${amount}kg thành công!`, "success");
+    }
+
+    // Incident Logic
+    function openIncidentModal(id) {
+      const b = appDb.batches.find(x => x.id === id);
+      if (!b) return;
+      document.getElementById("incidentBatchId").value = b.id;
+      document.getElementById("incidentModalTitle").innerText = `Ghi nhận sự cố cho lô: ${b.code}`;
+      openModal("incidentModal");
+    }
+
+    function handleIncidentSubmit(e) {
+      e.preventDefault();
+      const id = parseInt(document.getElementById("incidentBatchId").value);
+      const type = document.getElementById("incidentType").value;
+      const severity = document.getElementById("incidentSeverity").value;
+      const desc = document.getElementById("incidentDesc").value;
+
+      const b = appDb.batches.find(x => x.id === id);
+      if (b) {
+        b.timeline = b.timeline || [];
+        b.timeline.push({
+          stage: `SỰ CỐ: ${type} (${severity})`,
+          date: new Date().toISOString().split('T')[0],
+          desc: desc
+        });
+        addAuditLog("BÁO CÁO SỰ CỐ", `Lô ${b.code}: ${type} - ${severity}`);
+      }
+
+      saveDb(appDb);
+      closeModal("incidentModal");
+      renderAdminAll();
+      showToast("Đã lưu sự cố vào hồ sơ kiểm toán của lô hàng.", "warning");
+    }
+
+    // Move Location Logic
+    function openMoveModal(id) {
+      const b = appDb.batches.find(x => x.id === id);
+      if (!b) return;
+      document.getElementById("moveBatchId").value = b.id;
+      openModal("moveLocationModal");
+    }
+
+    function handleMoveSubmit(e) {
+      e.preventDefault();
+      const id = parseInt(document.getElementById("moveBatchId").value);
+      const targetLoc = document.getElementById("moveTargetLocation").value;
+      const vehicle = document.getElementById("moveVehicle").value;
+
+      const b = appDb.batches.find(x => x.id === id);
+      if (b) {
+        b.location = targetLoc;
+        b.timeline = b.timeline || [];
+        b.timeline.push({
+          stage: "Chuyển kho lưu trữ",
+          date: new Date().toISOString().split('T')[0],
+          desc: `Điều chuyển đến ${targetLoc} bằng ${vehicle}.`
+        });
+        addAuditLog("ĐIỀU CHUYỂN KHO", `Chuyển lô ${b.code} sang ${targetLoc}`);
+      }
+
+      saveDb(appDb);
+      closeModal("moveLocationModal");
+      renderAdminAll();
+      showToast(`Đã điều chuyển lô hàng sang ${targetLoc}!`, "success");
+    }
+
+    // Farm CRUD
+    function openFarmModal() {
+      document.getElementById("farmEditId").value = "";
+      document.getElementById("farmName").value = "";
+      document.getElementById("farmOwner").value = "";
+      document.getElementById("farmAddress").value = "";
+      openModal("farmModal");
+    }
+
+    function handleFarmSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById("farmName").value;
+      const owner = document.getElementById("farmOwner").value;
+      const address = document.getElementById("farmAddress").value;
+      const cert = document.getElementById("farmCert").value;
+      const area = parseFloat(document.getElementById("farmArea").value) || 5;
+
+      const newFarm = {
+        id: Date.now(),
+        name,
+        owner,
+        address,
+        cert,
+        area,
+        lat: (11 + Math.random()).toFixed(4),
+        lng: (108 + Math.random()).toFixed(4)
+      };
+
+      appDb.farms.push(newFarm);
+      addAuditLog("THÊM VÙNG TRỒNG", `Thêm nông trại mới: ${name}`);
+      saveDb(appDb);
+      closeModal("farmModal");
+      renderAdminAll();
+      showToast("Đã thêm vùng trồng thành công!", "success");
+    }
+
+    function deleteFarm(id) {
+      if (confirm("Bạn có chắc muốn xoá vùng trồng này?")) {
+        appDb.farms = appDb.farms.filter(f => f.id !== id);
+        saveDb(appDb);
+        renderAdminAll();
+        showToast("Đã xoá vùng trồng.", "info");
+      }
+    }
+
+    // Product CRUD
+    function openProductModal() {
+      openModal("productModal");
+    }
+
+    function handleProductSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById("prodName").value;
+      const sku = document.getElementById("prodSku").value || `SKU-${Date.now().toString().slice(-4)}`;
+      const cat = document.getElementById("prodCategory").value;
+      const tempMin = parseFloat(document.getElementById("prodTempMin").value) || 2;
+      const tempMax = parseFloat(document.getElementById("prodTempMax").value) || 8;
+
+      const catNames = { greens: "Rau xanh hữu cơ", fruits: "Trái cây sạch", roots: "Củ quả sạch" };
+
+      const newP = {
+        id: Date.now(),
+        name,
+        sku,
+        category: cat,
+        categoryName: catNames[cat],
+        unit: "kg",
+        tempMin,
+        tempMax,
+        humidity: 85,
+        shelfDays: 14
+      };
+
+      appDb.products.push(newP);
+      addAuditLog("THÊM SẢN PHẨM", `Thêm nông sản: ${name} (Chuỗi lạnh: ${tempMin}-${tempMax}°C)`);
+      saveDb(appDb);
+      closeModal("productModal");
+      renderAdminAll();
+      showToast("Đã thêm nông sản mới vào danh mục!", "success");
+    }
+
+    function deleteProduct(id) {
+      if (confirm("Xoá sản phẩm này khỏi danh mục?")) {
+        appDb.products = appDb.products.filter(p => p.id !== id);
+        saveDb(appDb);
+        renderAdminAll();
+        showToast("Đã xoá sản phẩm.", "info");
+      }
+    }
+
+    // Handover CRUD
+    function openCreateHandoverModal() {
+      openModal("createHandoverModal");
+    }
+
+    function handleCreateHandoverSubmit(e) {
+      e.preventDefault();
+      const batchCode = document.getElementById("handoverBatchSelect").value;
+      const qty = parseFloat(document.getElementById("handoverQty").value);
+      const sender = document.getElementById("handoverSender").value;
+      const receiver = document.getElementById("handoverReceiver").value;
+      const temp = document.getElementById("handoverTemp").value;
+
+      const b = appDb.batches.find(x => x.code === batchCode);
+      const prodName = b ? b.name : "Nông sản";
+
+      const newH = {
+        id: Date.now(),
+        code: `HND-${Date.now().toString().slice(-4)}`,
+        batchCode,
+        productName: prodName,
+        qty,
+        sender,
+        receiver,
+        temp,
+        date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        status: "Pending"
+      };
+
+      appDb.handovers.unshift(newH);
+      addAuditLog("TẠO PHIẾU BÀN GIAO", `Bàn giao ${batchCode} (${qty}kg) từ ${sender} sang ${receiver}`);
+      saveDb(appDb);
+      closeModal("createHandoverModal");
+      renderAdminAll();
+      showToast(`Đã tạo phiếu bàn giao ${newH.code} thành công!`, "success");
+    }
+
+    // Create Batch Modal
+    function openAddBatchModal() {
+      const today = new Date().toISOString().split("T")[0];
+      const harvestInput = document.getElementById("newBatchHarvestDate");
+      if (harvestInput) harvestInput.value = today;
+      openModal("addBatchModal");
+    }
+
+    function closeAddBatchModal() {
+      closeModal("addBatchModal");
+    }
+
+    function handleCreateBatch(e) {
+      e.preventDefault();
+      const name = document.getElementById("newBatchName").value;
+      const customCode = document.getElementById("newBatchCode").value.trim();
+      const farm = document.getElementById("newBatchFarm").value;
+      const cert = document.getElementById("newBatchCert").value;
+      const qty = parseFloat(document.getElementById("newBatchQty").value) || 500;
+      const harvestDate = document.getElementById("newBatchHarvestDate").value;
+      const price = parseFloat(document.getElementById("newBatchPrice").value) || 60000;
+
+      const code = customCode || `BATCH-${Date.now().toString().slice(-4)}`;
+
+      const newBatch = {
+        id: Date.now(),
+        code: code,
+        name: name,
+        category: "greens",
+        price: price,
+        unit: "kg",
+        farm: farm,
+        initialQty: qty,
+        remainingQty: qty,
+        plantingDate: new Date(Date.now() - 45*86400000).toISOString().split('T')[0],
+        harvestDate: harvestDate,
+        location: "Kho Lạnh Đà Lạt #01",
+        status: "Đang lưu kho",
+        cert: cert,
+        image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=80",
+        engineer: "Kỹ sư phụ trách nông trại",
+        waterPh: "6.2 pH",
+        nitrate: "< 40 mg/kg",
+        coldChainTemp: "4.5°C",
+        parentCode: null,
+        hash: Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+        timeline: [
+          { stage: "Gieo trồng chuẩn " + cert, date: harvestDate, desc: "Canh tác nông nghiệp thông minh có ghi chép nhật ký điện tử." },
+          { stage: "Thu hoạch & Đóng gói", date: harvestDate, desc: "Đưa vào bảo quản lạnh chuỗi cung ứng." }
+        ]
+      };
+
+      appDb.batches.unshift(newBatch);
+      addAuditLog("TẠO LÔ MỚI", `Khởi tạo lô ${code} (${qty}kg) tại ${farm}`);
+      saveDb(appDb);
+      closeAddBatchModal();
+      renderAdminAll();
+      renderProducts();
+      showToast(`Đã tạo thành công lô nông sản ${code}!`, "success");
+    }
+
+    function deleteBatch(id) {
+      if (confirm("Bạn có chắc chắn muốn xóa lô nông sản này khỏi hệ thống?")) {
+        const b = appDb.batches.find(x => x.id === id);
+        if (b) addAuditLog("XOÁ LÔ NÔNG SẢN", `Xoá lô ${b.code}`);
+        appDb.batches = appDb.batches.filter(b => b.id !== id);
+        saveDb(appDb);
+        renderAdminAll();
+        renderProducts();
+        showToast("Đã xóa lô hàng thành công.", "info");
+      }
+    }
+
+    /**
+     * STOREFRONT CATALOG
+     */
+    function renderProducts() {
+      const productGrid = document.getElementById("productGrid");
+      const emptyState = document.getElementById("emptyCatalogState");
+      if (!productGrid) return;
+
+      const filtered = appDb.batches.filter(item => {
+        const matchCategory = currentCategory === 'all' || item.category === currentCategory;
+        const q = searchQuery.toLowerCase().trim();
+        const matchSearch = !q || item.name.toLowerCase().includes(q) || item.code.toLowerCase().includes(q) || item.farm.toLowerCase().includes(q);
+        return matchCategory && matchSearch;
+      });
+
+      if (filtered.length === 0) {
+        productGrid.innerHTML = '';
+        emptyState?.classList.remove("hidden");
+        return;
+      }
+
+      emptyState?.classList.add("hidden");
+
+      productGrid.innerHTML = filtered.map(item => `
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-farm transition-all duration-300 flex flex-col overflow-hidden group hover:-translate-y-1">
+          <div class="relative overflow-hidden h-48 bg-slate-100">
+            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-emerald-600/90 backdrop-blur-md text-white shadow-sm">
+                ${item.cert}
+              </span>
+            </div>
+            <div class="absolute bottom-3 right-3">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-900/80 text-white backdrop-blur-sm">
+                ${item.code}
+              </span>
+            </div>
+          </div>
+
+          <div class="p-5 flex-grow flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between text-xs text-slate-400 mb-1 font-medium">
+                <span class="truncate"><i class="fa-solid fa-location-dot text-emerald-500 mr-1"></i>${item.farm}</span>
+                <span class="flex-shrink-0 text-emerald-700 font-semibold"><i class="fa-solid fa-snowflake mr-1"></i>${item.coldChainTemp}</span>
+              </div>
+              <h3 class="font-extrabold text-slate-900 text-base group-hover:text-emerald-700 transition-colors line-clamp-1">
+                ${item.name}
+              </h3>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                <span class="text-xs text-slate-400 block">Giá niêm phong</span>
+                <span class="text-base font-black text-slate-900">${formatCurrency(item.price)}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="openTraceModal(${item.id})" class="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors" title="Xem Hộ Chiếu Nông Sản">
+                  <i class="fa-solid fa-qrcode text-base"></i>
+                </button>
+                <button onclick="addToCart(${item.id})" class="px-3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 text-xs">
+                  <i class="fa-solid fa-cart-plus"></i> Chọn Mua
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterByCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll(".cat-pill").forEach(el => {
+        if (el.getAttribute("data-cat") === cat) {
+          el.className = "cat-pill active px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-emerald-600 text-white shadow-sm whitespace-nowrap";
+        } else {
+          el.className = "cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 whitespace-nowrap";
+        }
+      });
+      renderProducts();
+    }
+
+    function handleSearch(val) {
+      searchQuery = val;
+      renderProducts();
+      const clearBtn = document.getElementById("clearSearchBtn");
+      if (clearBtn) {
+        if (val.trim()) clearBtn.classList.remove("hidden");
+        else clearBtn.classList.add("hidden");
+      }
+    }
+
+    function clearSearch() {
+      searchQuery = '';
+      const input = document.getElementById("globalSearchInput");
+      if (input) input.value = '';
+      document.getElementById("clearSearchBtn")?.classList.add("hidden");
+      renderProducts();
+    }
+
+    function openQuickTracePrompt() {
+      const code = prompt("Nhập mã định danh lô hàng cần tra cứu (VD: BATCH-TOM-2601):");
+      if (!code) return;
+      const b = appDb.batches.find(x => x.code.toLowerCase().trim() === code.toLowerCase().trim());
+      if (b) {
+        openTraceModal(b.id);
+      } else {
+        alert("Không tìm thấy mã lô trong hệ thống! Vui lòng kiểm tra lại.");
+      }
+    }
+
+    function openTraceModal(id) {
+      const b = appDb.batches.find(x => x.id === id);
+      if (!b) return;
+
+      document.getElementById("modalProduceName").innerText = b.name;
+      document.getElementById("modalBatchCode").innerText = b.code;
+      document.getElementById("modalCertBadge").innerText = b.cert;
+      document.getElementById("modalHarvestDate").innerText = b.harvestDate;
+      document.getElementById("modalColdChain").innerText = b.coldChainTemp;
+      document.getElementById("modalEngineer").innerText = b.engineer;
+      document.getElementById("modalPh").innerText = b.waterPh;
+      document.getElementById("modalNitrate").innerText = b.nitrate;
+      document.getElementById("modalHashDisplay").innerText = "SHA256: " + (b.hash || "8f4c2e...b3a19").substring(0, 32) + "...";
+
+      const timelineBox = document.getElementById("modalTimelineContainer");
+      timelineBox.innerHTML = (b.timeline || []).map((t, idx) => `
+        <div class="relative pl-6 pb-2 border-l-2 border-emerald-300">
+          <div class="absolute -left-2 top-0 w-3.5 h-3.5 rounded-full bg-emerald-600 border-2 border-white"></div>
+          <div class="font-bold text-slate-800 text-xs">${t.stage} <span class="text-slate-400 font-mono text-[10px]">(${t.date})</span></div>
+          <div class="text-slate-500 text-xs mt-0.5">${t.desc}</div>
+        </div>
+      `).join('');
+
+      openModal("tracePassportModal");
+    }
+
+    function closeTraceModal() {
+      closeModal("tracePassportModal");
+    }
+
+    /**
+     * SHOPPING CART LOGIC
+     */
+    function toggleCartDrawer(open) {
+      const drawer = document.getElementById("cartDrawer");
+      const backdrop = document.getElementById("cartDrawerBackdrop");
+      if (open) {
+        backdrop?.classList.remove("opacity-0", "pointer-events-none");
+        backdrop?.classList.add("opacity-100", "pointer-events-auto");
+        drawer?.classList.remove("translate-x-full");
+      } else {
+        backdrop?.classList.remove("opacity-100", "pointer-events-auto");
+        backdrop?.classList.add("opacity-0", "pointer-events-none");
+        drawer?.classList.add("translate-x-full");
+      }
+    }
+
+    function addToCart(id) {
+      const p = appDb.batches.find(x => x.id === id);
+      if (!p) return;
+      const ex = cart.find(x => x.id === id);
+      if (ex) ex.quantity += 1;
+      else cart.push({ ...p, quantity: 1 });
+      updateCartUI();
+      showToast(`Đã thêm ${p.name} vào giỏ hàng!`, "success");
+    }
+
+    function updateCartQuantity(id, delta) {
+      const ex = cart.find(x => x.id === id);
+      if (!ex) return;
+      ex.quantity += delta;
+      if (ex.quantity <= 0) cart = cart.filter(x => x.id !== id);
+      updateCartUI();
+    }
+
+    function removeFromCart(id) {
+      cart = cart.filter(x => x.id !== id);
+      updateCartUI();
+      showToast("Đã xoá món khỏi giỏ hàng.", "info");
+    }
+
+    function updateCartUI() {
+      const badge = document.getElementById("cartBadgeCount");
+      const headerCount = document.getElementById("cartItemCountHeader");
+      const list = document.getElementById("cartItemsList");
+      const empty = document.getElementById("emptyCartView");
+      const footer = document.getElementById("cartFooter");
+
+      const total = cart.reduce((sum, i) => sum + i.quantity, 0);
+      if (badge) badge.innerText = total;
+      if (headerCount) headerCount.innerText = `${total} món`;
+
+      if (cart.length === 0) {
+        list?.classList.add("hidden");
+        footer?.classList.add("hidden");
+        empty?.classList.remove("hidden");
+        return;
+      }
+
+      list?.classList.remove("hidden");
+      footer?.classList.remove("hidden");
+      empty?.classList.add("hidden");
+
+      let subtotal = 0;
+      list.innerHTML = cart.map(item => {
+        subtotal += item.price * item.quantity;
+        return `
+          <div class="py-3 flex items-center justify-between gap-3">
+            <img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-xl object-cover border border-slate-200">
+            <div class="flex-grow min-w-0">
+              <h4 class="font-bold text-slate-800 text-xs truncate">${item.name}</h4>
+              <p class="text-[10px] text-slate-400 font-mono">${item.code}</p>
+              <p class="text-xs font-bold text-emerald-700">${formatCurrency(item.price)}</p>
+            </div>
+            <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+              <button onclick="updateCartQuantity(${item.id}, -1)" class="w-5 h-5 bg-white text-slate-700 rounded text-xs font-bold">-</button>
+              <span class="w-4 text-center text-xs font-bold">${item.quantity}</span>
+              <button onclick="updateCartQuantity(${item.id}, 1)" class="w-5 h-5 bg-white text-slate-700 rounded text-xs font-bold">+</button>
+            </div>
+            <button onclick="removeFromCart(${item.id})" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById("cartSubtotal").innerText = formatCurrency(subtotal);
+      const ship = subtotal >= 150000 ? 0 : 25000;
+      document.getElementById("cartShipping").innerText = ship === 0 ? "Miễn phí" : formatCurrency(ship);
+      document.getElementById("cartGrandTotal").innerText = formatCurrency(subtotal + ship);
+    }
+
+    function checkoutCart() {
+      if (cart.length === 0) return;
+      alert("Đơn hàng chuỗi lạnh của bạn đã được xác nhận!
+Mã vận đơn: SHIP-COLD-" + Date.now().toString().slice(-4));
+      cart = [];
+      updateCartUI();
+      toggleCartDrawer(false);
+      showToast("Đặt hàng thành công! Đang phân phối xe lạnh.", "success");
+    }
+
+    /**
+     * IOT TELEMETRY SIMULATION
+     */
+    function startIoTSimulation() {
+      setInterval(() => {
+        const temp = (24.2 + Math.random()*0.8).toFixed(1);
+        const hum = (73 + Math.random()*2.5).toFixed(1);
+        const soil = (67.5 + Math.random()*2).toFixed(1);
+        const light = Math.floor(32000 + Math.random()*800);
+
+        const tempEl = document.getElementById("sensorTemp");
+        const humEl = document.getElementById("sensorHumidity");
+        const soilEl = document.getElementById("sensorSoil");
+        const lightEl = document.getElementById("sensorLight");
+        const syncTimeEl = document.getElementById("iotLastSyncTime");
+
+        if (tempEl) tempEl.innerText = temp;
+        if (humEl) humEl.innerText = hum;
+        if (soilEl) soilEl.innerText = soil;
+        if (lightEl) lightEl.innerText = light.toLocaleString();
+        if (syncTimeEl) syncTimeEl.innerText = new Date().toTimeString().split(' ')[0];
+      }, 4000);
+    }
+
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toastContainer");
+      if (!container) return;
+      const toast = document.createElement("div");
+      const icons = {
+        success: "fa-circle-check text-emerald-400",
+        info: "fa-circle-info text-blue-400",
+        warning: "fa-triangle-exclamation text-amber-400"
+      };
+      toast.className = "flex items-center gap-2.5 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-xl text-xs font-semibold border border-slate-700 pointer-events-auto";
+      toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => { toast.remove(); }, 3500);
+    }
+
+    function formatCurrency(n) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
+    }
+  </script>
+</body>
+</html>

@@ -9,8 +9,10 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.core.security import decode_access_token
 from app.models.batch import Batch
+from app.models.land_plot import LandPlot
 from app.models.user import User, UserRole
 from app.repositories.batch_repository import BatchRepository
+from app.repositories.land_plot_repository import LandPlotRepository
 from app.repositories.security_log_repository import SecurityLogRepository
 from app.repositories.user_repository import UserRepository
 
@@ -185,3 +187,74 @@ def verify_batch_access(
         )
 
     return batch
+
+
+def verify_land_plot_access(
+    plot_id: int,
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+) -> LandPlot:
+    """
+    Kiểm tra quyền truy cập thửa đất chéo tổ chức và cán bộ kiểm tra:
+    - Nếu không tìm thấy thửa đất -> Trả về 404 Not Found.
+    - Cán bộ kiểm tra (inspector) -> Thấy được thửa của mọi tổ chức nhưng chỉ ở chế độ đọc (GET).
+    - Thành viên tổ chức khác -> Trả về 403 Forbidden và ghi nhật ký lần thử.
+    """
+    plot = LandPlotRepository.get_by_id(db, plot_id)
+    if not plot:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Không tìm thấy thửa đất với ID {plot_id}",
+        )
+
+    client_ip = request.client.host if request.client else "unknown"
+
+    # Trường hợp là cán bộ kiểm tra (Inspector)
+    if current_user.role == UserRole.INSPECTOR.value:
+        if request.method not in ["GET", "HEAD", "OPTIONS"]:
+            SecurityLogRepository.log_attempt(
+                db=db,
+                user_id=current_user.id,
+                user_email=current_user.email,
+                user_org_id=current_user.organization_id,
+                attempt_type="inspector_write_violation",
+                target_resource="land_plot",
+                target_id=str(plot.id),
+                target_org_id=plot.organization_id,
+                endpoint=request.url.path,
+                method=request.method,
+                ip_address=client_ip,
+                description="Cán bộ kiểm tra cố gắng thực hiện thao tác ghi/sửa/xóa trên thửa đất (chỉ được phép đọc).",
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc).",
+            )
+        return plot
+
+    # Trường hợp là người dùng thuộc tổ chức: kiểm tra xem thửa có thuộc tổ chức của user không
+    if plot.organization_id != current_user.organization_id:
+        SecurityLogRepository.log_attempt(
+            db=db,
+            user_id=current_user.id,
+            user_email=current_user.email,
+            user_org_id=current_user.organization_id,
+            attempt_type="cross_tenant_access_denied",
+            target_resource="land_plot",
+            target_id=str(plot.id),
+            target_org_id=plot.organization_id,
+            endpoint=request.url.path,
+            method=request.method,
+            ip_address=client_ip,
+            description=(
+                f"Người dùng {current_user.email} (Tổ chức {current_user.organization_id}) "
+                f"cố tình gọi thẳng API truy cập thửa đất #{plot.id} của Tổ chức {plot.organization_id}."
+            ),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Không có quyền truy cập dữ liệu thửa đất của tổ chức khác.",
+        )
+
+    return plot
