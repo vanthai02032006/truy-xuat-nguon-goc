@@ -80,6 +80,12 @@ jobs:
 
             COMPOSE="docker-compose.staging.yml"
 
+            # Dong bo file docker-compose.staging.yml moi nhat tu repo ve VPS
+            curl -fsSL https://raw.githubusercontent.com/vanthai02032006/truy-xuat-nguon-goc/main/docker-compose.staging.yml -o "$COMPOSE"
+
+            # Mo firewall port 80 tren VPS neu co ufw
+            sudo ufw allow 80/tcp || true
+
             # Dang nhap GHCR de keo image
             echo "$GHCR_TOKEN" | docker login ghcr.io \
               -u "$GHCR_USERNAME" --password-stdin
