@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-farm_db}
+      POSTGRES_USER: ${POSTGRES_USER:-farm_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-replace_with_a_local_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    container_name: app_staging
+    image: ghcr.io/vanthai02032006/truy-xuat-nguon-goc:${IMAGE_TAG:-latest}
+    ports:
+      - "80:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-farm_user}:${POSTGRES_PASSWORD:-replace_with_a_local_secret}@db:5432/${POSTGRES_DB:-farm_db}
+      ALLOWED_HOSTS: "nong-san-lanh-k18-n4.duckdns.org,160.191.245.209,localhost,127.0.0.1,*"
+      CSRF_TRUSTED_ORIGINS: "http://nong-san-lanh-k18-n4.duckdns.org,https://nong-san-lanh-k18-n4.duckdns.org,http://160.191.245.209"
+      CORS_ORIGINS: "http://nong-san-lanh-k18-n4.duckdns.org,https://nong-san-lanh-k18-n4.duckdns.org,http://160.191.245.209,http://localhost,*"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/health')
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
