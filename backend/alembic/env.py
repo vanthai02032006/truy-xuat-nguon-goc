@@ -11,10 +11,7 @@ database_url = os.environ.get("DATABASE_URL")
 if not database_url:
     raise RuntimeError("Thieu bien moi truong DATABASE_URL")
 
-config.set_main_option(
-    "sqlalchemy.url",
-    database_url.replace("%", "%%")
-)
+config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 target_metadata = Base.metadata
 
