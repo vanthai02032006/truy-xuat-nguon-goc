@@ -17,6 +17,12 @@ class Batch(Base):
         nullable=False,
         index=True,
     )
+    land_plot_id = Column(
+        Integer,
+        ForeignKey("land_plots.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -24,3 +30,4 @@ class Batch(Base):
     )
 
     organization = relationship("Organization")
+    land_plot = relationship("LandPlot", back_populates="batches")

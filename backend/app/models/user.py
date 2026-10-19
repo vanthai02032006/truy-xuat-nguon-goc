@@ -13,6 +13,8 @@ class UserRole(str, enum.Enum):
     INSPECTOR = (
         "inspector"  # Cán bộ kiểm tra (xem được mọi tổ chức nhưng chỉ ở chế độ đọc)
     )
+    FARMER = "farmer"  # Vai trò vùng trồng (khai báo thửa đất, ghi nhận thu hoạch)
+    VUNG_TRONG = "vung_trong"  # Bí danh tiếng Việt cho vai trò vùng trồng
 
 
 class User(Base):

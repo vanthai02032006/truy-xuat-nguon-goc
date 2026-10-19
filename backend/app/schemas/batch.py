@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict
 class BatchBase(BaseModel):
     batch_code: str
     product_name: str
+    land_plot_id: int | None = None
 
 
 class BatchCreate(BatchBase):

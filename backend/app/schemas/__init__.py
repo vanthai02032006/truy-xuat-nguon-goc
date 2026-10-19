@@ -1,4 +1,10 @@
 from app.schemas.batch import BatchBase, BatchCreate, BatchResponse
+from app.schemas.land_plot import (
+    LandPlotBase,
+    LandPlotCreate,
+    LandPlotResponse,
+    LandPlotUpdate,
+)
 from app.schemas.organization import (
     OrganizationBase,
     OrganizationCreate,
@@ -11,6 +17,10 @@ __all__ = [
     "BatchBase",
     "BatchCreate",
     "BatchResponse",
+    "LandPlotBase",
+    "LandPlotCreate",
+    "LandPlotResponse",
+    "LandPlotUpdate",
     "OrganizationBase",
     "OrganizationCreate",
     "OrganizationResponse",
