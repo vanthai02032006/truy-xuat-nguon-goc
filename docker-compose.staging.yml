@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: postgres:15
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-farm_db}
       POSTGRES_USER: ${POSTGRES_USER:-farm_user}
