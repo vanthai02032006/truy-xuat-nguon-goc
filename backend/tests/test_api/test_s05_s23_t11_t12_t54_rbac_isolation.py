@@ -3,6 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 
 import pytest
+from fastapi import status
+from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
 from app.core.security import create_access_token, get_password_hash
 from app.models.batch import Batch
 from app.models.batch_relation import BatchRelation, BatchRelationType
@@ -19,9 +23,6 @@ from app.services.batch_access_service import (
     get_viewable_chain_events,
     tenant_query,
 )
-from fastapi import status
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
 
 def get_auth_headers(user_email: str, role: str, org_id: int | None) -> dict[str, str]:
