@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class BatchBase(BaseModel):
     product_name: str
     land_plot_id: int | None = None
+    initial_quantity: float = Field(default=100.0, ge=0)
+    remaining_quantity: float = Field(default=100.0, ge=0)
+    unit: str = "kg"
 
 
 class BatchCreate(BatchBase):

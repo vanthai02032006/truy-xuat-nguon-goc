@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, verify_batch_access
 from app.models.batch import Batch
+from app.models.batch_relation import BatchRelation, BatchRelationType
 from app.models.material import BatchMaterialLog
 from app.models.user import User, UserRole
 from app.repositories.batch_repository import BatchRepository
@@ -16,12 +17,21 @@ from app.schemas.batch import (
     JourneyMilestone,
     PublicBatchTraceResponse,
 )
+from app.schemas.batch_relation import (
+    BatchLineageResponse,
+    BatchMergeRequest,
+    BatchMergeResponse,
+    BatchRelationResponse,
+    BatchSplitRequest,
+    BatchSplitResponse,
+)
 from app.schemas.material import (
     BatchMaterialLogCreate,
     BatchMaterialLogResponse,
     BatchPHICheckResponse,
 )
 from app.services.batch_code_service import generate_unique_batch_code
+from app.services.hash_chain_service import record_chain_event
 
 router = APIRouter(prefix="/batches", tags=["batches"])
 
@@ -218,6 +228,9 @@ def create_batch(
         product_name=batch_in.product_name,
         organization_id=target_org_id,
         land_plot_id=batch_in.land_plot_id,
+        initial_quantity=batch_in.initial_quantity,
+        remaining_quantity=batch_in.remaining_quantity,
+        unit=batch_in.unit,
     )
     return BatchRepository.create(db, new_batch)
 
@@ -239,6 +252,399 @@ def delete_batch(
         )
 
     BatchRepository.delete(db, batch)
+
+
+# ============================================================================
+# USER STORY S-17, S-18, S-19: TÁCH LÔ (SPLIT) VÀ GỘP LÔ (MERGE) HÀNG NÔNG SẢN
+# ============================================================================
+
+
+@router.post(
+    "/merge",
+    response_model=BatchMergeResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def merge_batches(
+    payload: BatchMergeRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    User Story S-19: Gộp nhiều lô hàng có CÙNG loại sản phẩm thành 1 lô mới.
+    - Khóa các dòng lô mẹ theo thứ tự ID cố định (ORDER BY id ASC) để tránh deadlock.
+    - Kiểm tra các lô mẹ có cùng loại sản phẩm.
+    - Trừ số lượng tương ứng ở các lô mẹ.
+    - Tạo lô mới có khối lượng bằng tổng lượng gộp.
+    - Lưu vết quan hệ MERGE vào bảng batch_relations.
+    - Ghi nhận sự kiện chuỗi hash SHA-256 trong cùng transaction.
+    """
+    if current_user.role == UserRole.INSPECTOR.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc).",
+        )
+
+    # 1. Tránh deadlock: Sắp xếp các batch_id theo thứ tự tăng dần cố định
+    sorted_sources = sorted(payload.sources, key=lambda s: s.batch_id)
+    sorted_ids = [s.batch_id for s in sorted_sources]
+
+    if len(set(sorted_ids)) != len(sorted_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Danh sách lô gộp chứa mã lô trùng lặp.",
+        )
+
+    # 2. Khóa các dòng lô mẹ theo thứ tự ID cố định (SELECT ... FOR UPDATE ORDER BY id ASC)
+    parents = (
+        db.query(Batch)
+        .filter(Batch.id.in_(sorted_ids))
+        .order_by(Batch.id.asc())
+        .with_for_update()
+        .all()
+    )
+
+    if len(parents) != len(sorted_ids):
+        missing_ids = set(sorted_ids) - {p.id for p in parents}
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Không tìm thấy các lô hàng có ID: {list(missing_ids)}.",
+        )
+
+    parent_map = {p.id: p for p in parents}
+
+    # 3. Kiểm tra phân quyền: Tất cả các lô phải thuộc tổ chức của current_user
+    for p in parents:
+        if (
+            current_user.role not in [UserRole.SYSTEM_ADMIN.value, UserRole.ADMIN.value]
+            and p.organization_id != current_user.organization_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Bạn không có quyền thao tác trên lô #{p.id} ({p.batch_code}) của tổ chức khác.",
+            )
+        if p.status == "chờ xác nhận":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Lô {p.batch_code} đang trong trạng thái chờ bàn giao, không thể gộp lô.",
+            )
+
+    # 4. Kiểm tra CÙNG LOẠI SẢN PHẨM (S-19 tiêu chí chấp nhận)
+    product_names = {p.product_name.strip().lower() for p in parents}
+    if len(product_names) > 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Chỉ được gộp các lô có CÙNG loại sản phẩm! "
+                f"Các sản phẩm hiện tại: {', '.join(p.product_name for p in parents)}."
+            ),
+        )
+
+    # 5. Kiểm tra khối lượng và trừ số lượng tương ứng ở các lô mẹ
+    total_merged_qty = 0.0
+    for src in sorted_sources:
+        p = parent_map[src.batch_id]
+        if src.quantity <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Khối lượng gộp từ lô {p.batch_code} phải lớn hơn 0.",
+            )
+        if src.quantity > p.remaining_quantity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Khối lượng yêu cầu gộp từ lô {p.batch_code} ({src.quantity} {p.unit}) "
+                    f"vượt quá khối lượng còn lại ({p.remaining_quantity} {p.unit})."
+                ),
+            )
+        p.remaining_quantity = round(p.remaining_quantity - src.quantity, 3)
+        total_merged_qty += src.quantity
+
+    total_merged_qty = round(total_merged_qty, 3)
+    base_parent = parents[0]
+
+    # 6. Tạo lô mới đại diện cho lô đã gộp
+    merged_code = generate_unique_batch_code(db)
+    merged_batch = Batch(
+        batch_code=merged_code,
+        product_name=base_parent.product_name,
+        organization_id=current_user.organization_id,
+        land_plot_id=base_parent.land_plot_id,
+        status="active",
+        initial_quantity=total_merged_qty,
+        remaining_quantity=total_merged_qty,
+        unit=base_parent.unit,
+    )
+    db.add(merged_batch)
+    db.flush()
+
+    # 7. Lưu bảng quan hệ batch_relations (loại MERGE)
+    for src in sorted_sources:
+        p = parent_map[src.batch_id]
+        rel = BatchRelation(
+            parent_batch_id=p.id,
+            child_batch_id=merged_batch.id,
+            relation_type=BatchRelationType.MERGE.value,
+            quantity=src.quantity,
+            notes=payload.notes,
+        )
+        db.add(rel)
+
+        # Ghi sự kiện hash cho từng lô mẹ
+        record_chain_event(
+            db=db,
+            batch_id=p.id,
+            event_type="BATCH_MERGE_PARENT",
+            event_data=(
+                f"Trích {src.quantity} {p.unit} để gộp vào lô mới {merged_batch.batch_code}. "
+                f"Khối lượng còn lại: {p.remaining_quantity} {p.unit}"
+            ),
+            organization_id=current_user.organization_id,
+        )
+
+    # Ghi sự kiện hash cho lô gộp mới
+    src_codes_str = ", ".join(
+        f"{parent_map[s.batch_id].batch_code} ({s.quantity} {parent_map[s.batch_id].unit})"
+        for s in sorted_sources
+    )
+    record_chain_event(
+        db=db,
+        batch_id=merged_batch.id,
+        event_type="BATCH_MERGE_CREATED",
+        event_data=(
+            f"Tạo lô mới từ việc gộp các lô [{src_codes_str}]. "
+            f"Tổng khối lượng gộp: {total_merged_qty} {merged_batch.unit}"
+        ),
+        organization_id=current_user.organization_id,
+    )
+
+    db.commit()
+    db.refresh(merged_batch)
+    for p in parents:
+        db.refresh(p)
+
+    return BatchMergeResponse(
+        merged_batch=merged_batch,
+        source_batches=parents,
+        total_merged_quantity=total_merged_qty,
+    )
+
+
+@router.post(
+    "/{batch_id}/split",
+    response_model=BatchSplitResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def split_batch(
+    batch_id: int,
+    payload: BatchSplitRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    User Story S-17 & S-18: Tách lô nông sản thành nhiều lô con.
+    - Khóa dòng lô mẹ bằng SELECT ... FOR UPDATE để chống race condition.
+    - Tổng khối lượng các lô con không được vượt quá khối lượng còn lại của lô mẹ.
+    - Mỗi lô con có mã lô mới (sinh an toàn), kế thừa sản phẩm và thửa gốc từ lô mẹ.
+    - Khối lượng còn lại của lô mẹ bị trừ tương ứng.
+    - Lưu vết vào bảng batch_relations (loại SPLIT).
+    - Ghi nhận sự kiện chuỗi hash SHA-256 trong cùng transaction.
+    """
+    if current_user.role == UserRole.INSPECTOR.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc).",
+        )
+
+    # Khóa dòng lô mẹ với SELECT ... FOR UPDATE chống race condition (S-17, S-18)
+    parent = db.query(Batch).filter(Batch.id == batch_id).with_for_update().first()
+    if not parent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lô hàng #{batch_id} không tồn tại.",
+        )
+
+    # Kiểm tra phân quyền: Chỉ tổ chức đang giữ quyền sở hữu mới được tách lô
+    if (
+        current_user.role not in [UserRole.SYSTEM_ADMIN.value, UserRole.ADMIN.value]
+        and parent.organization_id != current_user.organization_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền thực hiện thao tác trên lô hàng của tổ chức khác.",
+        )
+
+    # Không cho tách lô khi lô đang trong trạng thái chờ xác nhận bàn giao
+    if parent.status == "chờ xác nhận":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Lô hàng đang trong quá trình bàn giao chờ xác nhận, không thể tách lô.",
+        )
+
+    total_split_qty = sum(item.quantity for item in payload.splits)
+    if total_split_qty <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tổng khối lượng tách phải lớn hơn 0.",
+        )
+
+    if total_split_qty > parent.remaining_quantity:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Tổng khối lượng các lô con ({total_split_qty} {parent.unit}) "
+                f"vượt quá khối lượng còn lại của lô mẹ ({parent.remaining_quantity} {parent.unit})."
+            ),
+        )
+
+    # Trừ khối lượng còn lại của lô mẹ
+    parent.remaining_quantity = round(parent.remaining_quantity - total_split_qty, 3)
+
+    child_batches: list[Batch] = []
+
+    for item in payload.splits:
+        child_code = generate_unique_batch_code(db)
+        child = Batch(
+            batch_code=child_code,
+            product_name=parent.product_name,
+            organization_id=parent.organization_id,
+            land_plot_id=parent.land_plot_id,
+            status="active",
+            initial_quantity=item.quantity,
+            remaining_quantity=item.quantity,
+            unit=parent.unit,
+        )
+        db.add(child)
+        db.flush()  # Sinh child.id
+        child_batches.append(child)
+
+        rel = BatchRelation(
+            parent_batch_id=parent.id,
+            child_batch_id=child.id,
+            relation_type=BatchRelationType.SPLIT.value,
+            quantity=item.quantity,
+            notes=item.notes or payload.notes,
+        )
+        db.add(rel)
+
+        # Ghi nhận mắt xích hash cho lô con
+        record_chain_event(
+            db=db,
+            batch_id=child.id,
+            event_type="BATCH_SPLIT_CREATED",
+            event_data=(
+                f"Lô con {child.batch_code} ({item.quantity} {child.unit}) "
+                f"được tách ra từ lô mẹ {parent.batch_code} (#{parent.id})"
+            ),
+            organization_id=current_user.organization_id,
+        )
+
+    # Ghi nhận mắt xích hash cho lô mẹ
+    child_codes_str = ", ".join(c.batch_code for c in child_batches)
+    record_chain_event(
+        db=db,
+        batch_id=parent.id,
+        event_type="BATCH_SPLIT_PARENT",
+        event_data=(
+            f"Tách {len(child_batches)} lô con [{child_codes_str}] "
+            f"với tổng khối lượng {total_split_qty} {parent.unit}. "
+            f"Khối lượng còn lại: {parent.remaining_quantity} {parent.unit}"
+        ),
+        organization_id=current_user.organization_id,
+    )
+
+    db.commit()
+    db.refresh(parent)
+    for c in child_batches:
+        db.refresh(c)
+
+    return BatchSplitResponse(
+        parent_batch=parent,
+        child_batches=child_batches,
+        total_split_quantity=total_split_qty,
+    )
+
+
+@router.get("/{batch_id}/lineage", response_model=BatchLineageResponse)
+def get_batch_lineage(
+    batch_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    Truy vấn đồ thị phả hệ (Genealogy Tree) nguồn gốc lô hàng (S-17, S-18, S-19):
+    - Các lô cha/mẹ tạo nên lô này (qua split hoặc merge).
+    - Các lô con được sinh ra từ lô này (qua split hoặc merge).
+    """
+    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lô hàng #{batch_id} không tồn tại.",
+        )
+
+    is_admin_or_inspector = current_user.role in [
+        UserRole.INSPECTOR.value,
+        UserRole.SYSTEM_ADMIN.value,
+        UserRole.ADMIN.value,
+    ]
+    if (
+        not is_admin_or_inspector
+        and batch.organization_id != current_user.organization_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền xem thông tin lô hàng của tổ chức khác.",
+        )
+
+    # Truy vấn quan hệ cha: lô này là child_batch_id
+    parent_rels = (
+        db.query(BatchRelation)
+        .filter(BatchRelation.child_batch_id == batch.id)
+        .order_by(BatchRelation.id.asc())
+        .all()
+    )
+    parents_data = [
+        BatchRelationResponse(
+            id=r.id,
+            parent_batch_id=r.parent_batch_id,
+            child_batch_id=r.child_batch_id,
+            parent_batch_code=r.parent_batch.batch_code if r.parent_batch else None,
+            child_batch_code=r.child_batch.batch_code if r.child_batch else None,
+            relation_type=r.relation_type,
+            quantity=r.quantity,
+            notes=r.notes,
+            created_at=r.created_at,
+        )
+        for r in parent_rels
+    ]
+
+    # Truy vấn quan hệ con: lô này là parent_batch_id
+    child_rels = (
+        db.query(BatchRelation)
+        .filter(BatchRelation.parent_batch_id == batch.id)
+        .order_by(BatchRelation.id.asc())
+        .all()
+    )
+    children_data = [
+        BatchRelationResponse(
+            id=r.id,
+            parent_batch_id=r.parent_batch_id,
+            child_batch_id=r.child_batch_id,
+            parent_batch_code=r.parent_batch.batch_code if r.parent_batch else None,
+            child_batch_code=r.child_batch.batch_code if r.child_batch else None,
+            relation_type=r.relation_type,
+            quantity=r.quantity,
+            notes=r.notes,
+            created_at=r.created_at,
+        )
+        for r in child_rels
+    ]
+
+    return BatchLineageResponse(
+        batch=batch,
+        parents=parents_data,
+        children=children_data,
+    )
 
 
 # ============================================================================

@@ -99,9 +99,12 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
 
         client_ip = request.client.host if request.client else "unknown"
 
-        # 4. Kiểm tra Cán bộ kiểm tra (Inspector) cố tình tạo mới lô hàng hoặc thao tác bàn giao
+        # 4. Kiểm tra Cán bộ kiểm tra (Inspector) cố tình tạo mới lô hàng, tách/gộp hoặc thao tác bàn giao
         if (
-            (path == "/api/v1/batches" and method == "POST")
+            (
+                path.startswith("/api/v1/batches")
+                and method in ["POST", "PUT", "PATCH", "DELETE"]
+            )
             or (
                 path.startswith("/api/v1/handovers")
                 and method in ["POST", "PUT", "PATCH", "DELETE"]

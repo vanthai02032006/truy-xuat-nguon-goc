@@ -478,6 +478,9 @@ def generate_spa_html():
           <p class="text-xs text-slate-500 mt-1">Mã lô ngẫu nhiên đủ dài, tìm kiếm không phân biệt hoa thường, phân trang 20 lô/trang</p>
         </div>
         <div class="flex items-center gap-2">
+          <button id="btnOpenMergeModal" onclick="openMergeModalForSelected()" class="hidden px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-all">
+            <i class="fa-solid fa-object-group"></i> Gộp Lô Đã Chọn (<span id="mergeSelectedCount">0</span>) (S-19)
+          </button>
           <button id="addBatchBtn" onclick="handleAddBatchClick()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
             <i class="fa-solid fa-plus"></i> Tạo Lô Thu Hoạch Mới
           </button>
@@ -514,10 +517,11 @@ def generate_spa_html():
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
               <tr>
+                <th class="p-3.5 w-10 text-center"><input type="checkbox" id="selectAllBatches" onchange="toggleSelectAllBatches(this)" class="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"/></th>
                 <th class="p-3.5">Mã Định Danh Lô</th>
                 <th class="p-3.5">Tên Nông Sản</th>
                 <th class="p-3.5">Thửa Đất Nguồn</th>
-                <th class="p-3.5">Khối Lượng</th>
+                <th class="p-3.5">Khối Lượng Còn Lại (S-17)</th>
                 <th class="p-3.5">Trạng Thái Chuỗi Lạnh</th>
                 <th class="p-3.5">Thời Gian Cách Ly (S-62)</th>
                 <th class="p-3.5 text-right">Thao Tác</th>
@@ -1230,6 +1234,25 @@ def generate_spa_html():
           <div><p class="text-slate-400 uppercase text-[10px]">Tiêu Chuẩn</p><p class="font-bold text-emerald-600" id="modalBatchCert">VietGAP</p></div>
         </div>
 
+        <!-- Khối lượng lưu kho & Khối lượng còn lại theo S-17 -->
+        <div class="bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-200 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+              <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+            <div>
+              <p class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Khối Lượng Lưu Kho (User Story S-17, S-18, S-19)</p>
+              <p class="text-sm font-extrabold text-emerald-950">
+                Còn lại: <span id="modalBatchRemainingQty" class="text-emerald-700 font-black">100.0</span> <span id="modalBatchUnit">kg</span> 
+                <span class="text-xs text-slate-400 font-normal">(Ban đầu: <span id="modalBatchInitialQty">100.0</span> <span id="modalBatchUnit2">kg</span>)</span>
+              </p>
+            </div>
+          </div>
+          <span id="modalBatchStatusBadge" class="px-2.5 py-1 bg-white text-emerald-800 rounded-full font-bold text-[10px] border border-emerald-300">
+            active
+          </span>
+        </div>
+
         <!-- PHI Badge in Modal (S-62) -->
         <div class="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
@@ -1240,6 +1263,19 @@ def generate_spa_html():
             </div>
           </div>
           <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">Đạt Chuẩn VietGAP</span>
+        </div>
+
+        <!-- CÂY PHẢ HỆ / LỊCH SỬ TÁCH - GỘP (GENEALOGY LINEAGE TREE - S-17, S-18, S-19) -->
+        <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-sitemap text-indigo-600"></i> Cây Phả Hệ Nguồn Gốc (Genealogy Tree - S-17, S-18, S-19)
+            </h4>
+            <span id="modalBatchLineageStatus" class="text-[10px] text-slate-400 font-medium">Đang tải phả hệ...</span>
+          </div>
+          <div id="modalBatchLineageContainer" class="space-y-2 text-xs">
+            <!-- Dynamic lineage nodes -->
+          </div>
         </div>
 
         <!-- CÁC MỐC HÀNH TRÌNH CHUỖI CUNG ỨNG CHÍNH (S-48: Sơ chế, Vận chuyển, Phân phối) -->
@@ -1259,14 +1295,22 @@ def generate_spa_html():
         </div>
       </div>
 
-      <!-- Footer Buttons: Nút Bàn Giao (S-15) và Nút Đóng -->
-      <div class="flex items-center justify-between pt-3 border-t border-slate-100">
-        <button 
-          id="modalBtnHandover" 
-          onclick="openHandoverForCurrentBatch()" 
-          class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-2 transition-all">
-          <i class="fa-solid fa-truck-moving"></i> Bàn Giao Lô Hàng (S-15)
-        </button>
+      <!-- Footer Buttons: Nút Tách Lô (S-17), Nút Bàn Giao (S-15) và Nút Đóng -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100 gap-2 flex-wrap">
+        <div class="flex items-center gap-2">
+          <button 
+            id="modalBtnSplit" 
+            onclick="openSplitModalForCurrentBatch()" 
+            class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-scissors"></i> Tách Lô (S-17)
+          </button>
+          <button 
+            id="modalBtnHandover" 
+            onclick="openHandoverForCurrentBatch()" 
+            class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-truck-moving"></i> Bàn Giao Lô Hàng (S-15)
+          </button>
+        </div>
         <button onclick="closeModal('batchDetailModal')" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
           Đóng Cửa Sổ
         </button>
@@ -1318,6 +1362,156 @@ def generate_spa_html():
 
       <div class="flex justify-end pt-2 border-t border-slate-100">
         <button onclick="closeQrCameraScanner()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-xs">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: TÁCH LÔ NÔNG SẢN (SPLIT BATCH - USER STORY S-17 & S-18)                -->
+  <!-- Khóa dòng SELECT ... FOR UPDATE chống race condition                         -->
+  <!-- ============================================================================ -->
+  <div id="splitBatchModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-sm font-black">
+            <i class="fa-solid fa-scissors"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Tách Lô Nông Sản (S-17, S-18)</h3>
+            <p class="text-[11px] text-slate-500">Khóa dòng SELECT ... FOR UPDATE chống race condition khi 2 người cùng tách</p>
+          </div>
+        </div>
+        <button onclick="closeModal('splitBatchModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Thông tin lô mẹ -->
+      <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 grid grid-cols-3 gap-2 text-xs">
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Mã Lô Mẹ</span>
+          <p id="splitModalParentCode" class="font-mono font-bold text-slate-800">BATCH-...</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Sản Phẩm</span>
+          <p id="splitModalProductName" class="font-bold text-slate-800 truncate">...</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Khối Lượng Còn Lại</span>
+          <p class="font-extrabold text-amber-700"><span id="splitModalRemainingQty">100</span> <span id="splitModalUnit">kg</span></p>
+        </div>
+      </div>
+
+      <!-- Danh sách các lô con cần tách ra -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-bold text-slate-700">Danh Sách Lô Con Sinh Ra:</label>
+          <button type="button" onclick="addSplitRow()" class="px-2.5 py-1 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded-lg text-xs font-bold border border-amber-200 flex items-center gap-1">
+            <i class="fa-solid fa-plus text-[10px]"></i> Thêm Lô Con
+          </button>
+        </div>
+        <div id="splitRowsContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <!-- Rows dynamically added -->
+        </div>
+      </div>
+
+      <!-- Ghi chú chung -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Ghi Chú Phân Loại / Mục Đích Tách Lô:</label>
+        <input type="text" id="splitNotesInput" placeholder="Ví dụ: Phân loại đóng thùng xuất khẩu và siêu thị" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 font-medium"/>
+      </div>
+
+      <!-- Khung tổng kết khối lượng và cảnh báo -->
+      <div class="p-3 bg-amber-50/70 rounded-2xl border border-amber-200 space-y-1 text-xs">
+        <div class="flex justify-between font-semibold text-slate-700">
+          <span>Tổng khối lượng các lô con:</span>
+          <span class="font-mono font-bold text-amber-900"><span id="splitTotalCalculated">0.0</span> kg</span>
+        </div>
+        <div class="flex justify-between font-semibold text-slate-700">
+          <span>Khối lượng lô mẹ còn lại sau tách:</span>
+          <span class="font-mono font-bold text-slate-800"><span id="splitRemainingCalculated">100.0</span> kg</span>
+        </div>
+        <div id="splitValidationAlert" class="hidden text-[11px] font-bold text-rose-600 pt-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span id="splitValidationMsg">Tổng khối lượng lô con vượt quá khối lượng còn lại của lô mẹ!</span>
+        </div>
+      </div>
+
+      <!-- Nút thao tác -->
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeModal('splitBatchModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold">Hủy</button>
+        <button type="button" id="btnSubmitSplit" onclick="submitSplitBatch()" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-check"></i> Xác Nhận Tách Lô (S-17)
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: GỘP LÔ NÔNG SẢN CÙNG LOẠI (MERGE BATCH - USER STORY S-19)              -->
+  <!-- Khóa các dòng lô theo thứ tự ID cố định tránh deadlock                      -->
+  <!-- ============================================================================ -->
+  <div id="mergeBatchModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center text-sm font-black">
+            <i class="fa-solid fa-object-group"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Gộp Lô Nông Sản Cùng Loại (S-19)</h3>
+            <p class="text-[11px] text-slate-500">Khóa dòng theo thứ tự ID cố định tránh deadlock (ORDER BY id ASC)</p>
+          </div>
+        </div>
+        <button onclick="closeModal('mergeBatchModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Thông tin sản phẩm chung -->
+      <div class="p-3 bg-indigo-50 rounded-2xl border border-indigo-200 flex items-center justify-between text-xs">
+        <div>
+          <span class="text-[10px] text-indigo-600 uppercase font-bold tracking-wider">Sản Phẩm Chung</span>
+          <p id="mergeCommonProduct" class="font-extrabold text-indigo-950 text-sm">...</p>
+        </div>
+        <span class="px-2.5 py-1 bg-white text-indigo-800 rounded-full font-bold text-[10px] border border-indigo-200">
+          CÙNG LOẠI SẢN PHẨM (S-19)
+        </span>
+      </div>
+
+      <!-- Danh sách các lô nguồn cần trích gộp -->
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-slate-700">Danh Sách Lô Nguồn & Khối Lượng Trích Gộp:</label>
+        <div id="mergeSourcesContainer" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Ghi chú gộp lô -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Ghi Chú Đóng Gói / Mục Đích Gộp Lô:</label>
+        <input type="text" id="mergeNotesInput" placeholder="Ví dụ: Gộp 2 sọt đạt chuẩn kích cỡ VIP vào thùng lớn" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-medium"/>
+      </div>
+
+      <!-- Khung tổng kết khối lượng lô gộp mới -->
+      <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
+        <div class="flex justify-between font-bold text-slate-800">
+          <span>Tổng khối lượng Lô Gộp Mới:</span>
+          <span class="font-mono text-indigo-700 text-sm font-extrabold"><span id="mergeTotalNewBatchQty">0.0</span> kg</span>
+        </div>
+        <p class="text-[11px] text-slate-500">Mã lô mới sẽ được sinh ngẫu nhiên an toàn 8 ký tự và ghi sự kiện chuỗi hash SHA-256.</p>
+        <div id="mergeValidationAlert" class="hidden text-[11px] font-bold text-rose-600 pt-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span id="mergeValidationMsg">Có lỗi trong quá trình cấu hình gộp lô!</span>
+        </div>
+      </div>
+
+      <!-- Nút thao tác -->
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeModal('mergeBatchModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold">Hủy</button>
+        <button type="button" id="btnSubmitMerge" onclick="submitMergeBatches()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-check"></i> Xác Nhận Gộp Lô (S-19)
+        </button>
       </div>
     </div>
   </div>
@@ -1420,11 +1614,16 @@ def generate_spa_html():
 
       // S-08, S-14, E-02: Lô nông sản của các tổ chức độc lập trong chuỗi
       batches: [
-        { code: "BATCH-TOM-2601", product: "Cà Chua Beef Hữu Cơ", org_id: 1, farm: "HTX Thắng Lợi", qty: 1200, status: "Đang lưu kho", temp: "4.2°C", cert: "GlobalGAP", plot: "Thửa A1" },
-        { code: "BATCH-BERRY-01", product: "Dâu Tây New Zealand", org_id: 1, farm: "HTX Thắng Lợi", qty: 450, status: "Đang lưu kho", temp: "3.8°C", cert: "VietGAP", plot: "Thửa B2" },
-        { code: "BATCH-MELON-02", product: "Dưa Lưới Sơ Chế Đóng Gói", org_id: 2, farm: "HTX Sơ Chế Đà Lạt Lành", qty: 2100, status: "Đang sơ chế", temp: "5.1°C", cert: "Organic EU", plot: "Xưởng Sơ Chế #1" },
-        { code: "BATCH-AVO-03", product: "Bơ Sáp 034 Chuỗi Lạnh", org_id: 3, farm: "Đội Xe Lạnh Việt Nhật", qty: 850, status: "Đang vận chuyển", temp: "3.5°C", cert: "VietGAP", plot: "Container 29C-8819" },
-        { code: "BATCH-GRAPE-04", product: "Nho Hạ Đen Quầy Kệ", org_id: 4, farm: "Chuỗi Siêu Thị BioMart", qty: 650, status: "Điểm bán lẻ", temp: "6.0°C", cert: "VietGAP", plot: "Quầy Kệ K12 BioMart" }
+        { code: "BATCH-TOM-2601", product: "Cà Chua Beef Hữu Cơ", org_id: 1, farm: "HTX Thắng Lợi", qty: 1200, initial_qty: 1200, remaining_qty: 1200, unit: "kg", status: "Đang lưu kho", temp: "4.2°C", cert: "GlobalGAP", plot: "Thửa A1" },
+        { code: "BATCH-BERRY-01", product: "Dâu Tây New Zealand", org_id: 1, farm: "HTX Thắng Lợi", qty: 450, initial_qty: 450, remaining_qty: 450, unit: "kg", status: "Đang lưu kho", temp: "3.8°C", cert: "VietGAP", plot: "Thửa B2" },
+        { code: "BATCH-MELON-02", product: "Dưa Lưới Sơ Chế Đóng Gói", org_id: 2, farm: "HTX Sơ Chế Đà Lạt Lành", qty: 2100, initial_qty: 2100, remaining_qty: 2100, unit: "kg", status: "Đang sơ chế", temp: "5.1°C", cert: "Organic EU", plot: "Xưởng Sơ Chế #1" },
+        { code: "BATCH-AVO-03", product: "Bơ Sáp 034 Chuỗi Lạnh", org_id: 3, farm: "Đội Xe Lạnh Việt Nhật", qty: 850, initial_qty: 850, remaining_qty: 850, unit: "kg", status: "Đang vận chuyển", temp: "3.5°C", cert: "VietGAP", plot: "Container 29C-8819" },
+        { code: "BATCH-GRAPE-04", product: "Nho Hạ Đen Quầy Kệ", org_id: 4, farm: "Chuỗi Siêu Thị BioMart", qty: 650, initial_qty: 650, remaining_qty: 650, unit: "kg", status: "Điểm bán lẻ", temp: "6.0°C", cert: "VietGAP", plot: "Quầy Kệ K12 BioMart" }
+      ],
+
+      // S-17, S-18, S-19: Bảng quan hệ phả hệ cha - con (SPLIT / MERGE)
+      batchRelations: [
+        // { parent_code: '...', child_code: '...', relation_type: 'SPLIT'|'MERGE', quantity: 200 }
       ],
 
       // S-62: Nhật ký vật tư & Thời gian cách ly thu hoạch (PHI)
@@ -1735,30 +1934,47 @@ def generate_spa_html():
       if (list.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="p-8 text-center text-slate-400">
+            <td colspan="8" class="p-8 text-center text-slate-400">
               <i class="fa-solid fa-box-open text-3xl mb-2 text-slate-300"></i>
               <p class="font-bold text-xs">Không có lô hàng nào thuộc quyền quản lý của ${cfg.orgName}</p>
               <p class="text-[11px] text-slate-400 mt-1">Dữ liệu được cô lập chặt chẽ theo Organization ID (Epic E-02)</p>
             </td>
           </tr>
         `;
+        handleBatchSelectChange();
         return;
       }
 
       tbody.innerHTML = list.map(b => {
         // PHI check status for this batch
-        const logs = state.materialLogs.filter(m => m.batch_code === b.code);
+        const logs = state.materialLogs ? state.materialLogs.filter(m => m.batch_code === b.code) : [];
         let phiBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">Chưa ghi nhận</span>';
         if (logs.length > 0) {
           phiBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check mr-1"></i> Đã cách ly an toàn</span>`;
         }
 
+        const remQty = b.remaining_qty !== undefined ? b.remaining_qty : b.qty;
+        const initQty = b.initial_qty !== undefined ? b.initial_qty : b.qty;
+        const isDepleted = remQty <= 0;
+        const qtyDisplay = isDepleted 
+          ? `<span class="text-rose-600 font-bold line-through text-xs">${remQty} kg</span> <span class="text-[10px] text-slate-400 block font-normal">(Đã tách/gộp hết)</span>`
+          : `<span class="text-emerald-700 font-black text-xs">${remQty} kg</span> ${remQty < initQty ? `<span class="text-[10px] text-slate-400 block font-normal">(gốc: ${initQty} kg)</span>` : ''}`;
+
         return `
-          <tr class="hover:bg-slate-50 transition-colors">
+          <tr class="hover:bg-slate-50 transition-colors ${isDepleted ? 'bg-slate-50/50' : ''}">
+            <td class="p-3.5 text-center">
+              <input type="checkbox" 
+                class="batch-select-checkbox rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
+                data-code="${b.code}" 
+                data-product="${b.product}" 
+                data-qty="${remQty}"
+                ${isDepleted ? 'disabled title="Lô đã hết số lượng"' : ''}
+                onchange="handleBatchSelectChange()"/>
+            </td>
             <td class="p-3.5 font-mono font-black text-emerald-800 text-xs">${b.code}</td>
             <td class="p-3.5 font-bold text-slate-800">${b.product}</td>
             <td class="p-3.5 text-slate-600 font-semibold">${b.plot || 'Thửa A1'}</td>
-            <td class="p-3.5 font-bold text-slate-700">${b.qty} kg</td>
+            <td class="p-3.5">${qtyDisplay}</td>
             <td class="p-3.5">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${b.status === 'Đang vận chuyển' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
                 <i class="fa-solid fa-temperature-half"></i> ${b.status} (${b.temp})
@@ -1773,6 +1989,8 @@ def generate_spa_html():
           </tr>
         `;
       }).join('');
+
+      handleBatchSelectChange();
     }
 
     function filterBatchesTable(val) {
@@ -2512,6 +2730,534 @@ def generate_spa_html():
     /**
      * RENDER TRACEABILITY & HASH TAB (S-10, S-12)
      */
+    /**
+     * ========================================================
+     * S-17, S-18, S-19: TÁCH LÔ, GỘP LÔ VÀ CÂY PHẢ HỆ (LINEAGE)
+     * ========================================================
+     */
+
+    // 1. Quản lý lựa chọn các lô để gộp (S-19)
+    function handleBatchSelectChange() {
+      const selectedBoxes = Array.from(document.querySelectorAll('.batch-select-checkbox:checked'));
+      const mergeBtn = document.getElementById('btnOpenMergeModal');
+      const countSpan = document.getElementById('mergeSelectedCount');
+      if (countSpan) countSpan.innerText = selectedBoxes.length;
+
+      if (!mergeBtn) return;
+
+      if (selectedBoxes.length >= 2) {
+        mergeBtn.classList.remove('hidden');
+        // Kiểm tra xem có cùng loại sản phẩm không
+        const products = new Set(selectedBoxes.map(b => b.dataset.product));
+        if (products.size === 1) {
+          mergeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          mergeBtn.title = "Gộp các lô đã chọn thành 1 lô mới";
+        } else {
+          mergeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          mergeBtn.title = "Các lô đã chọn khác loại sản phẩm! Vui lòng chỉ chọn cùng loại.";
+        }
+      } else {
+        mergeBtn.classList.add('hidden');
+      }
+    }
+
+    function toggleSelectAllBatches(masterCheckbox) {
+      const checkboxes = document.querySelectorAll('.batch-select-checkbox:not(:disabled)');
+      checkboxes.forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+      });
+      handleBatchSelectChange();
+    }
+
+    // 2. Mở Modal Gộp Lô (S-19)
+    function openMergeModalForSelected() {
+      const selectedBoxes = Array.from(document.querySelectorAll('.batch-select-checkbox:checked'));
+      if (selectedBoxes.length < 2) {
+        showToast("Vui lòng chọn ít nhất 2 lô nông sản để gộp!", "warning");
+        return;
+      }
+
+      const products = Array.from(new Set(selectedBoxes.map(b => b.dataset.product)));
+      if (products.length > 1) {
+        showToast(`Không thể gộp: Các lô được chọn không cùng loại sản phẩm (${products.join(", ")})!`, "error");
+        return;
+      }
+
+      const productName = products[0];
+      document.getElementById('mergeTargetProduct').value = productName;
+
+      // Render danh sách các lô nguồn
+      const container = document.getElementById('mergeSourceBatchesList');
+      container.innerHTML = selectedBoxes.map((cb, idx) => {
+        const code = cb.dataset.code;
+        const maxQty = parseFloat(cb.dataset.qty) || 0;
+        return `
+          <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+            <div class="space-y-0.5">
+              <div class="font-mono font-black text-emerald-800">${code}</div>
+              <div class="text-[11px] text-slate-500">Khối lượng khả dụng: <span class="font-bold text-slate-700">${maxQty} kg</span></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-slate-500 font-semibold text-[11px]">Lượng gộp:</span>
+              <input 
+                type="number" 
+                step="0.01" 
+                min="0.01" 
+                max="${maxQty}" 
+                value="${maxQty}" 
+                data-code="${code}" 
+                data-max="${maxQty}"
+                oninput="updateMergeTotalCalculation()"
+                class="merge-source-qty w-28 p-1.5 text-xs font-bold text-right bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <span class="font-bold text-slate-600">kg</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateMergeTotalCalculation();
+      openModal('mergeBatchModal');
+    }
+
+    function updateMergeTotalCalculation() {
+      const inputs = Array.from(document.querySelectorAll('.merge-source-qty'));
+      let total = 0;
+      let hasError = false;
+
+      inputs.forEach(input => {
+        const val = parseFloat(input.value) || 0;
+        const max = parseFloat(input.dataset.max) || 0;
+        if (val <= 0 || val > max) {
+          hasError = true;
+          input.classList.add('border-rose-500', 'bg-rose-50');
+        } else {
+          input.classList.remove('border-rose-500', 'bg-rose-50');
+        }
+        total += val;
+      });
+
+      const totalEl = document.getElementById('mergeTotalWeight');
+      if (totalEl) totalEl.innerText = total.toFixed(2);
+
+      const submitBtn = document.getElementById('btnSubmitMerge');
+      if (submitBtn) {
+        if (hasError || total <= 0) {
+          submitBtn.disabled = true;
+          submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+      }
+    }
+
+    // 3. Thực Hiện Gộp Lô (S-19)
+    async function submitMergeBatches() {
+      const inputs = Array.from(document.querySelectorAll('.merge-source-qty'));
+      const productName = document.getElementById('mergeTargetProduct').value;
+      const notes = document.getElementById('mergeNotes').value || "Gộp lô nông sản chuỗi cung ứng";
+
+      const sourceBatches = [];
+      let totalQty = 0;
+      for (const input of inputs) {
+        const val = parseFloat(input.value) || 0;
+        const max = parseFloat(input.dataset.max) || 0;
+        if (val <= 0 || val > max) {
+          showToast(`Số lượng gộp của lô ${input.dataset.code} không hợp lệ!`, "error");
+          return;
+        }
+        sourceBatches.push({
+          code: input.dataset.code,
+          quantity: val
+        });
+        totalQty += val;
+      }
+
+      // Khóa và thực hiện gộp (Deadlock Prevention: sắp xếp theo ID / Code)
+      sourceBatches.sort((a, b) => a.code.localeCompare(b.code));
+
+      // Sinh mã lô gộp mới (8 ký tự ngẫu nhiên an toàn)
+      const newMergedCode = generateRandomBatchCode();
+
+      // Cập nhật số lượng các lô mẹ
+      sourceBatches.forEach(src => {
+        const parent = state.batches.find(b => b.code === src.code);
+        if (parent) {
+          if (parent.remaining_qty === undefined) parent.remaining_qty = parent.qty;
+          parent.remaining_qty = Math.max(0, parent.remaining_qty - src.quantity);
+          // Ghi nhận quan hệ phả hệ
+          if (!state.batchRelations) state.batchRelations = [];
+          state.batchRelations.push({
+            parent_code: src.code,
+            child_code: newMergedCode,
+            relation_type: 'MERGE',
+            quantity: src.quantity,
+            notes: notes
+          });
+        }
+      });
+
+      // Tạo lô mới
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      const newBatch = {
+        code: newMergedCode,
+        product: productName,
+        org_id: cfg.orgId !== null ? cfg.orgId : 1,
+        farm: cfg.orgName,
+        qty: totalQty,
+        initial_qty: totalQty,
+        remaining_qty: totalQty,
+        unit: "kg",
+        status: "Đang lưu kho",
+        temp: "4.0°C",
+        cert: "VietGAP",
+        plot: `Gộp từ ${sourceBatches.length} lô`
+      };
+      state.batches.unshift(newBatch);
+
+      // Ghi sự kiện chuỗi băm Hash SHA-256
+      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
+      state.hashEvents.push({
+        index: state.hashEvents.length + 1,
+        event_type: "BATCH_MERGE_CREATED",
+        batch_code: newMergedCode,
+        org_name: cfg.orgName,
+        prev_hash: prevHash,
+        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+        valid: true
+      });
+
+      saveAppState(state);
+      closeModal('mergeBatchModal');
+      renderBatchesTable();
+      renderTraceabilityTab();
+
+      showToast(`GỘP LÔ THÀNH CÔNG (S-19)! Mã lô mới: ${newMergedCode} (${totalQty} kg)`, "success");
+    }
+
+    // 4. Mở Modal Tách Lô (S-17)
+    function openSplitModalForCurrentBatch() {
+      const parentCode = currentDetailBatchCode;
+      const batch = state.batches.find(b => b.code === parentCode);
+      if (!batch) {
+        showToast("Không tìm thấy thông tin lô mẹ!", "error");
+        return;
+      }
+
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (roleKey === "consumer" || cfg.isReadOnly) {
+        showToast("Vai trò của bạn chỉ có quyền tra cứu, không được tách lô!", "error");
+        return;
+      }
+
+      const remQty = batch.remaining_qty !== undefined ? batch.remaining_qty : batch.qty;
+      if (remQty <= 0) {
+        showToast("Lô này đã hết số lượng khả dụng, không thể tách thêm!", "warning");
+        return;
+      }
+
+      document.getElementById('splitParentCode').innerText = batch.code;
+      document.getElementById('splitParentProduct').innerText = batch.product;
+      const remEl = document.getElementById('splitParentRemainingQty');
+      remEl.innerText = `${remQty} kg`;
+      remEl.dataset.qty = remQty;
+
+      // Khởi tạo 2 hàng lô con mặc định
+      const container = document.getElementById('splitChildrenContainer');
+      const half1 = (remQty / 2).toFixed(1);
+      const half2 = (remQty - half1).toFixed(1);
+      container.innerHTML = `
+        <div class="split-child-row flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center split-row-index">1</span>
+          <div class="flex-1 grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-slate-500 uppercase">Khối lượng tách (kg)</label>
+              <input type="number" step="0.01" min="0.01" max="${remQty}" value="${half1}" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" required/>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-slate-500 uppercase">Ghi chú lô con</label>
+              <input type="text" placeholder="Đóng thùng loại A..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+            </div>
+          </div>
+          <button type="button" onclick="removeSplitRow(this)" class="p-2 text-rose-500 hover:text-rose-700 text-sm"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        <div class="split-child-row flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center split-row-index">2</span>
+          <div class="flex-1 grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-slate-500 uppercase">Khối lượng tách (kg)</label>
+              <input type="number" step="0.01" min="0.01" max="${remQty}" value="${half2}" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" required/>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-slate-500 uppercase">Ghi chú lô con</label>
+              <input type="text" placeholder="Xuất sang siêu thị..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+            </div>
+          </div>
+          <button type="button" onclick="removeSplitRow(this)" class="p-2 text-rose-500 hover:text-rose-700 text-sm"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      `;
+
+      calculateSplitTotals();
+      openModal('splitBatchModal');
+    }
+
+    function addSplitRow() {
+      const container = document.getElementById('splitChildrenContainer');
+      const remQty = parseFloat(document.getElementById('splitParentRemainingQty').dataset.qty) || 0;
+      const currentRows = container.querySelectorAll('.split-child-row').length;
+      const newIndex = currentRows + 1;
+
+      const div = document.createElement('div');
+      div.className = "split-child-row flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200";
+      div.innerHTML = `
+        <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center split-row-index">${newIndex}</span>
+        <div class="flex-1 grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] font-bold text-slate-500 uppercase">Khối lượng tách (kg)</label>
+            <input type="number" step="0.01" min="0.01" max="${remQty}" value="50" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" required/>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-slate-500 uppercase">Ghi chú lô con</label>
+            <input type="text" placeholder="Lô con #${newIndex}..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+          </div>
+        </div>
+        <button type="button" onclick="removeSplitRow(this)" class="p-2 text-rose-500 hover:text-rose-700 text-sm"><i class="fa-solid fa-trash"></i></button>
+      `;
+      container.appendChild(div);
+      calculateSplitTotals();
+    }
+
+    function removeSplitRow(btn) {
+      const container = document.getElementById('splitChildrenContainer');
+      const rows = container.querySelectorAll('.split-child-row');
+      if (rows.length <= 1) {
+        showToast("Phải có ít nhất 1 lô con khi tách!", "warning");
+        return;
+      }
+      btn.closest('.split-child-row').remove();
+      // Đánh số lại
+      container.querySelectorAll('.split-child-row').forEach((row, idx) => {
+        row.querySelector('.split-row-index').innerText = idx + 1;
+      });
+      calculateSplitTotals();
+    }
+
+    function calculateSplitTotals() {
+      const remQty = parseFloat(document.getElementById('splitParentRemainingQty').dataset.qty) || 0;
+      const qtyInputs = Array.from(document.querySelectorAll('.split-child-qty'));
+      let sum = 0;
+      let hasError = false;
+
+      qtyInputs.forEach(input => {
+        const val = parseFloat(input.value) || 0;
+        if (val <= 0) hasError = true;
+        sum += val;
+      });
+
+      const totalEl = document.getElementById('splitTotalQuantity');
+      const remainEl = document.getElementById('splitRemainingParentQty');
+      const errorEl = document.getElementById('splitQtyErrorAlert');
+      const submitBtn = document.getElementById('btnSubmitSplit');
+
+      totalEl.innerText = `${sum.toFixed(2)} kg`;
+      const leftover = remQty - sum;
+      remainEl.innerText = `${leftover.toFixed(2)} kg`;
+
+      if (sum > remQty || hasError || sum <= 0) {
+        errorEl.classList.remove('hidden');
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        errorEl.classList.add('hidden');
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    // 5. Thực Hiện Tách Lô (S-17, S-18)
+    async function submitSplitBatch() {
+      const parentCode = currentDetailBatchCode;
+      const batch = state.batches.find(b => b.code === parentCode);
+      if (!batch) return;
+
+      const remQty = batch.remaining_qty !== undefined ? batch.remaining_qty : batch.qty;
+      const rows = Array.from(document.querySelectorAll('.split-child-row'));
+      const children = [];
+      let sum = 0;
+
+      for (const row of rows) {
+        const qty = parseFloat(row.querySelector('.split-child-qty').value) || 0;
+        const notes = row.querySelector('.split-child-notes').value || `Tách từ lô ${parentCode}`;
+        if (qty <= 0) {
+          showToast("Khối lượng các lô con phải lớn hơn 0!", "error");
+          return;
+        }
+        sum += qty;
+        children.push({ quantity: qty, notes: notes });
+      }
+
+      if (sum > remQty) {
+        showToast("Tổng khối lượng các lô con vượt quá khối lượng còn lại của lô mẹ!", "error");
+        return;
+      }
+
+      // Trừ khối lượng còn lại của lô mẹ
+      batch.remaining_qty = Math.max(0, remQty - sum);
+
+      // Tạo các lô con kế thừa sản phẩm và thửa từ lô mẹ
+      const createdChildCodes = [];
+      children.forEach(c => {
+        const childCode = generateRandomBatchCode();
+        createdChildCodes.push(childCode);
+
+        state.batches.unshift({
+          code: childCode,
+          product: batch.product,
+          org_id: batch.org_id,
+          farm: batch.farm,
+          qty: c.quantity,
+          initial_qty: c.quantity,
+          remaining_qty: c.quantity,
+          unit: batch.unit || "kg",
+          status: "Đang lưu kho",
+          temp: batch.temp || "4.0°C",
+          cert: batch.cert || "VietGAP",
+          plot: batch.plot || "Thửa gốc kế thừa"
+        });
+
+        // Ghi quan hệ phả hệ SPLIT
+        if (!state.batchRelations) state.batchRelations = [];
+        state.batchRelations.push({
+          parent_code: parentCode,
+          child_code: childCode,
+          relation_type: 'SPLIT',
+          quantity: c.quantity,
+          notes: c.notes
+        });
+      });
+
+      // Ghi chuỗi hash
+      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
+      state.hashEvents.push({
+        index: state.hashEvents.length + 1,
+        event_type: "BATCH_SPLIT_CREATED",
+        batch_code: parentCode,
+        org_name: batch.farm,
+        prev_hash: prevHash,
+        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+        valid: true
+      });
+
+      saveAppState(state);
+      closeModal('splitBatchModal');
+      renderBatchesTable();
+      renderTraceabilityTab();
+
+      // Cập nhật lại modal chi tiết lô mẹ
+      handleQuickSearch(parentCode);
+
+      showToast(`TÁCH LÔ THÀNH CÔNG (S-17)! Đã tạo ${createdChildCodes.length} lô con (${createdChildCodes.join(', ')})`, "success");
+    }
+
+    // 6. Dựng Đồ Thị / Cây Phả Hệ (Lineage Tree - S-17, S-18, S-19)
+    function fetchAndRenderLineage(batchCode) {
+      const container = document.getElementById('modalBatchLineageContainer');
+      const statusEl = document.getElementById('modalBatchLineageStatus');
+      if (!container) return;
+
+      const relations = state.batchRelations || [];
+      // Tìm cha của lô này
+      const parents = relations.filter(r => r.child_code === batchCode);
+      // Tìm con của lô này
+      const children = relations.filter(r => r.parent_code === batchCode);
+
+      if (statusEl) {
+        statusEl.innerText = (parents.length > 0 || children.length > 0) ? "Đã liên kết dữ liệu" : "Lô nguyên bản";
+      }
+
+      if (parents.length === 0 && children.length === 0) {
+        container.innerHTML = `
+          <div class="p-3 bg-white rounded-xl border border-dashed border-slate-200 text-slate-400 text-center text-[11px]">
+            <i class="fa-solid fa-seedling text-emerald-500 mr-1"></i> Lô thu hoạch nguyên gốc (chưa tách hoặc gộp).
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+
+      // Khối Lô Mẹ / Nguồn (Parents)
+      if (parents.length > 0) {
+        html += `
+          <div class="space-y-1">
+            <div class="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1">
+              <i class="fa-solid fa-arrow-turn-up fa-rotate-90 text-indigo-500"></i> Nguồn Gốc (Lô Mẹ Đã Đóng Góp):
+            </div>
+            <div class="space-y-1.5 pl-3 border-l-2 border-indigo-200">
+              ${parents.map(p => `
+                <div class="flex items-center justify-between p-2 bg-indigo-50/60 rounded-lg border border-indigo-100">
+                  <div class="flex items-center gap-2">
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${p.relation_type === 'SPLIT' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'}">
+                      ${p.relation_type === 'SPLIT' ? 'Tách từ mẹ' : 'Gộp từ nguồn'}
+                    </span>
+                    <span class="font-mono font-bold text-indigo-900">${p.parent_code}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-indigo-700">${p.quantity} kg</span>
+                    <button onclick="handleQuickSearch('${p.parent_code}')" class="text-indigo-600 hover:text-indigo-800 text-[10px] font-bold underline">Xem lô mẹ</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // Khối Lô Hiện Tại (Node Trung Tâm)
+      html += `
+        <div class="my-2 p-2.5 bg-emerald-100/70 border border-emerald-300 rounded-xl flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
+            <span class="font-mono font-black text-emerald-950 text-xs">${batchCode}</span>
+            <span class="text-[10px] text-emerald-800 font-semibold">(Lô đang xem)</span>
+          </div>
+          <span class="text-[10px] font-bold text-emerald-900">Vị Trí Hiện Tại</span>
+        </div>
+      `;
+
+      // Khối Lô Con (Children)
+      if (children.length > 0) {
+        html += `
+          <div class="space-y-1">
+            <div class="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1">
+              <i class="fa-solid fa-arrow-turn-down text-emerald-500"></i> Thế Hệ Con (Đã Sinh Ra Từ Lô Này):
+            </div>
+            <div class="space-y-1.5 pl-3 border-l-2 border-emerald-200">
+              ${children.map(c => `
+                <div class="flex items-center justify-between p-2 bg-emerald-50/60 rounded-lg border border-emerald-100">
+                  <div class="flex items-center gap-2">
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${c.relation_type === 'SPLIT' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'}">
+                      ${c.relation_type === 'SPLIT' ? 'Lô con tách' : 'Lô gộp đích'}
+                    </span>
+                    <span class="font-mono font-bold text-emerald-900">${c.child_code}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-emerald-700">${c.quantity} kg</span>
+                    <button onclick="handleQuickSearch('${c.child_code}')" class="text-emerald-700 hover:text-emerald-900 text-[10px] font-bold underline">Xem lô con</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
     function renderTraceabilityTab() {
       const tbody = document.getElementById("hashEventsTableBody");
       if (!tbody) return;
@@ -2679,17 +3425,33 @@ def generate_spa_html():
       document.getElementById("modalBatchCert").innerText = data.certification || "VietGAP";
       document.getElementById("modalBatchPhiText").innerText = data.phi_message || "Đạt chuẩn an toàn thời gian cách ly thuốc BVTV.";
 
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
       // Điều khiển hiển thị nút Bàn Giao (S-15): Ẩn nếu là Consumer hoặc Inspector
       const hoBtn = document.getElementById("modalBtnHandover");
       if (hoBtn) {
-        const roleKey = state.currentRole || "farm";
-        const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
         if (roleKey === "consumer" || cfg.isReadOnly) {
           hoBtn.classList.add("hidden");
         } else {
           hoBtn.classList.remove("hidden");
         }
       }
+
+      // Điều khiển hiển thị nút Tách Lô (S-17): Ẩn nếu là Consumer/Inspector hoặc hết khối lượng
+      const splitBtn = document.getElementById("modalBtnSplit");
+      if (splitBtn) {
+        const foundBatch = state.batches.find(b => b.code === data.batch_code);
+        const remQty = foundBatch ? (foundBatch.remaining_qty !== undefined ? foundBatch.remaining_qty : foundBatch.qty) : 0;
+        if (roleKey === "consumer" || cfg.isReadOnly || remQty <= 0) {
+          splitBtn.classList.add("hidden");
+        } else {
+          splitBtn.classList.remove("hidden");
+        }
+      }
+
+      // Dựng cây phả hệ (S-17, S-18, S-19)
+      fetchAndRenderLineage(data.batch_code);
 
       // Render các mốc hành trình chuỗi cung ứng chính (S-48: Sơ chế, Vận chuyển, Phân phối)
       const listEl = document.getElementById("modalBatchJourneyList");
