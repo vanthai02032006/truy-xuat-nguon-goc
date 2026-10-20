@@ -31,3 +31,7 @@ class Batch(Base):
 
     organization = relationship("Organization")
     land_plot = relationship("LandPlot", back_populates="batches")
+    material_logs = relationship(
+        "BatchMaterialLog", back_populates="batch", cascade="all, delete-orphan"
+    )
+
