@@ -2,13 +2,23 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision = "0008_batch_recalls_and_affected_items"
+revision = "0008_batch_recalls"
 down_revision = "0007_batch_split_merge_relations"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
+    # 0. Mo rong cot version_num cua alembic_version len VARCHAR(128) neu tren PostgreSQL
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        op.alter_column(
+            "alembic_version",
+            "version_num",
+            type_=sa.String(128),
+            existing_type=sa.String(32),
+        )
+
     # 1. Bảng recalls (Epic E-06, S-33: Mở lệnh thu hồi khẩn cấp)
     op.create_table(
         "recalls",
