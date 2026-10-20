@@ -15,7 +15,13 @@ router = APIRouter(prefix="/audit", tags=["audit"])
 def get_security_logs(
     _admin_or_inspector: Annotated[
         User,
-        Depends(require_roles(UserRole.ADMIN.value, UserRole.INSPECTOR.value)),
+        Depends(
+            require_roles(
+                UserRole.ADMIN.value,
+                UserRole.SYSTEM_ADMIN.value,
+                UserRole.INSPECTOR.value,
+            )
+        ),
     ],
     db: Annotated[Session, Depends(get_db)],
     skip: int = 0,
