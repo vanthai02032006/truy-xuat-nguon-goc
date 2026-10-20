@@ -19,13 +19,14 @@ class LandPlotRepository:
         limit: int = 100,
     ) -> list[LandPlot]:
         """
-        NFR: Lọc thửa đất theo tổ chức ở tầng truy vấn (SQL WHERE clause),
+        NFR / Task T-12: Lọc thửa đất theo tổ chức ở tầng truy vấn (SQL WHERE clause),
         tuyệt đối không lọc ở giao diện hay tầng ứng dụng sau khi fetch toàn bộ.
         """
-        query = db.query(LandPlot)
-        if organization_id is not None:
-            query = query.filter(LandPlot.organization_id == organization_id)
+        from app.services.batch_access_service import apply_tenant_filter
+
+        query = apply_tenant_filter(db.query(LandPlot), LandPlot, organization_id)
         return query.order_by(LandPlot.id.desc()).offset(skip).limit(limit).all()
+
 
     @staticmethod
     def create(db: Session, plot: LandPlot) -> LandPlot:

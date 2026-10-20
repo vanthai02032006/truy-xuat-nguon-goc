@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -12,6 +12,7 @@ from app.models.chain_event import ChainEvent
 from app.models.handover import Handover, HandoverStatus
 from app.models.organization import Organization
 from app.models.user import User, UserRole
+from app.repositories.security_log_repository import SecurityLogRepository
 from app.schemas.handover import (
     ChainEventResponse,
     HandoverCreate,
@@ -47,6 +48,7 @@ def _to_handover_response(h: Handover) -> HandoverResponse:
 @router.post("", response_model=HandoverResponse, status_code=status.HTTP_201_CREATED)
 def create_handover(
     payload: HandoverCreate,
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
@@ -75,6 +77,24 @@ def create_handover(
         current_user.role not in [UserRole.SYSTEM_ADMIN.value, UserRole.ADMIN.value]
         and batch.organization_id != current_user.organization_id
     ):
+        client_ip = request.client.host if request.client else "unknown"
+        SecurityLogRepository.log_attempt(
+            db=db,
+            user_id=current_user.id,
+            user_email=current_user.email,
+            user_org_id=current_user.organization_id,
+            attempt_type="cross_tenant_access_denied",
+            target_resource="batch",
+            target_id=str(batch.id),
+            target_org_id=batch.organization_id,
+            endpoint=request.url.path,
+            method=request.method,
+            ip_address=client_ip,
+            description=(
+                f"Người dùng {current_user.email} (Tổ chức {current_user.organization_id}) "
+                f"cố tình tạo lệnh bàn giao trên lô #{batch.id} của Tổ chức {batch.organization_id}."
+            ),
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Bạn không có quyền bàn giao lô hàng của tổ chức khác.",
@@ -380,6 +400,7 @@ def reject_handover(
 @router.get("/batches/{batch_id}/chain-events", response_model=list[ChainEventResponse])
 def get_batch_chain_events(
     batch_id: int,
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
@@ -391,24 +412,42 @@ def get_batch_chain_events(
             detail="Lô hàng không tồn tại.",
         )
 
-    is_admin_or_inspector = current_user.role in [
-        UserRole.INSPECTOR.value,
-        UserRole.SYSTEM_ADMIN.value,
-        UserRole.ADMIN.value,
-    ]
-    if (
-        not is_admin_or_inspector
-        and batch.organization_id != current_user.organization_id
-    ):
+    # Áp dụng quy tắc canView(org, batch) theo chuẩn S-23 & Task T-54
+    from app.services.batch_access_service import can_view_batch
+
+    allowed, _reason, cutoff_time = can_view_batch(
+        org_id=current_user.organization_id,
+        batch=batch,
+        db=db,
+        user_role=current_user.role,
+    )
+    if not allowed:
+        client_ip = request.client.host if request.client else "unknown"
+        SecurityLogRepository.log_attempt(
+            db=db,
+            user_id=current_user.id,
+            user_email=current_user.email,
+            user_org_id=current_user.organization_id,
+            attempt_type="cross_tenant_access_denied",
+            target_resource="batch",
+            target_id=str(batch.id),
+            target_org_id=batch.organization_id,
+            endpoint=request.url.path,
+            method=request.method,
+            ip_address=client_ip,
+            description=(
+                f"Người dùng {current_user.email} (Tổ chức {current_user.organization_id}) "
+                f"cố tình gọi API truy cập dòng thời gian lô #{batch.id} của Tổ chức {batch.organization_id} (không thuộc phả hệ)."
+            ),
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Không có quyền truy cập dữ liệu của tổ chức khác.",
         )
 
-    events = (
-        db.query(ChainEvent)
-        .filter(ChainEvent.batch_id == batch_id)
-        .order_by(ChainEvent.id.asc())
-        .all()
-    )
-    return events
+    query = db.query(ChainEvent).filter(ChainEvent.batch_id == batch_id)
+    if cutoff_time is not None:
+        # Điều kiện c: chỉ xem lịch sử các sự kiện tính tới thời điểm bàn giao đi
+        query = query.filter(ChainEvent.created_at <= cutoff_time)
+
+    return query.order_by(ChainEvent.id.asc()).all()

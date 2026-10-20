@@ -24,13 +24,14 @@ class BatchRepository:
         limit: int = 100,
     ) -> list[Batch]:
         """
-        NFR: Lọc theo tổ chức ở tầng truy vấn (SQL WHERE clause),
+        NFR / Task T-12: Lọc theo tổ chức ở tầng truy vấn (SQL WHERE clause),
         tuyệt đối không lọc ở giao diện hay tầng ứng dụng sau khi fetch toàn bộ.
         """
-        query = db.query(Batch)
-        if organization_id is not None:
-            query = query.filter(Batch.organization_id == organization_id)
+        from app.services.batch_access_service import apply_tenant_filter
+
+        query = apply_tenant_filter(db.query(Batch), Batch, organization_id)
         return query.order_by(Batch.id.desc()).offset(skip).limit(limit).all()
+
 
     @staticmethod
     def create(db: Session, batch: Batch) -> Batch:
