@@ -6,17 +6,22 @@ from pydantic import BaseModel, ConfigDict
 
 
 class BatchBase(BaseModel):
-    batch_code: str
     product_name: str
     land_plot_id: int | None = None
 
 
 class BatchCreate(BatchBase):
+    batch_code: str | None = None
     organization_id: int | None = None
+
+
+class BatchCodeGenerateResponse(BaseModel):
+    batch_code: str
 
 
 class BatchResponse(BatchBase):
     id: int
+    batch_code: str
     organization_id: int
     created_at: datetime
 

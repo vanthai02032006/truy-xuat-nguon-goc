@@ -849,10 +849,10 @@
 
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Mã Lô Định Danh (Sinh ngẫu nhiên bảo mật)</label>
+          <label class="block font-bold text-slate-700 mb-1">Mã Lô Định Danh (8 ký tự ngẫu nhiên an toàn S-08)</label>
           <div class="flex gap-2">
-            <input type="text" id="batch_code" readonly class="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl font-mono text-emerald-800 font-bold" value="BATCH-8X9Y2Z4K1" />
-            <button onclick="generateRandomBatchCode()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-xs">Đổi Mã</button>
+            <input type="text" id="batch_code" readonly class="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl font-mono text-emerald-800 font-bold text-sm tracking-widest" value="K7M9P3NX" />
+            <button onclick="generateRandomBatchCode()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-xs flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate"></i> Đổi Mã</button>
           </div>
         </div>
         <div>
@@ -879,6 +879,77 @@
         <button onclick="closeModal('addBatchModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs">Hủy</button>
         <button onclick="saveBatchSubmit()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md">Tạo Lô Hàng</button>
       </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: GHI NHẬN THU HOẠCH THÀNH CÔNG & HIỂN THỊ MÃ LÔ BẢO MẬT (S-08)       -->
+  <!-- Hiển thị mã lô cỡ chữ lớn, độ tương phản cao, nút sao chép nhanh cho nông dân -->
+  <!-- ============================================================================ -->
+  <div id="batchSuccessModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border-2 border-emerald-500 p-6 sm:p-8 space-y-6 text-center">
+      
+      <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-3xl shadow-inner border border-emerald-200">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+
+      <div class="space-y-1">
+        <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-xs uppercase tracking-wider">Ghi Nhận Thu Hoạch Thành Công</span>
+        <h3 class="text-xl sm:text-2xl font-black text-slate-900 mt-2">Đã Khởi Tạo Lô Nông Sản</h3>
+        <p class="text-xs text-slate-500 font-medium" id="successBatchProductName">Cà Chua Beef Hữu Cơ Thắng Lợi</p>
+      </div>
+
+      <!-- KHUNG HIỂN THỊ MÃ LÔ CỠ CHỮ LỚN & ĐỘ TƯƠNG PHẢN CAO CHO NÔNG DÂN (S-08) -->
+      <div class="bg-slate-950 text-white rounded-2xl p-5 border-2 border-emerald-400 shadow-xl space-y-2">
+        <p class="text-[11px] uppercase tracking-widest text-emerald-300 font-bold flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-shield-halved text-emerald-400"></i> Mã Định Danh Điện Tử (8 Ký Tự Ngẫu Nhiên)
+        </p>
+        
+        <!-- Cỡ chữ siêu lớn, độ tương phản tuyệt đối -->
+        <div 
+          id="successBatchCodeDisplay"
+          class="font-mono text-3xl sm:text-4xl font-black text-emerald-400 tracking-widest py-3 select-all bg-emerald-950/70 rounded-xl border border-emerald-500/40">
+          K7M9P3NX
+        </div>
+
+        <p class="text-[10px] text-slate-400">
+          Loại trừ hoàn toàn ký tự nhầm lẫn: không có số '0', chữ 'O', số '1', chữ 'I', 'L'.
+        </p>
+
+        <!-- Nút sao chép nhanh với phản hồi trực quan -->
+        <div class="pt-2 flex justify-center">
+          <button 
+            id="copySuccessCodeBtn"
+            onclick="copySuccessBatchCode()"
+            type="button"
+            class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all transform active:scale-95">
+            <i class="fa-solid fa-copy text-sm"></i>
+            <span id="copySuccessBtnText">Sao Chép Mã Lô</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tóm tắt thông tin lô thu hoạch -->
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-2 gap-3 text-left text-xs">
+        <div>
+          <span class="text-slate-400 block text-[10px] uppercase font-bold">Khối lượng thu hoạch:</span>
+          <span class="font-extrabold text-slate-800 text-sm" id="successBatchQtyDisplay">1,500 kg</span>
+        </div>
+        <div>
+          <span class="text-slate-400 block text-[10px] uppercase font-bold">Thửa đất canh tác:</span>
+          <span class="font-extrabold text-slate-800 text-sm" id="successBatchPlotDisplay">Thửa A1</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button 
+          onclick="closeModal('batchSuccessModal')"
+          class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-md transition-all">
+          Hoàn Tất & Xem Danh Sách Lô
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -1790,17 +1861,44 @@
       if (modal) modal.classList.add('hidden');
     }
 
-    function generateRandomBatchCode() {
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      let code = "BATCH-";
-      for (let i = 0; i < 9; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    function generateSecureBatchCode() {
+      // Bảng chữ cái 31 ký tự an toàn (CSPRNG): Loại trừ '0', 'O', '1', 'I', 'L'
+      const SAFE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+      const array = new Uint32Array(8);
+      window.crypto.getRandomValues(array);
+      let code = "";
+      for (let i = 0; i < 8; i++) {
+        code += SAFE_ALPHABET.charAt(array[i] % SAFE_ALPHABET.length);
       }
-      document.getElementById("batch_code").value = code;
+      return code;
+    }
+
+    function generateRandomBatchCode() {
+      const code = generateSecureBatchCode();
+      const el = document.getElementById("batch_code");
+      if (el) el.value = code;
+    }
+
+    let lastCreatedBatchCode = "";
+
+    function copySuccessBatchCode() {
+      const codeToCopy = lastCreatedBatchCode || (document.getElementById("successBatchCodeDisplay") ? document.getElementById("successBatchCodeDisplay").innerText.trim() : "");
+      if (!codeToCopy) return;
+
+      navigator.clipboard.writeText(codeToCopy).then(() => {
+        const btnText = document.getElementById("copySuccessBtnText");
+        if (btnText) btnText.innerText = "Đã Sao Chép!";
+        showToast(`Đã sao chép mã lô '${codeToCopy}' vào bộ nhớ tạm!`, "success");
+        setTimeout(() => {
+          if (btnText) btnText.innerText = "Sao Chép Mã Lô";
+        }, 2000);
+      }).catch(() => {
+        showToast("Mã lô: " + codeToCopy, "info");
+      });
     }
 
     function saveBatchSubmit() {
-      const code = document.getElementById("batch_code").value;
+      const code = document.getElementById("batch_code").value.trim() || generateSecureBatchCode();
       const product = document.getElementById("batch_product").value.trim();
       const qty = parseInt(document.getElementById("batch_quantity").value) || 0;
       const plot = document.getElementById("batch_plot").value;
@@ -1833,9 +1931,21 @@
         valid: true
       });
 
+      // Hiển thị mã lô với cỡ chữ lớn và độ tương phản cao trong modal thành công (S-08)
+      lastCreatedBatchCode = code;
+      const codeDisplay = document.getElementById("successBatchCodeDisplay");
+      if (codeDisplay) codeDisplay.innerText = code;
+      const prodDisplay = document.getElementById("successBatchProductName");
+      if (prodDisplay) prodDisplay.innerText = product;
+      const qtyDisplay = document.getElementById("successBatchQtyDisplay");
+      if (qtyDisplay) qtyDisplay.innerText = qty.toLocaleString('vi-VN') + " kg";
+      const plotDisplay = document.getElementById("successBatchPlotDisplay");
+      if (plotDisplay) plotDisplay.innerText = plot;
+
       saveAppState(state);
       closeModal("addBatchModal");
       renderBatchesTable();
+      openModal("batchSuccessModal");
       showToast(`Đã khởi tạo lô hàng ${code} thành công!`, "success");
     }
 

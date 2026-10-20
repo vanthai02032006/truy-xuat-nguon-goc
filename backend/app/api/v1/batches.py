@@ -10,6 +10,7 @@ from app.models.material import BatchMaterialLog
 from app.models.user import User, UserRole
 from app.repositories.batch_repository import BatchRepository
 from app.schemas.batch import (
+    BatchCodeGenerateResponse,
     BatchCreate,
     BatchResponse,
     JourneyMilestone,
@@ -20,6 +21,7 @@ from app.schemas.material import (
     BatchMaterialLogResponse,
     BatchPHICheckResponse,
 )
+from app.services.batch_code_service import generate_unique_batch_code
 
 router = APIRouter(prefix="/batches", tags=["batches"])
 
@@ -146,6 +148,20 @@ def list_batches(
     )
 
 
+@router.get("/generate-code", response_model=BatchCodeGenerateResponse)
+def get_generated_batch_code(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    User Story S-08: Sinh trước một mã lô ngẫu nhiên an toàn (8 ký tự CSPRNG,
+    loại bỏ hoàn toàn các ký tự dễ nhầm lẫn: '0', 'O', '1', 'I', 'L').
+    Tự động đảm bảo ràng buộc UNIQUE ở tầng cơ sở dữ liệu.
+    """
+    code = generate_unique_batch_code(db)
+    return BatchCodeGenerateResponse(batch_code=code)
+
+
 @router.get("/{batch_id}", response_model=BatchResponse)
 def get_batch_detail(
     batch: Annotated[Batch, Depends(verify_batch_access)],
@@ -166,6 +182,8 @@ def create_batch(
 ):
     """
     Tạo lô hàng mới gắn với tổ chức của user hiện tại.
+    User Story S-08: Nếu mã lô không được truyền, tự động sinh mã ngẫu nhiên an toàn 8 ký tự.
+    Đảm bảo ràng buộc UNIQUE ở tầng cơ sở dữ liệu (tự động thử sinh lại nếu trùng).
     AC 4: Cán bộ kiểm tra (Inspector) chỉ ở chế độ đọc, bị từ chối khi cố tạo mới (403).
     """
     if current_user.role == UserRole.INSPECTOR.value:
@@ -182,18 +200,24 @@ def create_batch(
             detail="Tài khoản người dùng chưa được liên kết với bất kỳ tổ chức nào.",
         )
 
-    # Kiểm tra mã lô trùng lặp
-    existing = BatchRepository.get_by_code(db, batch_in.batch_code)
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Mã lô '{batch_in.batch_code}' đã tồn tại trong hệ thống.",
-        )
+    # Xác định mã lô hàng: nếu không truyền hoặc rỗng thì tự động sinh ngẫu nhiên an toàn 8 ký tự
+    final_batch_code = batch_in.batch_code.strip() if batch_in.batch_code else ""
+    if not final_batch_code:
+        final_batch_code = generate_unique_batch_code(db)
+    else:
+        # Kiểm tra mã lô trùng lặp nếu người dùng tự chỉ định
+        existing = BatchRepository.get_by_code(db, final_batch_code)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Mã lô '{final_batch_code}' đã tồn tại trong hệ thống.",
+            )
 
     new_batch = Batch(
-        batch_code=batch_in.batch_code,
+        batch_code=final_batch_code,
         product_name=batch_in.product_name,
         organization_id=target_org_id,
+        land_plot_id=batch_in.land_plot_id,
     )
     return BatchRepository.create(db, new_batch)
 
