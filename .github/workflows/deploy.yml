@@ -110,6 +110,12 @@ jobs:
               docker logout ghcr.io
 
             else
+              echo "=========================================================="
+              echo "DEPLOY THAT BAI! TRUY XUAT LOG DOCKER DE XAC DINH NGUYEN NHAN:"
+              echo "=========================================================="
+              docker compose -f "$COMPOSE" logs --tail 200 web || true
+              docker inspect app_staging --format 'Status: {{.State.Status}}, ExitCode: {{.State.ExitCode}}, Error: {{.State.Error}}' || true
+              echo "=========================================================="
               echo "Deploy that bai. Dang rollback ve $OLD_TAG"
 
               # Khoi phuc image cu
