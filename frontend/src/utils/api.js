@@ -1,20 +1,19 @@
 /**
  * Hàm bọc apiFetch dùng chung cho toàn bộ Frontend:
- * - Tự động đọc access_token từ localStorage và gắn vào header Authorization: Bearer <token>.
- * - TUYỆT ĐỐI XÓA BỎ cơ chế fallback sang dữ liệu giả khi API lỗi.
+ * - Sử dụng Cookie phiên HttpOnly (credentials: 'include'), không lưu token trong localStorage.
  * - Ném lỗi rõ ràng kèm mã HTTP và detail từ máy chủ để UI hiển thị.
  */
 export async function apiFetch(url, options = {}) {
   const opts = { ...options };
   opts.headers = { ...(opts.headers || {}) };
 
-  const token = localStorage.getItem('app_access_token');
-  if (token && !opts.headers['Authorization']) {
-    opts.headers['Authorization'] = `Bearer ${token}`;
-  }
+  // Đảm bảo cookie phiên HttpOnly luôn được gửi kèm mọi request
+  opts.credentials = opts.credentials || 'include';
+
   if (!opts.headers['Content-Type'] && !(opts.body instanceof FormData)) {
     opts.headers['Content-Type'] = 'application/json';
   }
+
 
   let res;
   try {

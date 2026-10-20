@@ -91,35 +91,125 @@ export const ROLES_LIST = [
 const AuthRoleContext = createContext(null);
 
 export function AuthRoleProvider({ children }) {
-  const [currentRole, setCurrentRole] = useState(() => {
-    return localStorage.getItem('app_current_role') || 'system_admin';
-  });
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem('app_access_token') || null;
-  });
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('app_current_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [currentRole, setCurrentRole] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSwitching, setIsSwitching] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
-  const activeRoleConfig = ROLES_LIST.find((r) => r.id === currentRole) || ROLES_LIST[0];
+  // Xóa sạch token cũ khỏi localStorage nếu còn sót lại từ phiên trước
+  useEffect(() => {
+    localStorage.removeItem('app_access_token');
+    localStorage.removeItem('app_current_role');
+    localStorage.removeItem('app_current_user');
+  }, []);
 
-  // Hàm chuyển đổi vai trò và đồng bộ Token từ backend
+  // Kiểm tra phiên đăng nhập hiện tại bằng cookie HttpOnly qua /api/v1/auth/me
+  const checkSession = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/v1/auth/me', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const user = await res.json();
+        setCurrentUser(user);
+        setCurrentRole(user.role);
+        setIsAuthenticated(true);
+        setAuthError(null);
+      } else {
+        setCurrentUser(null);
+        setCurrentRole(null);
+        setIsAuthenticated(false);
+      }
+    } catch (err) {
+      console.warn('Chưa đăng nhập hoặc không thể xác thực phiên:', err.message);
+      setCurrentUser(null);
+      setCurrentRole(null);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  // Đăng nhập an toàn qua API /api/v1/auth/login sử dụng Cookie phiên HttpOnly
+  const login = async (email, password) => {
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentUser(data);
+        setCurrentRole(data.role);
+        setToken(data.access_token);
+        setIsAuthenticated(true);
+        setAuthError(null);
+        return { success: true, data };
+      }
+
+      const errJson = await res.json().catch(() => ({}));
+      const errorMsg = errJson.detail || 'Email hoặc mật khẩu không chính xác.';
+      setAuthError(errorMsg);
+      return { success: false, error: errorMsg, status: res.status };
+    } catch (err) {
+      const msg = `Lỗi kết nối máy chủ: ${err.message}`;
+      setAuthError(msg);
+      return { success: false, error: msg, status: 0 };
+    }
+  };
+
+  // Đăng xuất: Gọi endpoint backend xóa cookie phiên và đặt lại state
+  const logout = async () => {
+    try {
+      await fetch('/api/v1/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.warn('Lỗi khi gọi API đăng xuất:', err);
+    } finally {
+      setCurrentUser(null);
+      setCurrentRole(null);
+      setToken(null);
+      setIsAuthenticated(false);
+      setAuthError(null);
+      localStorage.removeItem('app_access_token');
+      localStorage.removeItem('app_current_role');
+      localStorage.removeItem('app_current_user');
+    }
+  };
+
+  // Cho phép chế độ khách xem công khai dành cho Người tiêu dùng
+  const loginAsConsumer = () => {
+    setCurrentRole('consumer');
+    setCurrentUser({
+      full_name: 'Người tiêu dùng đại chúng',
+      email: 'consumer@public.vn',
+      role: 'consumer',
+    });
+    setIsAuthenticated(true);
+    setAuthError(null);
+  };
+
+  // Hàm chuyển đổi vai trò demo (chỉ hoạt động khi APP_ENV=development và bật cờ)
   const switchRole = async (newRole) => {
     setIsSwitching(true);
-    setCurrentRole(newRole);
-    localStorage.setItem('app_current_role', newRole);
 
     if (newRole === 'consumer') {
-      setToken(null);
-      setCurrentUser(null);
-      localStorage.removeItem('app_access_token');
-      localStorage.removeItem('app_current_user');
+      loginAsConsumer();
       setIsSwitching(false);
       return;
     }
@@ -127,38 +217,29 @@ export function AuthRoleProvider({ children }) {
     try {
       const res = await fetch(`/api/v1/auth/quick-role-token?role=${newRole}`, {
         method: 'POST',
+        credentials: 'include',
       });
       if (res.ok) {
         const data = await res.json();
-        setToken(data.access_token);
+        setCurrentRole(data.role);
         setCurrentUser(data);
-        localStorage.setItem('app_access_token', data.access_token);
-        localStorage.setItem('app_current_user', JSON.stringify(data));
+        setToken(data.access_token);
       } else {
         const errData = await res.json().catch(() => ({}));
-        console.error('Không thể lấy token xác thực cho vai trò:', res.status, errData);
-        setToken(null);
-        setCurrentUser(null);
-        localStorage.removeItem('app_access_token');
-        localStorage.removeItem('app_current_user');
+        alert(`Không thể chuyển vai trò demo: ${errData.detail || 'Tính năng bị vô hiệu hóa hoặc bị từ chối.'}`);
       }
     } catch (err) {
       console.error('Lỗi kết nối auth quick-role-token:', err);
-      setToken(null);
-      setCurrentUser(null);
-      localStorage.removeItem('app_access_token');
-      localStorage.removeItem('app_current_user');
+      alert('Lỗi kết nối khi gọi chuyển vai trò demo.');
     } finally {
       setIsSwitching(false);
     }
   };
 
-  // Tự động khởi tạo token nếu chưa có khi nạp trang
-  useEffect(() => {
-    if (!token && currentRole !== 'consumer') {
-      switchRole(currentRole);
-    }
-  }, []);
+  const activeRoleConfig =
+    ROLES_LIST.find((r) => r.id === currentRole) ||
+    ROLES_LIST.find((r) => r.id === 'consumer') ||
+    ROLES_LIST[0];
 
   const getAuthHeaders = () => {
     const headers = { 'Content-Type': 'application/json' };
@@ -173,7 +254,13 @@ export function AuthRoleProvider({ children }) {
     activeRoleConfig,
     token,
     currentUser,
+    isAuthenticated,
+    isLoading,
     isSwitching,
+    authError,
+    login,
+    logout,
+    loginAsConsumer,
     switchRole,
     getAuthHeaders,
     authFetch: apiFetch,
@@ -187,6 +274,7 @@ export function AuthRoleProvider({ children }) {
 
   return <AuthRoleContext.Provider value={value}>{children}</AuthRoleContext.Provider>;
 }
+
 
 export function useAuthRole() {
   const ctx = useContext(AuthRoleContext);

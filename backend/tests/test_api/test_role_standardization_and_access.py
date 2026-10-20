@@ -132,8 +132,26 @@ class TestRoleStandardizationAndAccessMatrix:
             assert role_name in STANDARDIZED_ROLES
             assert role_name in SUPPLY_CHAIN_ROLES
 
-    def test_quick_role_token_endpoint_aliases(self, client: TestClient, test_setup):
-        """Endpoint /quick-role-token cấp token chính xác cho các vai trò chuẩn hóa và alias."""
+    def test_quick_role_token_endpoint_aliases(self, client: TestClient, test_setup, monkeypatch):
+        """
+        Bảo mật P0:
+        1. Người chưa đăng nhập bị từ chối 401 Unauthorized.
+        2. Khi đã đăng nhập và bật cờ demo ở development, cấp token cho các vai trò chuẩn hóa và alias (trừ admin).
+        3. Tuyệt đối không cấp quyền admin/system_admin qua endpoint demo (403 Forbidden).
+        """
+        from app.core.config import settings
+
+        # 1. Chưa đăng nhập -> 401
+        res_unauth = client.post("/api/v1/auth/quick-role-token?role=farm")
+        assert res_unauth.status_code == 401
+
+        # Cấu hình môi trường development + ENABLE_DEMO_ROLE_SWITCH=True
+        monkeypatch.setattr(settings, "APP_ENV", "development")
+        monkeypatch.setattr(settings, "ENABLE_DEMO_ROLE_SWITCH", True)
+
+        farm_user = test_setup["user_farm"]
+        farm_headers = get_auth_headers(farm_user.email, farm_user.role, farm_user.organization_id)
+
         roles_to_test = [
             ("farm", "farm"),
             ("coop", "coop"),
@@ -142,15 +160,19 @@ class TestRoleStandardizationAndAccessMatrix:
             ("distributor", "distributor"),
             ("retailer", "distributor"),
             ("inspector", "inspector"),
-            ("system_admin", "system_admin"),
-            ("admin", "system_admin"),
         ]
         for role_input, expected_role in roles_to_test:
-            res = client.post(f"/api/v1/auth/quick-role-token?role={role_input}")
-            assert res.status_code == 200, f"Thất bại với vai trò: {role_input}"
+            res = client.post(f"/api/v1/auth/quick-role-token?role={role_input}", headers=farm_headers)
+            assert res.status_code == 200, f"Thất bại với vai trò: {role_input} - {res.text}"
             data = res.json()
             assert data["role"] == expected_role, f"Mong đợi {expected_role}, nhận {data['role']}"
             assert "access_token" in data
+
+        # 2. Không cho phép cấp quyền quản trị qua endpoint demo
+        for admin_alias in ["system_admin", "admin", "quan_tri"]:
+            res_admin = client.post(f"/api/v1/auth/quick-role-token?role={admin_alias}", headers=farm_headers)
+            assert res_admin.status_code == 403, f"Endpoint demo không được phép cấp quyền quản trị {admin_alias}"
+
 
     def test_system_admin_full_administrative_access(self, client: TestClient, test_setup):
         """system_admin truy cập được Nhật ký an ninh (S-31), Sản phẩm (S-07), Thửa đất, Vật tư, Canh tác, Tài chính."""
