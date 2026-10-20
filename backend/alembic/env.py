@@ -1,8 +1,9 @@
 import os
 
+from sqlalchemy import engine_from_config, pool
+
 from alembic import context
 from app.core.database import Base
-from sqlalchemy import engine_from_config, pool
 
 config = context.config
 
