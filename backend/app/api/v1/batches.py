@@ -25,6 +25,11 @@ from app.schemas.batch_relation import (
     BatchSplitRequest,
     BatchSplitResponse,
 )
+from app.schemas.lineage_dag import (
+    DagGraphResponse,
+    DescendantsResponse,
+    RootOriginsResponse,
+)
 from app.schemas.material import (
     BatchMaterialLogCreate,
     BatchMaterialLogResponse,
@@ -32,6 +37,7 @@ from app.schemas.material import (
 )
 from app.services.batch_code_service import generate_unique_batch_code
 from app.services.hash_chain_service import record_chain_event
+from app.services.lineage_dag_service import LineageCycleError, LineageDagService
 
 router = APIRouter(prefix="/batches", tags=["batches"])
 
@@ -830,3 +836,153 @@ def check_batch_phi_compliance(
         ),
         material_logs=logs,
     )
+
+
+# ============================================================================
+# USER STORY S-21, S-26, S-27: THUẬT TOÁN ĐỒ THỊ DAG PHẢ HỆ LÔ HÀNG NÔNG SẢN
+# ============================================================================
+
+
+@router.get("/{batch_id}/origins", response_model=RootOriginsResponse)
+def get_batch_root_origins(
+    batch_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    User Story S-21: Truy ngược nguồn gốc bằng BFS.
+    - Duyệt ngược theo chiều con -> cha từ bảng batch_relations.
+    - Chống vòng lặp vô hạn bằng visited_set và kiểm tra chu trình.
+    - Trả về danh sách toàn bộ các lô thu hoạch gốc ban đầu cùng tên vùng trồng và thửa đất tương ứng.
+    """
+    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lô hàng #{batch_id} không tồn tại.",
+        )
+
+    is_admin_or_inspector = current_user.role in [
+        UserRole.INSPECTOR.value,
+        UserRole.SYSTEM_ADMIN.value,
+        UserRole.ADMIN.value,
+    ]
+    if (
+        not is_admin_or_inspector
+        and batch.organization_id != current_user.organization_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền truy vấn phả hệ của lô hàng thuộc tổ chức khác.",
+        )
+
+    try:
+        data = LineageDagService.trace_upstream_roots(db, batch_id)
+        return RootOriginsResponse(
+            target_batch_id=data["target_batch_id"],
+            target_batch_code=data["target_batch_code"],
+            root_count=data["root_count"],
+            roots=data["roots"],
+        )
+    except LineageCycleError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.get("/{batch_id}/descendants", response_model=DescendantsResponse)
+def get_batch_descendants(
+    batch_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    User Story S-26, S-27: Truy xuôi hậu duệ bằng BFS.
+    - Duyệt theo chiều cha -> con từ bảng batch_relations để liệt kê mọi lô con, cháu, lô gộp.
+    - Trả về: Tổ chức hiện đang giữ, Địa điểm/cửa hàng hiện tại, Khối lượng còn lại và Trạng thái (kho/hết).
+    """
+    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lô hàng #{batch_id} không tồn tại.",
+        )
+
+    is_admin_or_inspector = current_user.role in [
+        UserRole.INSPECTOR.value,
+        UserRole.SYSTEM_ADMIN.value,
+        UserRole.ADMIN.value,
+    ]
+    if (
+        not is_admin_or_inspector
+        and batch.organization_id != current_user.organization_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền truy vấn hậu duệ của lô hàng thuộc tổ chức khác.",
+        )
+
+    try:
+        data = LineageDagService.trace_downstream_descendants(db, batch_id)
+        return DescendantsResponse(
+            source_batch_id=data["source_batch_id"],
+            source_batch_code=data["source_batch_code"],
+            descendant_count=data["descendant_count"],
+            descendants=data["descendants"],
+        )
+    except LineageCycleError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.get("/{batch_id}/dag-graph", response_model=DagGraphResponse)
+def get_batch_dag_graph(
+    batch_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    Tổng hợp Đồ thị DAG phục vụ vẽ sơ đồ phả hệ trực quan 3 chiều:
+    - Tổ tiên và Lô gốc bên trái.
+    - Lô hiện tại ở giữa.
+    - Toàn bộ hậu duệ bên phải.
+    """
+    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lô hàng #{batch_id} không tồn tại.",
+        )
+
+    is_admin_or_inspector = current_user.role in [
+        UserRole.INSPECTOR.value,
+        UserRole.SYSTEM_ADMIN.value,
+        UserRole.ADMIN.value,
+    ]
+    if (
+        not is_admin_or_inspector
+        and batch.organization_id != current_user.organization_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền truy vấn đồ thị DAG của lô hàng thuộc tổ chức khác.",
+        )
+
+    try:
+        data = LineageDagService.get_dag_graph_structure(db, batch_id)
+        return DagGraphResponse(
+            focus_batch=data["focus_batch"],
+            roots=data["roots"],
+            ancestors=data["ancestors"],
+            descendants=data["descendants"],
+            nodes=data["nodes"],
+            edges=data["edges"],
+        )
+    except LineageCycleError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
