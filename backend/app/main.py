@@ -20,10 +20,16 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Tự động kiểm tra và nạp dữ liệu mẫu ban đầu nếu DB đang trống khi khởi động."""
-    import os
+    """
+    Vòng đời ứng dụng:
+    1. Kiểm tra an toàn các biến môi trường bắt buộc (P0 Security Check).
+    2. Chỉ tự động nạp dữ liệu mẫu ban đầu nếu DB hoàn toàn trống (0 lô hàng) VÀ ở môi trường development.
+       Môi trường staging/production tuyệt đối không tự động nạp dữ liệu mẫu.
+    """
+    if not settings.IS_TEST:
+        settings.validate_required_env()
 
-    if not os.getenv("PYTEST_CURRENT_TEST") and os.getenv("TESTING") != "1":
+    if not settings.IS_TEST and settings.APP_ENV == "development":
         try:
             from app.services.database_seeder import seed_database_if_empty
 
@@ -39,11 +45,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# 1. Cấu hình Trusted Host Middleware (DuckDNS, VPS IP, localhost, wildcard)
+# 1. Cấu hình Trusted Host Middleware (DuckDNS, VPS IP, localhost)
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=settings.ALLOWED_HOSTS,
 )
+
 
 # 2. Cấu hình CORS Middleware (DuckDNS HTTP & HTTPS, CSRF Trusted Origins)
 app.add_middleware(

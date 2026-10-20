@@ -2813,10 +2813,11 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
       let res;
       try {
-        res = await fetch(url, { ...options, headers });
+        res = await fetch(url, { credentials: "include", ...options, headers });
       } catch (networkErr) {
         throw new Error(`Lỗi kết nối mạng máy chủ: ${networkErr.message}`);
       }
+
 
       if (!res.ok) {
         let errorDetail = `Lỗi máy chủ (${res.status}: ${res.statusText})`;

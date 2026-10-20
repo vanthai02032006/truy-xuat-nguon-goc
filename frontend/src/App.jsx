@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthRoleProvider, useAuthRole, ROLES_LIST } from './context/AuthRoleContext';
+import LoginPage from './components/LoginPage';
 import ProductManagement from './pages/ProductManagement';
 import ChainIntegrityCheck from './pages/ChainIntegrityCheck';
 import BatchLineageDAG from './pages/BatchLineageDAG';
@@ -17,14 +18,37 @@ import {
   ThermometerSnowflake,
   UserCheck,
   FileText,
-  Printer,
+  LogOut,
+  Loader2,
 } from 'lucide-react';
 
 function MainApp() {
   const [activeTab, setActiveTab] = useState('dag'); // Mặc định mở tab Phả hệ lô hàng (DAG)
-  const { currentRole, activeRoleConfig, switchRole, isSwitching, currentUser } = useAuthRole();
+  const {
+    currentRole,
+    activeRoleConfig,
+    switchRole,
+    isSwitching,
+    currentUser,
+    isAuthenticated,
+    isLoading,
+    logout,
+  } = useAuthRole();
   const [showGlobalDossierModal, setShowGlobalDossierModal] = useState(false);
   const [targetBatchId, setTargetBatchId] = useState(1);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
+        <Loader2 className="w-8 h-8 text-emerald-400 animate-spin mb-3" />
+        <div className="text-sm font-semibold text-slate-300">Đang kiểm tra phiên làm việc bảo mật...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-800 flex flex-col font-sans">
@@ -50,7 +74,7 @@ function MainApp() {
               </div>
             </div>
 
-            {/* Quick Action: Xuất Hồ Sơ Kiểm Tra (S-52) & 7-Role Switcher Widget */}
+            {/* Quick Action: Xuất Hồ Sơ Kiểm Tra (S-52) & 7-Role Switcher Widget & Logout */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowGlobalDossierModal(true)}
@@ -74,7 +98,7 @@ function MainApp() {
               {/* Dropdown 7 Vai Trò */}
               <div className="relative">
                 <select
-                  value={currentRole}
+                  value={currentRole || 'consumer'}
                   onChange={(e) => switchRole(e.target.value)}
                   disabled={isSwitching}
                   className={`text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl border appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-sm transition ${activeRoleConfig.badgeColor}`}
@@ -87,12 +111,23 @@ function MainApp() {
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-2.5 top-2.5 pointer-events-none text-slate-500" />
               </div>
+
+              {/* Nút Đăng Xuất An Toàn */}
+              <button
+                onClick={logout}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-sm"
+                title="Đăng xuất khỏi hệ thống"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                <span className="hidden sm:inline">Đăng xuất</span>
+              </button>
             </div>
           </div>
 
           {/* Navigation Tabs Bar */}
           <div className="flex items-center gap-2 overflow-x-auto py-2 border-t border-slate-100 scrollbar-none">
             <button
+
               onClick={() => setActiveTab('dag')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                 activeTab === 'dag'

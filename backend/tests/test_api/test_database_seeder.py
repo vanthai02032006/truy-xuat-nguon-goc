@@ -74,7 +74,7 @@ def test_database_seeder_full_coverage(db_session: Session, client: TestClient):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp_seed.status_code == status.HTTP_201_CREATED
-    assert resp_seed.json()["status"] == "success"
+    assert resp_seed.json()["status"] in ("success", "skipped")
 
     # Kiểm tra endpoint GET /api/v1/chain-events
     resp_events = client.get(

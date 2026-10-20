@@ -11,6 +11,7 @@ from app.api.deps import (
     get_db,
     verify_batch_access,
 )
+from app.core.config import settings
 from app.models.batch import Batch
 from app.models.batch_relation import BatchRelation, BatchRelationType
 from app.models.land_plot import LandPlot
@@ -1088,15 +1089,29 @@ def seed_lineage_dag(
 def seed_full_database(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
+    force_reset: bool = Query(False, description="Chỉ được phép bật ở development/testing"),
 ):
     """
-    Nạp dữ liệu mẫu toàn diện cho cả 6 vai trò chuỗi cung ứng:
-    Sản phẩm, Thửa đất, Nông hộ NĐ 13, 13 lô hàng phả hệ 4 tầng (mã an toàn 8 ký tự S-08),
-    chuỗi băm SHA-256 thật, Bàn giao, Chuỗi lạnh và Thu hồi.
+    Nạp dữ liệu mẫu demo:
+    - Bắt buộc vai trò Quản trị viên hệ thống (system_admin).
+    - Vô hiệu hóa hoàn toàn ở môi trường production và staging.
+    - Mặc định force_reset=False để đảm bảo an toàn, không xóa dữ liệu đang có.
     """
+    if settings.APP_ENV in ("production", "staging"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tính năng nạp dữ liệu mẫu bị vô hiệu hóa ở môi trường production và staging.",
+        )
+    if current_user.role not in (UserRole.SYSTEM_ADMIN.value, "system_admin", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ Quản trị viên hệ thống (system_admin) mới có quyền gọi nạp dữ liệu mẫu.",
+        )
+
     from app.services.database_seeder import run_full_database_seed
 
-    return run_full_database_seed(db, force_reset=True)
+    return run_full_database_seed(db, force_reset=force_reset)
+
 
 
 @router.get("/{batch_id}/inspection-dossier", response_model=InspectionDossierResponse)

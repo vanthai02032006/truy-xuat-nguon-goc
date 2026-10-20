@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.api.v1.auth import ensure_supply_chain_demo_users
+from app.core.config import settings
 from app.core.database import SessionLocal
 from app.models.batch import Batch
 from app.models.batch_relation import BatchRelation, BatchRelationType
@@ -79,6 +80,10 @@ def run_full_database_seed(db: Session, force_reset: bool = False) -> dict[str, 
     8. Lệnh thu hồi khẩn cấp và phong tỏa (Recall S-33 -> S-38)
     """
     if force_reset:
+        if settings.APP_ENV in ("production", "staging"):
+            raise RuntimeError(
+                "NGĂN CHẶN MẤT DỮ LIỆU: Tuyệt đối không được phép thực hiện force_reset database ở môi trường production/staging!"
+            )
         logger.warning("Đang xóa sạch dữ liệu cũ để reset toàn bộ hệ thống...")
         db.query(RecallOrganizationAction).delete(synchronize_session=False)
         db.query(RecallAffectedBatch).delete(synchronize_session=False)
@@ -93,6 +98,21 @@ def run_full_database_seed(db: Session, force_reset: bool = False) -> dict[str, 
         db.query(ChainEvent).delete(synchronize_session=False)
         db.query(Batch).delete(synchronize_session=False)
         db.commit()
+    else:
+        # Đảm bảo tính idempotent: Không xóa dữ liệu và không nhân đôi dữ liệu nếu đã có lô hàng trong DB
+        existing_batch_count = db.query(Batch).count()
+        if existing_batch_count > 0:
+            logger.info("Cơ sở dữ liệu đã có sẵn %d lô hàng. Bỏ qua nạp lại (idempotent, không nhân đôi dữ liệu).", existing_batch_count)
+            all_batches = db.query(Batch).order_by(Batch.id.asc()).all()
+            codes = [b.batch_code for b in all_batches]
+            return {
+                "status": "skipped",
+                "message": f"Cơ sở dữ liệu đã có sẵn {existing_batch_count} lô hàng. Bỏ qua để đảm bảo tính idempotent không nhân đôi dữ liệu.",
+                "total_batches": existing_batch_count,
+                "batch_codes": codes,
+                "sample_batch_to_trace": codes[0] if codes else None,
+            }
+
 
     # 1. Đảm bảo 6 tổ chức và 6 tài khoản người dùng
     ensure_supply_chain_demo_users(db)
@@ -524,10 +544,30 @@ def run_full_database_seed(db: Session, force_reset: bool = False) -> dict[str, 
 
 
 if __name__ == "__main__":
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(description="Script nạp dữ liệu mẫu an toàn cho hệ thống.")
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Xóa sạch dữ liệu cũ và nạp lại từ đầu (CHỈ CHO PHÉP Ở DEVELOPMENT/TEST)",
+    )
+    args = parser.parse_args()
+
     logging.basicConfig(level=logging.INFO)
     session = SessionLocal()
     try:
-        res = run_full_database_seed(session, force_reset=True)
-        print(f"Seed hoan tat: {res}")
+        if args.reset:
+            if settings.APP_ENV in ("production", "staging"):
+                print("LỖI BẢO MẬT: Không được phép chạy --reset trên môi trường production/staging!", file=sys.stderr)
+                sys.exit(1)
+            print("Đang nạp lại dữ liệu với --reset (chỉ dùng cho development/testing)...")
+            res = run_full_database_seed(session, force_reset=True)
+        else:
+            print("Đang nạp dữ liệu mẫu an toàn (idempotent, không xóa dữ liệu cũ)...")
+            res = run_full_database_seed(session, force_reset=False)
+        print(f"Kết quả seed: {res}")
     finally:
         session.close()
+

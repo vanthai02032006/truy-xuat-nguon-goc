@@ -221,14 +221,17 @@ def login(
             organization_id=user.organization_id,
         )
 
-        # Đặt cookie phiên có cờ HttpOnly và Secure (S-04 NFR)
+        # Đặt cookie phiên có cờ HttpOnly và Secure khi chạy HTTPS/Production/Staging
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,
+            secure=settings.COOKIE_SECURE,
             samesite="lax",
+            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            path="/",
         )
+
 
         return Token(
             access_token=access_token,
@@ -341,19 +344,50 @@ def get_lockout_status(
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: Annotated[User, Depends(get_current_user)]):
-    """Xem thông tin tài khoản hiện tại."""
+    """Xem thông tin tài khoản hiện tại (kiểm tra trạng thái phiên làm việc)."""
     return current_user
+
+
+@router.post("/logout")
+def logout(response: Response):
+    """
+    Đăng xuất an toàn: Hủy cookie phiên access_token.
+    """
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        samesite="lax",
+        path="/",
+    )
+    return {"status": "success", "message": "Đăng xuất thành công và đã hủy cookie phiên."}
 
 
 @router.post("/quick-role-token", response_model=Token)
 def get_quick_role_token(
     role: str = Query(..., description="Vai trò cần chuyển đổi trong 7 vai trò"),
+    current_user: Annotated[User, Depends(get_current_user)] = None,
     db: Annotated[Session, Depends(get_db)] = None,
 ):
     """
-    Tiện ích chuyển đổi nhanh phiên làm việc giữa 7 vai trò chuỗi cung ứng cho UI:
-    Tự động cấp JWT access_token hợp lệ của tài khoản mẫu tương ứng.
+    Tiện ích chuyển đổi nhanh phiên làm việc giữa các vai trò demo cho môi trường học tập/phát triển:
+    Yêu cầu bảo mật:
+    1. Chỉ bật khi APP_ENV=development VÀ ENABLE_DEMO_ROLE_SWITCH=true. Mặc định luôn tắt.
+    2. Tuyệt đối không hỗ trợ ở môi trường staging và production (403 Forbidden).
+    3. Không cho phép người chưa đăng nhập tự cấp token cho bất kỳ tài khoản nào (401 Unauthorized).
+    4. Không cho phép endpoint demo cấp quyền quản trị (system_admin) mà chưa qua xác thực chuẩn (403 Forbidden).
     """
+    if settings.APP_ENV != "development" or not settings.ENABLE_DEMO_ROLE_SWITCH:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tính năng chuyển vai trò demo đã bị vô hiệu hóa vì lý do an toàn bảo mật. Vui lòng đăng nhập qua /api/v1/auth/login.",
+        )
+
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Yêu cầu xác thực danh tính trước khi sử dụng tính năng chuyển đổi vai trò.",
+        )
+
     ensure_supply_chain_demo_users(db)
     role_normalized = role.lower().strip()
     ROLE_ALIASES = {
@@ -380,6 +414,13 @@ def get_quick_role_token(
         "quan_tri": UserRole.SYSTEM_ADMIN.value,
     }
     target_role = ROLE_ALIASES.get(role_normalized, role_normalized)
+
+    # Tuyệt đối cấm cấp token vai trò quản trị qua demo endpoint
+    if target_role in (UserRole.SYSTEM_ADMIN.value, "system_admin", "admin", "quan_tri"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Không được phép cấp quyền quản trị hệ thống (system_admin) qua endpoint demo. Quản trị viên bắt buộc phải đăng nhập qua quy trình xác thực chuẩn.",
+        )
 
     target_config = None
     for cfg in DEMO_USERS_CONFIG:
@@ -410,4 +451,5 @@ def get_quick_role_token(
         user_email=user.email,
         full_name=user.full_name,
     )
+
 
