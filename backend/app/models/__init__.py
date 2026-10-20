@@ -10,6 +10,7 @@ from app.models.cold_chain import (
     TripStatus,
     ViolationType,
 )
+from app.models.farmer import FarmerIdentity
 from app.models.farming import FarmingLog, FieldIncident
 from app.models.finance import FinancialTransaction
 from app.models.handover import Handover, HandoverStatus
@@ -39,6 +40,7 @@ __all__ = [
     "ChainEvent",
     "ColdChainViolation",
     "DailyTask",
+    "FarmerIdentity",
     "FarmingLog",
     "FieldIncident",
     "FinancialTransaction",

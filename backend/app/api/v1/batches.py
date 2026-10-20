@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db, verify_batch_access
 from app.models.batch import Batch
 from app.models.batch_relation import BatchRelation, BatchRelationType
+from app.models.land_plot import LandPlot
 from app.models.material import BatchMaterialLog
 from app.models.user import User, UserRole
 from app.repositories.batch_repository import BatchRepository
@@ -31,6 +32,7 @@ from app.schemas.lineage_dag import (
     RootOriginsResponse,
     SeedLineageDagResponse,
 )
+from app.schemas.inspection_dossier import InspectionDossierResponse
 from app.schemas.material import (
     BatchMaterialLogCreate,
     BatchMaterialLogResponse,
@@ -38,6 +40,7 @@ from app.schemas.material import (
 )
 from app.services.batch_code_service import generate_unique_batch_code
 from app.services.hash_chain_service import record_chain_event
+from app.services.inspection_dossier_service import InspectionDossierService
 from app.services.lineage_dag_service import LineageCycleError, LineageDagService
 from app.services.recall_service import RecallService
 
@@ -72,7 +75,17 @@ def get_public_batch_trace(
     # Xác định tên vùng trồng và địa bàn (tỉnh/thành)
     farm_name = "Vùng trồng Nông Sản Lành"
     province = "Lâm Đồng"
-    if batch.land_plot:
+    farmer_ref = batch.farmer_ref_id or (batch.land_plot.farmer_ref_id if batch.land_plot else None)
+    if farmer_ref:
+        from app.models.farmer import FarmerIdentity
+        farmer_obj = db.query(FarmerIdentity).filter(FarmerIdentity.farmer_ref_id == farmer_ref).first()
+        if farmer_obj and farmer_obj.is_anonymized:
+            farm_name = f"Vùng trồng nông hộ ẩn danh ({farmer_ref})"
+            province = farmer_obj.province or "Lâm Đồng"
+        elif farmer_obj:
+            farm_name = farmer_obj.full_name or "Vùng trồng Nông Sản Lành"
+            province = farmer_obj.province or "Lâm Đồng"
+    elif batch.land_plot:
         farm_name = batch.land_plot.name
         if batch.land_plot.address:
             province = batch.land_plot.address.split(",")[-1].strip()
@@ -231,16 +244,45 @@ def create_batch(
                 detail=f"Mã lô '{final_batch_code}' đã tồn tại trong hệ thống.",
             )
 
+    farmer_ref = batch_in.farmer_ref_id
+    if not farmer_ref and batch_in.land_plot_id:
+        plot = db.query(LandPlot).filter(LandPlot.id == batch_in.land_plot_id).first()
+        if plot and plot.farmer_ref_id:
+            farmer_ref = plot.farmer_ref_id
+
     new_batch = Batch(
         batch_code=final_batch_code,
         product_name=batch_in.product_name,
         organization_id=target_org_id,
         land_plot_id=batch_in.land_plot_id,
+        farmer_ref_id=farmer_ref,
         initial_quantity=batch_in.initial_quantity,
         remaining_quantity=batch_in.remaining_quantity,
         unit=batch_in.unit,
     )
-    return BatchRepository.create(db, new_batch)
+    created = BatchRepository.create(db, new_batch)
+
+    # Ghi nhận sự kiện khởi tạo lô hàng vào chuỗi Hash SHA-256 (chỉ chứa farmer_ref_id, không chứa PII - S-56)
+    event_data = {
+        "action": "BATCH_INITIALIZED",
+        "batch_code": created.batch_code,
+        "product_name": created.product_name,
+        "quantity": created.initial_quantity,
+        "unit": created.unit,
+    }
+    if farmer_ref:
+        event_data["farmer_ref_id"] = farmer_ref
+
+    record_chain_event(
+        db=db,
+        batch_id=created.id,
+        event_type="BATCH_INITIALIZED",
+        event_data=event_data,
+        organization_id=target_org_id,
+    )
+    db.commit()
+    db.refresh(created)
+    return created
 
 
 @router.delete("/{batch_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -1018,4 +1060,47 @@ def seed_lineage_dag(
     """
     data = LineageDagService.seed_lineage_dataset(db)
     return SeedLineageDagResponse(**data)
+
+
+@router.get("/{batch_id}/inspection-dossier", response_model=InspectionDossierResponse)
+def get_batch_inspection_dossier(
+    batch_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    User Story S-52, S-53: Xuất hồ sơ kiểm tra truy xuất nguồn gốc (PDF / Bản in).
+    - Dành cho Cán bộ kiểm tra (Inspector), Quản trị viên hoặc tổ chức có thẩm quyền.
+    - Bao gồm: Thông tin lô, Dòng thời gian sự kiện, Phả hệ tổ tiên & hậu duệ,
+      Vi phạm chuỗi lạnh, Lệnh thu hồi (nếu có),
+      Kết quả kiểm tra toàn vẹn chuỗi Hash SHA-256 tại thời điểm xuất và Terminal Hash.
+    """
+    # Quyền truy cập: Cán bộ kiểm tra và Admin xem được mọi lô; các bên khác chỉ xem lô thuộc tổ chức mình
+    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lô hàng #{batch_id} không tồn tại.",
+        )
+
+    is_admin_or_inspector = current_user.role in [
+        UserRole.INSPECTOR.value,
+        UserRole.SYSTEM_ADMIN.value,
+        UserRole.ADMIN.value,
+    ]
+    if (
+        not is_admin_or_inspector
+        and batch.organization_id != current_user.organization_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền xuất hồ sơ kiểm tra của lô hàng thuộc tổ chức khác.",
+        )
+
+    return InspectionDossierService.generate_dossier(
+        db=db,
+        batch_id=batch_id,
+        inspector_user=current_user,
+    )
+
 

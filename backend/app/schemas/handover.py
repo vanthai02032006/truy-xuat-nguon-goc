@@ -40,6 +40,8 @@ class HandoverResponse(BaseModel):
     from_org_name: str | None = None
     to_org_name: str | None = None
     batch_status: str | None = None
+    has_cold_chain_violation: bool = False
+    cold_chain_warning: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

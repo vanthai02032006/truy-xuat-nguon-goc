@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import secrets
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -21,6 +21,7 @@ from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.cold_chain import (
     ColdChainViolationItem,
+    ScenarioSimulationResponse,
     TelemetryReadingInput,
     TelemetryReadingItem,
     TransportTripDetailResponse,
@@ -542,3 +543,208 @@ class ColdChainService:
             )
 
         return new_violations
+
+    @classmethod
+    def simulate_scenario(
+        cls,
+        db: Session,
+        trip_id: int,
+        scenario_id: int,
+        reset_previous_telemetry: bool = True,
+        user: User | None = None,
+    ) -> ScenarioSimulationResponse:
+        """
+        User Story S-42: Script Giả lập Cảm biến theo 5 kịch bản mẫu:
+        - Kịch bản 1: Không vượt ngưỡng (ổn định an toàn 2°C - 8°C).
+        - Kịch bản 2: Vượt ngưỡng 10 phút (mở cửa xe tạm thời) -> KHÔNG tính là vi phạm.
+        - Kịch bản 3: Vượt ngưỡng liên tục 45 phút (> 30 phút) -> Tính 1 vi phạm.
+        - Kịch bản 4: Hai lần vượt cách nhau dưới 5 phút -> Gộp thành 1 vi phạm.
+        - Kịch bản 5: Vượt qua nửa đêm (cross-midnight).
+        """
+        trip = db.query(TransportTrip).filter(TransportTrip.id == trip_id).first()
+        if not trip:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy chuyến xe với ID {trip_id}.",
+            )
+
+        if reset_previous_telemetry:
+            # Xóa các bản ghi telemetry và vi phạm cũ của chuyến để quan sát kịch bản độc lập
+            db.query(ColdChainViolation).filter(ColdChainViolation.trip_id == trip_id).delete(
+                synchronize_session=False
+            )
+            db.query(TemperatureTelemetry).filter(TemperatureTelemetry.trip_id == trip_id).delete(
+                synchronize_session=False
+            )
+            db.commit()
+
+        now = datetime.now(UTC)
+        readings_to_inject: list[dict[str, Any]] = []
+
+        if scenario_id == 1:
+            scenario_name = "Kịch bản 1: Không vượt ngưỡng"
+            description = (
+                "Nhiệt độ bảo quản lạnh được duy trì ổn định trong dải an toàn (3.5°C - 5.0°C) "
+                "suốt hành trình 60 phút."
+            )
+            rule_explanation = (
+                "Nhiệt độ hoàn toàn nằm trong dải cho phép (2.0°C - 8.0°C). "
+                "Hệ thống xác nhận hành trình đạt chuẩn, không có vi phạm nào."
+            )
+            base_time = now - timedelta(minutes=60)
+            offsets_and_temps = [
+                (0, 4.0),
+                (5, 4.2),
+                (10, 3.8),
+                (15, 4.5),
+                (20, 4.1),
+                (25, 4.8),
+                (30, 5.0),
+                (35, 4.3),
+                (40, 3.9),
+                (45, 4.1),
+                (50, 4.4),
+                (55, 4.0),
+            ]
+            for m, temp in offsets_and_temps:
+                readings_to_inject.append({"timestamp": base_time + timedelta(minutes=m), "temp": temp})
+
+        elif scenario_id == 2:
+            scenario_name = "Kịch bản 2: Vượt ngưỡng 10 phút (mở cửa xe tạm thời) -> KHÔNG tính vi phạm"
+            description = (
+                "Xe mở cửa bốc dỡ hàng tại điểm dừng làm nhiệt độ tăng lên 13.5°C trong vòng 10 phút, "
+                "sau đó đóng kín thùng làm lạnh về 4.0°C."
+            )
+            rule_explanation = (
+                "Độ trễ vi phạm 30 phút (S-43): Dao động nhiệt nhất thời dưới 30 phút (10 phút) "
+                "được công nhận là hoạt động vận hành bình thường, KHÔNG bị coi là vi phạm."
+            )
+            base_time = now - timedelta(minutes=40)
+            offsets_and_temps = [
+                (0, 4.0),
+                (5, 4.2),
+                (10, 12.0),  # Bắt đầu mở cửa xe
+                (15, 13.5),  # Đỉnh nhiệt độ
+                (20, 10.5),  # Đóng cửa xe (vượt 10 phút)
+                (25, 4.5),   # Trở về an toàn
+                (30, 4.0),
+            ]
+            for m, temp in offsets_and_temps:
+                readings_to_inject.append({"timestamp": base_time + timedelta(minutes=m), "temp": temp})
+
+        elif scenario_id == 3:
+            scenario_name = "Kịch bản 3: Vượt ngưỡng liên tục 45 phút (> 30 phút) -> Tính 1 vi phạm"
+            description = (
+                "Hệ thống làm lạnh gặp sự cố làm nhiệt độ vượt 8°C liên tục suốt 45 phút, "
+                "nhiệt độ đỉnh đạt 16.5°C trước khi kỹ thuật viên khắc phục."
+            )
+            rule_explanation = (
+                "Quy tắc S-43 & S-45: Nhiệt độ vượt ngưỡng liên tục trên 30 phút (45 phút) "
+                "kích hoạt 1 sự kiện Vi phạm chuỗi lạnh và tự động ghi vào chuỗi Hash SHA-256."
+            )
+            base_time = now - timedelta(minutes=65)
+            offsets_and_temps = [
+                (0, 4.0),
+                (5, 4.5),
+                (10, 9.5),   # Bắt đầu vượt ngưỡng
+                (20, 13.0),
+                (30, 16.5),  # Đỉnh nhiệt độ 16.5°C
+                (40, 15.0),
+                (50, 12.0),
+                (55, 9.2),   # Kết thúc đợt (45 phút)
+                (60, 4.5),   # Làm lạnh sâu trở lại
+            ]
+            for m, temp in offsets_and_temps:
+                readings_to_inject.append({"timestamp": base_time + timedelta(minutes=m), "temp": temp})
+
+        elif scenario_id == 4:
+            scenario_name = "Kịch bản 4: Hai lần vượt cách nhau dưới 5 phút -> Gộp thành 1 vi phạm"
+            description = (
+                "Lần 1 vượt 18 phút (đỉnh 12°C), hạ nhiệt 3 phút (< 5 phút), sau đó vượt tiếp 20 phút (đỉnh 15.5°C)."
+            )
+            rule_explanation = (
+                "Quy tắc Gộp vi phạm (S-43): Hai lần vượt ngưỡng cách nhau dưới 5 phút (300s) "
+                "tự động gộp thành 1 sự kiện vi phạm duy nhất (tổng 41 phút > 30 phút)."
+            )
+            base_time = now - timedelta(minutes=55)
+            offsets_and_temps = [
+                (0, 9.0),    # Bắt đầu đợt 1
+                (10, 12.0),
+                (18, 9.5),   # Kết thúc đợt 1 (18 phút)
+                (20, 6.0),   # Hạ nhiệt ngắn 2-3 phút (< 5 phút)
+                (21, 9.8),   # Bắt đầu đợt 2
+                (30, 15.5),  # Đỉnh đợt 2
+                (41, 9.0),   # Kết thúc đợt 2 (kéo dài 20 phút)
+                (45, 4.0),   # Trở lại an toàn
+            ]
+            for m, temp in offsets_and_temps:
+                readings_to_inject.append({"timestamp": base_time + timedelta(minutes=m), "temp": temp})
+
+        elif scenario_id == 5:
+            scenario_name = "Kịch bản 5: Vượt qua nửa đêm (Cross-midnight)"
+            description = (
+                "Sự cố nhiệt độ bắt đầu lúc 23:40 đêm hôm trước, kéo dài xuyên qua 00:00 "
+                "đến 00:25 sáng hôm sau (tổng 45 phút, đỉnh 15.8°C)."
+            )
+            rule_explanation = (
+                "Xử lý chuẩn hóa thời gian UTC liên tục: Vi phạm xuyên qua mốc nửa đêm (00:00) "
+                "vẫn được ghi nhận chính xác là 1 vi phạm duy nhất, không bị chia tách hay lỗi ngày."
+            )
+            # Tạo mốc đêm hôm trước lúc 23:35
+            base_date = (now - timedelta(days=1)).replace(hour=23, minute=35, second=0, microsecond=0)
+            offsets_and_temps = [
+                (0, 4.0),    # 23:35
+                (5, 10.0),   # 23:40: bắt đầu vượt
+                (15, 13.5),  # 23:50
+                (24, 15.8),  # 23:59: Đỉnh nhiệt độ lúc nửa đêm
+                (35, 14.0),  # 00:10 (hôm sau)
+                (45, 11.5),  # 00:20 (hôm sau)
+                (50, 9.0),   # 00:25 (hôm sau, kết thúc 45 phút)
+                (55, 4.5),   # 00:30 (hôm sau, hạ về an toàn)
+            ]
+            for m, temp in offsets_and_temps:
+                readings_to_inject.append({"timestamp": base_date + timedelta(minutes=m), "temp": temp})
+
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Kịch bản #{scenario_id} không hợp lệ. Vui lòng chọn từ 1 đến 5.",
+            )
+
+        # Lưu các điểm đo vào bảng TemperatureTelemetry
+        for item in readings_to_inject:
+            db.add(
+                TemperatureTelemetry(
+                    trip_id=trip.id,
+                    timestamp=item["timestamp"],
+                    temperature=item["temp"],
+                )
+            )
+        db.flush()
+
+        # Gọi thuật toán phát hiện vi phạm và ghi Hash Chain
+        detected_violations = cls.detect_and_record_violations(
+            db=db,
+            trip=trip,
+            actor_id=user.id if user else None,
+        )
+        db.commit()
+
+        violations_count = len(detected_violations)
+        is_violated = violations_count > 0
+
+        return ScenarioSimulationResponse(
+            scenario_id=scenario_id,
+            scenario_name=scenario_name,
+            trip_id=trip.id,
+            trip_code=trip.trip_code,
+            vehicle_code=trip.vehicle_code,
+            readings_injected=len(readings_to_inject),
+            violations_count=violations_count,
+            violations=detected_violations,
+            is_violated=is_violated,
+            description=description,
+            rule_explanation=rule_explanation,
+            hash_chain_updated=is_violated,
+        )
+

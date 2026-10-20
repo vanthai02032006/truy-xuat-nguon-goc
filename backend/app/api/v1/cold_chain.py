@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.schemas.cold_chain import (
+    ScenarioSimulationRequest,
+    ScenarioSimulationResponse,
     TelemetryIngestResponse,
     TelemetryReadingInput,
     TransportTripDetailResponse,
@@ -88,3 +90,35 @@ def ingest_telemetry(
     4. Tự động ghi nhận vi phạm vào Hash Chain của toàn bộ các lô hàng trên chuyến xe (S-45).
     """
     return ColdChainService.ingest_telemetry(db=db, readings=readings, user=current_user)
+
+
+@router.post(
+    "/trips/{trip_id}/simulate-scenario/{scenario_id}",
+    response_model=ScenarioSimulationResponse,
+    status_code=status.HTTP_200_OK,
+)
+def simulate_trip_scenario(
+    trip_id: int,
+    scenario_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    payload: ScenarioSimulationRequest | None = None,
+):
+    """
+    Công cụ chạy Script Giả lập Cảm biến theo 5 kịch bản mẫu (User Story S-42):
+    - Kịch bản 1: Không vượt ngưỡng (ổn định 2°C - 8°C).
+    - Kịch bản 2: Vượt ngưỡng 10 phút (mở cửa xe tạm thời) -> KHÔNG tính là vi phạm.
+    - Kịch bản 3: Vượt ngưỡng liên tục 45 phút (> 30 phút) -> Tính 1 vi phạm.
+    - Kịch bản 4: Hai lần vượt cách nhau dưới 5 phút -> Gộp thành 1 vi phạm.
+    - Kịch bản 5: Vượt qua nửa đêm (cross-midnight).
+    - Khi phát hiện vi phạm, tự động ghi sự kiện vi phạm vào chuỗi hash của mọi lô trên xe (S-45).
+    """
+    reset_prev = payload.reset_previous_telemetry if payload else True
+    return ColdChainService.simulate_scenario(
+        db=db,
+        trip_id=trip_id,
+        scenario_id=scenario_id,
+        reset_previous_telemetry=reset_prev,
+        user=current_user,
+    )
+
