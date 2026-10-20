@@ -55,6 +55,10 @@ class Settings:
             ),
         )
     )
+    # Kết nối riêng dành cho Migration/Alembic (role quản trị/owner có quyền DDL)
+    MIGRATION_DATABASE_URL: str = field(
+        default_factory=lambda: os.getenv("MIGRATION_DATABASE_URL", "")
+    )
     APP_PORT: int = field(default_factory=lambda: int(os.getenv("APP_PORT", "80")))
 
     # Security & JWT: Bắt buộc cung cấp trong production/staging. Trong test mode dùng mock key an toàn.
@@ -135,6 +139,13 @@ class Settings:
         if not self.DATABASE_URL:
             return ""
         return re.sub(r":([^:@]+)@", r":***@", self.DATABASE_URL)
+
+    @property
+    def masked_migration_database_url(self) -> str:
+        """Che giấu mật khẩu trong chuỗi kết nối migration database khi ghi log."""
+        if not self.MIGRATION_DATABASE_URL:
+            return ""
+        return re.sub(r":([^:@]+)@", r":***@", self.MIGRATION_DATABASE_URL)
 
     def validate_required_env(self) -> None:
         """

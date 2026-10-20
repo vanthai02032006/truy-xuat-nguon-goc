@@ -22,7 +22,7 @@ class ChainEvent(Base):
     id = Column(Integer, primary_key=True, index=True)
     batch_id = Column(
         Integer,
-        ForeignKey("batches.id", ondelete="CASCADE"),
+        ForeignKey("batches.id", ondelete="RESTRICT"),
         nullable=False,
         index=True,
     )
@@ -63,9 +63,7 @@ def prevent_chain_event_update(mapper, connection, target):
 @event.listens_for(ChainEvent, "before_delete")
 def prevent_chain_event_delete(mapper, connection, target):
     """Chặn đứng mọi thao tác xóa (DELETE) sự kiện chuỗi cung ứng đã ghi (S-11)."""
-    if getattr(target, "_allow_simulation_tamper", False) or getattr(
-        target, "_allow_cascade_delete", False
-    ):
+    if getattr(target, "_allow_simulation_tamper", False):
         return
     raise ReadOnlyChainEventError(
         "Bảng chain_events là chỉ-thêm (append-only - S-11). Nghiêm cấm xóa sự kiện đã ghi."
