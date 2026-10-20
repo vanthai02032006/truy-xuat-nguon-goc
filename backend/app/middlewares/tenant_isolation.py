@@ -102,7 +102,13 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
         # 4. Kiểm tra Cán bộ kiểm tra (Inspector) bị chặn mọi thao tác ghi/sửa/xóa (trả về 403)
         if (
             path.startswith("/api/v1/")
-            and not path.startswith(("/api/v1/auth/", "/api/v1/recalls"))
+            and not path.startswith(
+                (
+                    "/api/v1/auth/",
+                    "/api/v1/recalls",
+                    "/api/v1/chain-events/simulate-tamper",
+                )
+            )
             and method in ["POST", "PUT", "PATCH", "DELETE"]
             and user_role == UserRole.INSPECTOR.value
         ):
