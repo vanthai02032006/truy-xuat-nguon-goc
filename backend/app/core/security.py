@@ -6,12 +6,13 @@ UTC = getattr(datetime, "UTC", timezone.utc)  # noqa: UP017
 from typing import Any
 
 import jwt
-from argon2 import PasswordHasher
+from argon2 import PasswordHasher, Type
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
 from app.core.config import settings
 
-hasher = PasswordHasher()
+# Băm mật khẩu theo chuẩn argon2id (NFR S-04)
+hasher = PasswordHasher(type=Type.ID)
 
 
 def get_password_hash(password: str) -> str:
