@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-farm_db}
       POSTGRES_USER: ${POSTGRES_USER:-farm_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Loi: Bien moi truong POSTGRES_PASSWORD bat buoc phai duoc thiet lap trong file .env}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Bien moi truong POSTGRES_PASSWORD bat buoc phai duoc thiet lap trong file .env}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -23,9 +23,9 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-farm_db}
       POSTGRES_USER: ${POSTGRES_USER:-farm_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Loi: Bien moi truong POSTGRES_PASSWORD bat buoc phai duoc thiet lap trong file .env}
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-farm_user}:${POSTGRES_PASSWORD:?Loi: Bien moi truong POSTGRES_PASSWORD bat buoc}@db:5432/${POSTGRES_DB:-farm_db}
-      SECRET_KEY: ${SECRET_KEY:?Loi: Bien moi truong SECRET_KEY bat buoc phai duoc thiet lap trong file .env}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Bien moi truong POSTGRES_PASSWORD bat buoc phai duoc thiet lap trong file .env}"
+      DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER:-farm_user}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD bat buoc}@db:5432/${POSTGRES_DB:-farm_db}"
+      SECRET_KEY: "${SECRET_KEY:?Bien moi truong SECRET_KEY bat buoc phai duoc thiet lap trong file .env}"
       APP_ENV: ${APP_ENV:-development}
       ENABLE_DEMO_ROLE_SWITCH: ${ENABLE_DEMO_ROLE_SWITCH:-false}
     depends_on:
