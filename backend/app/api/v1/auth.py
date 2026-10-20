@@ -47,7 +47,7 @@ DEMO_USERS_CONFIG = [
         "id": 102,
         "email": "operator@sochebaoloc.vn",
         "full_name": "Trần Thị Sơ Chế (HTX Sơ chế)",
-        "role": UserRole.PROCESSING.value,
+        "role": UserRole.COOP.value,
         "org_id": 20,
         "org_name": "HTX Sơ Chế Bảo Lộc",
         "org_code": "COOP-BL",
@@ -65,7 +65,7 @@ DEMO_USERS_CONFIG = [
         "id": 104,
         "email": "store@biomart.vn",
         "full_name": "Phạm Bán Lẻ (Nhà phân phối / Bán lẻ)",
-        "role": UserRole.RETAILER.value,
+        "role": UserRole.DISTRIBUTOR.value,
         "org_id": 40,
         "org_name": "Hệ Thống Bán Lẻ BioMart",
         "org_code": "RET-BIO",
@@ -125,6 +125,13 @@ def ensure_supply_chain_demo_users(db: Session):
                 db.commit()
             except SQLAlchemyError:
                 db.rollback()
+        else:
+            if u.role != cfg["role"]:
+                u.role = cfg["role"]
+                try:
+                    db.commit()
+                except SQLAlchemyError:
+                    db.rollback()
 
 
 @router.post("/login", response_model=Token)
@@ -348,13 +355,35 @@ def get_quick_role_token(
     Tự động cấp JWT access_token hợp lệ của tài khoản mẫu tương ứng.
     """
     ensure_supply_chain_demo_users(db)
-    target_config = None
     role_normalized = role.lower().strip()
+    ROLE_ALIASES = {
+        "farm": UserRole.FARM.value,
+        "farmer": UserRole.FARM.value,
+        "farm_owner": UserRole.FARM.value,
+        "vung_trong": UserRole.FARM.value,
+        "coop": UserRole.COOP.value,
+        "processing": UserRole.COOP.value,
+        "processing_coop": UserRole.COOP.value,
+        "htx": UserRole.COOP.value,
+        "so_che": UserRole.COOP.value,
+        "logistics": UserRole.LOGISTICS.value,
+        "van_tai": UserRole.LOGISTICS.value,
+        "distributor": UserRole.DISTRIBUTOR.value,
+        "retailer": UserRole.DISTRIBUTOR.value,
+        "ban_le": UserRole.DISTRIBUTOR.value,
+        "phan_phoi": UserRole.DISTRIBUTOR.value,
+        "inspector": UserRole.INSPECTOR.value,
+        "kiem_tra": UserRole.INSPECTOR.value,
+        "thanh_tra": UserRole.INSPECTOR.value,
+        "system_admin": UserRole.SYSTEM_ADMIN.value,
+        "admin": UserRole.SYSTEM_ADMIN.value,
+        "quan_tri": UserRole.SYSTEM_ADMIN.value,
+    }
+    target_role = ROLE_ALIASES.get(role_normalized, role_normalized)
+
+    target_config = None
     for cfg in DEMO_USERS_CONFIG:
-        if cfg["role"] == role_normalized or (
-            role_normalized in ["admin", "system_admin"]
-            and cfg["role"] == UserRole.SYSTEM_ADMIN.value
-        ):
+        if cfg["role"] == target_role:
             target_config = cfg
             break
 

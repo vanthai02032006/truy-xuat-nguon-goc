@@ -33,7 +33,7 @@ def list_land_plots(
     Cán bộ kiểm tra (Inspector): Xem được thửa của mọi tổ chức ở chế độ đọc.
     NFR: Lọc theo tổ chức ở tầng truy vấn (Database Query), không lọc ở giao diện.
     """
-    if current_user.role == UserRole.INSPECTOR.value:
+    if current_user.role in [UserRole.INSPECTOR.value, UserRole.SYSTEM_ADMIN.value, "inspector", "system_admin", "admin"]:
         return LandPlotRepository.list_plots(
             db, organization_id=None, skip=skip, limit=limit
         )
@@ -72,25 +72,26 @@ def create_land_plot(
           Khi lưu, Thì bị chặn kèm thông báo rõ lý do.
     """
     # 1. Cán bộ kiểm tra không được phép tạo/sửa dữ liệu (chỉ đọc)
-    if current_user.role == UserRole.INSPECTOR.value:
+    if current_user.role in [UserRole.INSPECTOR.value, "inspector"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc).",
         )
 
     # 2. Kiểm tra vai trò được phép khai báo thửa đất
-    allowed_roles = [
-        UserRole.FARM_OWNER.value,
-        UserRole.SUPERVISOR.value,
-        UserRole.ADMIN.value,
-        UserRole.FARMER.value,
-        UserRole.VUNG_TRONG.value,
-        UserRole.MEMBER.value,
+    allowed_roles = {
+        UserRole.FARM.value,
+        UserRole.SYSTEM_ADMIN.value,
+        "farm",
+        "system_admin",
+        "admin",
         "farm_owner",
-        "owner",
+        "farmer",
+        "vung_trong",
         "supervisor",
-        "field_manager",
-    ]
+        "owner",
+        "member",
+    }
     if current_user.role not in allowed_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -154,9 +155,11 @@ def delete_land_plot(
 ):
     """Xóa thửa đất (Chỉ Chủ nông trại hoặc Quản trị viên hệ thống có quyền)."""
     allowed_roles = {
-        UserRole.ADMIN.value,
-        UserRole.FARM_OWNER.value,
+        UserRole.SYSTEM_ADMIN.value,
+        UserRole.FARM.value,
+        "system_admin",
         "admin",
+        "farm",
         "farm_owner",
         "owner",
     }

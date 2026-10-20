@@ -68,10 +68,49 @@ def get_current_user(
 
 
 ADMIN_ROLES = {
-    UserRole.ADMIN.value,
     UserRole.SYSTEM_ADMIN.value,
-    "admin",
     "system_admin",
+    "admin",
+}
+
+INSPECTOR_ROLES = {
+    UserRole.INSPECTOR.value,
+    "inspector",
+}
+
+FARM_ROLES = {
+    UserRole.FARM.value,
+    "farm",
+    "farm_owner",
+    "farmer",
+    "vung_trong",
+}
+
+COOP_ROLES = {
+    UserRole.COOP.value,
+    "coop",
+    "processing",
+    "processing_coop",
+}
+
+LOGISTICS_ROLES = {
+    UserRole.LOGISTICS.value,
+    "logistics",
+}
+
+DISTRIBUTOR_ROLES = {
+    UserRole.DISTRIBUTOR.value,
+    "distributor",
+    "retailer",
+}
+
+OWNER_ROLES = ADMIN_ROLES | FARM_ROLES | COOP_ROLES | {
+    "owner",
+}
+
+SUPERVISOR_ROLES = OWNER_ROLES | INSPECTOR_ROLES | {
+    "supervisor",
+    "field_manager",
 }
 
 
@@ -85,23 +124,6 @@ def require_admin(
             detail="Chỉ vai trò Quản trị hệ thống (Admin) mới có quyền thực hiện thao tác này.",
         )
     return current_user
-OWNER_ROLES = {
-    UserRole.ADMIN.value,
-    UserRole.FARM_OWNER.value,
-    "admin",
-    "farm_owner",
-    "owner",
-}
-SUPERVISOR_ROLES = {
-    UserRole.ADMIN.value,
-    UserRole.FARM_OWNER.value,
-    UserRole.SUPERVISOR.value,
-    "admin",
-    "farm_owner",
-    "owner",
-    "supervisor",
-    "field_manager",
-}
 
 
 def require_roles(*allowed_roles: str):
@@ -200,7 +222,7 @@ def verify_batch_access(
     client_ip = request.client.host if request.client else "unknown"
 
     # Trường hợp là cán bộ kiểm tra (Inspector)
-    if current_user.role == UserRole.INSPECTOR.value:
+    if current_user.role in INSPECTOR_ROLES:
         if request.method not in ["GET", "HEAD", "OPTIONS"]:
             SecurityLogRepository.log_attempt(
                 db=db,
@@ -261,10 +283,7 @@ def verify_batch_access(
         return batch
 
     # Thao tác ghi/sửa/xóa: bắt buộc phải là tổ chức đang trực tiếp giữ lô
-    if batch.organization_id != current_user.organization_id and current_user.role not in [
-        UserRole.SYSTEM_ADMIN.value,
-        UserRole.ADMIN.value,
-    ]:
+    if batch.organization_id != current_user.organization_id and current_user.role not in ADMIN_ROLES:
         SecurityLogRepository.log_attempt(
             db=db,
             user_id=current_user.id,
@@ -312,7 +331,7 @@ def verify_land_plot_access(
     client_ip = request.client.host if request.client else "unknown"
 
     # Trường hợp là cán bộ kiểm tra (Inspector)
-    if current_user.role == UserRole.INSPECTOR.value:
+    if current_user.role in INSPECTOR_ROLES:
         if request.method not in ["GET", "HEAD", "OPTIONS"]:
             SecurityLogRepository.log_attempt(
                 db=db,
@@ -332,6 +351,10 @@ def verify_land_plot_access(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc).",
             )
+        return plot
+
+    # Trường hợp là Quản trị hệ thống (System Admin)
+    if current_user.role in ADMIN_ROLES:
         return plot
 
     # Trường hợp là người dùng thuộc tổ chức: kiểm tra xem thửa có thuộc tổ chức của user không

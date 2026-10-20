@@ -112,7 +112,7 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                 )
             )
             and method in ["POST", "PUT", "PATCH", "DELETE"]
-            and user_role == UserRole.INSPECTOR.value
+            and user_role in [UserRole.INSPECTOR.value, "inspector"]
         ):
             db, should_close = _get_db_session()
             try:
@@ -162,7 +162,7 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                     batch = BatchRepository.get_by_id(db, target_batch_id)
                     if batch:
                         # 5.1 Trường hợp là Cán bộ kiểm tra (Inspector)
-                        if user_role == UserRole.INSPECTOR.value:
+                        if user_role in [UserRole.INSPECTOR.value, "inspector"]:
                             if method not in ["GET", "HEAD", "OPTIONS"]:
                                 SecurityLogRepository.log_attempt(
                                     db=db,
@@ -281,7 +281,7 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                     plot = LandPlotRepository.get_by_id(db, target_plot_id)
                     if plot:
                         # 6.1 Trường hợp là Cán bộ kiểm tra
-                        if user_role == UserRole.INSPECTOR.value:
+                        if user_role in [UserRole.INSPECTOR.value, "inspector"]:
                             if method not in ["GET", "HEAD", "OPTIONS"]:
                                 SecurityLogRepository.log_attempt(
                                     db=db,

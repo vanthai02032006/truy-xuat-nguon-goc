@@ -158,16 +158,16 @@
                 </div>
 
                 <!-- 2. Processing Co-op -->
-                <div onclick="selectSupplyChainRole('processing')" class="p-2.5 rounded-2xl hover:bg-blue-50 cursor-pointer transition-colors flex items-start gap-3">
+                <div onclick="selectSupplyChainRole('coop')" class="p-2.5 rounded-2xl hover:bg-blue-50 cursor-pointer transition-colors flex items-start gap-3">
                   <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
                     <i class="fa-solid fa-industry"></i>
                   </div>
                   <div class="flex-1 text-xs">
                     <div class="flex items-center justify-between">
-                      <span class="font-bold text-slate-800">2. HTX Sơ Chế (Processing Co-op)</span>
-                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-blue-100 text-blue-800">Org #2</span>
+                      <span class="font-bold text-slate-800">2. HTX Sơ Chế (Co-op)</span>
+                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-blue-100 text-blue-800">Org #20</span>
                     </div>
-                    <p class="text-[11px] text-slate-500 font-medium">HTX Sơ Chế Đà Lạt Lành - Sơ chế, đóng gói</p>
+                    <p class="text-[11px] text-slate-500 font-medium">HTX Sơ Chế Bảo Lộc - Sơ chế, đóng gói</p>
                   </div>
                 </div>
 
@@ -179,21 +179,21 @@
                   <div class="flex-1 text-xs">
                     <div class="flex items-center justify-between">
                       <span class="font-bold text-slate-800">3. Vận Chuyển Lạnh (Logistics)</span>
-                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-cyan-100 text-cyan-800">Org #3</span>
+                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-cyan-100 text-cyan-800">Org #30</span>
                     </div>
-                    <p class="text-[11px] text-slate-500 font-medium">Đội Xe Lạnh Việt Nhật - Giám sát IoT 2°C - 6°C</p>
+                    <p class="text-[11px] text-slate-500 font-medium">Đội Xe Lạnh Express - Giám sát IoT 2°C - 6°C</p>
                   </div>
                 </div>
 
-                <!-- 4. Retailer -->
-                <div onclick="selectSupplyChainRole('retailer')" class="p-2.5 rounded-2xl hover:bg-amber-50 cursor-pointer transition-colors flex items-start gap-3">
+                <!-- 4. Distributor -->
+                <div onclick="selectSupplyChainRole('distributor')" class="p-2.5 rounded-2xl hover:bg-amber-50 cursor-pointer transition-colors flex items-start gap-3">
                   <div class="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
                     <i class="fa-solid fa-shop"></i>
                   </div>
                   <div class="flex-1 text-xs">
                     <div class="flex items-center justify-between">
-                      <span class="font-bold text-slate-800">4. Nhà Phân Phối / Bán Lẻ</span>
-                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-amber-100 text-amber-800">Org #4</span>
+                      <span class="font-bold text-slate-800">4. Nhà Phân Phối / Bán Lẻ (Distributor)</span>
+                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-amber-100 text-amber-800">Org #40</span>
                     </div>
                     <p class="text-[11px] text-slate-500 font-medium">Chuỗi Siêu Thị BioMart - Điểm bán & quầy kệ</p>
                   </div>
@@ -2309,21 +2309,21 @@
         name: "1. Vùng Trồng (Farm)",
         email: "manager@nongtraixanh.vn",
         samplePassword: "pass123",
-        orgId: 1,
+        orgId: 10,
         orgName: "HTX Nông Nghiệp Thắng Lợi",
-        badge: "Org #1",
+        badge: "Org #10",
         icon: "fa-seedling",
         iconBg: "bg-emerald-600",
         isReadOnly: false,
         canAccessAllOrgs: false
       },
-      processing: {
-        name: "2. HTX Sơ Chế (Processing Co-op)",
+      coop: {
+        name: "2. HTX Sơ Chế (Co-op)",
         email: "operator@sochebaoloc.vn",
         samplePassword: "pass123",
-        orgId: 2,
-        orgName: "HTX Sơ Chế Đà Lạt Lành",
-        badge: "Org #2",
+        orgId: 20,
+        orgName: "HTX Sơ Chế Bảo Lộc",
+        badge: "Org #20",
         icon: "fa-industry",
         iconBg: "bg-blue-600",
         isReadOnly: false,
@@ -2333,21 +2333,21 @@
         name: "3. Vận Chuyển Lạnh (Logistics)",
         email: "driver@coldexpress.vn",
         samplePassword: "pass123",
-        orgId: 3,
-        orgName: "Đội Vận Chuyển Lạnh Việt Nhật",
-        badge: "Org #3",
+        orgId: 30,
+        orgName: "Công Ty Vận Tải Lạnh Express",
+        badge: "Org #30",
         icon: "fa-truck-fast",
         iconBg: "bg-cyan-600",
         isReadOnly: false,
         canAccessAllOrgs: false
       },
-      retailer: {
-        name: "4. Nhà Phân Phối / Bán Lẻ",
+      distributor: {
+        name: "4. Nhà Phân Phối / Bán Lẻ (Distributor)",
         email: "store@biomart.vn",
         samplePassword: "pass123",
-        orgId: 4,
-        orgName: "Chuỗi Siêu Thị BioMart",
-        badge: "Org #4",
+        orgId: 40,
+        orgName: "Hệ Thống Bán Lẻ BioMart",
+        badge: "Org #40",
         icon: "fa-shop",
         iconBg: "bg-amber-600",
         isReadOnly: false,
@@ -2357,8 +2357,8 @@
         name: "5. Cán Bộ Kiểm Tra (Inspector)",
         email: "inspector.safe@kiemdinh.gov.vn",
         samplePassword: "pass123",
-        orgId: 99,
-        orgName: "Chi Cục Quản Lý Chất Lượng NLTS",
+        orgId: null,
+        orgName: "Chi Cục Quản Lý Chất Lượng & BVTV",
         badge: "CHỈ ĐỌC",
         icon: "fa-clipboard-check",
         iconBg: "bg-purple-700",
@@ -2366,11 +2366,11 @@
         canAccessAllOrgs: true
       },
       system_admin: {
-        name: "6. Quản Trị Hệ Thống (Admin)",
+        name: "6. Quản Trị Hệ Thống (System Admin)",
         email: "sysadmin@nongsanlanh.gov.vn",
         samplePassword: "pass123",
-        orgId: 0,
-        orgName: "Ban Quản Trị Nền Tảng Chuỗi Cung Ứng",
+        orgId: null,
+        orgName: "Ban Quản Trị Hệ Thống Toàn Nền Tảng",
         badge: "Toàn Quyền",
         icon: "fa-user-shield",
         iconBg: "bg-slate-900",
@@ -2390,6 +2390,10 @@
         canAccessAllOrgs: false
       }
     };
+    // Aliases tương thích ngược
+    SUPPLY_CHAIN_ROLES.processing = SUPPLY_CHAIN_ROLES.coop;
+    SUPPLY_CHAIN_ROLES.retailer = SUPPLY_CHAIN_ROLES.distributor;
+    SUPPLY_CHAIN_ROLES.admin = SUPPLY_CHAIN_ROLES.system_admin;
 
     // Initial Supply Chain State (Bắt đầu với dữ liệu trống, tự động nạp từ API Backend thật)
     const defaultData = {
