@@ -1,5 +1,6 @@
 from app.core.database import Base
 from app.models.batch import Batch
+from app.models.batch_relation import BatchRelation, BatchRelationType
 from app.models.chain_event import ChainEvent
 from app.models.farming import FarmingLog, FieldIncident
 from app.models.finance import FinancialTransaction
@@ -16,6 +17,8 @@ __all__ = [
     "Base",
     "Batch",
     "BatchMaterialLog",
+    "BatchRelation",
+    "BatchRelationType",
     "ChainEvent",
     "DailyTask",
     "FarmingLog",
