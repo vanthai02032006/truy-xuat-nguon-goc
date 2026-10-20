@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-import app.models
 import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+import app.models
 from app.api.deps import get_db
 from app.core.database import Base
 from app.core.security import get_password_hash
@@ -9,10 +14,6 @@ from app.main import app
 from app.models.batch import Batch
 from app.models.organization import Organization
 from app.models.user import User, UserRole
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 # In-memory SQLite cho test tích hợp độc lập và siêu nhanh trong CI
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
