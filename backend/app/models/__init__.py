@@ -1,7 +1,9 @@
 from app.core.database import Base
 from app.models.batch import Batch
+from app.models.chain_event import ChainEvent
 from app.models.farming import FarmingLog, FieldIncident
 from app.models.finance import FinancialTransaction
+from app.models.handover import Handover, HandoverStatus
 from app.models.hr import DailyTask, Timesheet, Worker
 from app.models.land_plot import LandPlot
 from app.models.material import BatchMaterialLog, Material, MaterialRequest
@@ -14,10 +16,13 @@ __all__ = [
     "Base",
     "Batch",
     "BatchMaterialLog",
+    "ChainEvent",
     "DailyTask",
     "FarmingLog",
     "FieldIncident",
     "FinancialTransaction",
+    "Handover",
+    "HandoverStatus",
     "LandPlot",
     "Material",
     "MaterialRequest",

@@ -23,6 +23,13 @@ class Batch(Base):
         nullable=True,
         index=True,
     )
+    status = Column(
+        String(50),
+        nullable=False,
+        default="active",
+        server_default="active",
+        index=True,
+    )
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -33,4 +40,10 @@ class Batch(Base):
     land_plot = relationship("LandPlot", back_populates="batches")
     material_logs = relationship(
         "BatchMaterialLog", back_populates="batch", cascade="all, delete-orphan"
+    )
+    handovers = relationship(
+        "Handover", back_populates="batch", cascade="all, delete-orphan"
+    )
+    chain_events = relationship(
+        "ChainEvent", back_populates="batch", cascade="all, delete-orphan"
     )

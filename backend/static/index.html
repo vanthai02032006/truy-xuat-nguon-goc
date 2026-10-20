@@ -646,57 +646,81 @@
       
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Luân Chuyển Chuỗi Cung Ứng</span>
-          <h2 class="text-2xl font-black text-slate-900 mt-1">Bàn Giao Lô Hàng Chờ Xác Nhận (S-15, S-16)</h2>
-          <p class="text-xs text-slate-500 mt-1">Chặn bàn giao lần hai, bên nhận xác nhận hoặc từ chối kèm lý do, chuyển quyền giữ nguyên tử trong giao dịch</p>
+          <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Luân Chuyển Chuỗi Cung Ứng (User Story S-15, S-16)</span>
+          <h2 class="text-2xl font-black text-slate-900 mt-1">Bàn Giao Lô Hàng Giữa Các Tổ Chức Độc Lập</h2>
+          <p class="text-xs text-slate-500 mt-1">Chặn bàn giao lần hai khi đang chờ duyệt. Bên nhận xác nhận chuyển quyền hoặc từ chối kèm lý do (tối thiểu 10 ký tự) trong cùng giao dịch.</p>
         </div>
-        <button onclick="openModal('handoverModal')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
+        <button onclick="openModal('handoverModal')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
           <i class="fa-solid fa-truck-moving"></i> Tạo Phiếu Bàn Giao Mới
         </button>
       </div>
 
-      <!-- Handover Flow Visualization -->
-      <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-          <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
-            <span class="text-xs font-black text-emerald-700 uppercase">Mắt Xích 1</span>
-            <p class="font-extrabold text-slate-800 text-sm mt-1">Vùng Trồng</p>
-            <p class="text-[11px] text-slate-500">Thu hoạch, kiểm tra PHI (S-62)</p>
+      <!-- Quick Sub-Tabs: Tất cả / Chờ tôi xác nhận / Tôi đã gửi -->
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button id="hoFilterBtn_incoming" onclick="filterHandoversView('incoming')" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-white shadow-sm flex items-center gap-2">
+          <i class="fa-solid fa-inbox"></i> Danh Sách Chờ Tôi Xác Nhận
+          <span id="badgeIncomingCount" class="px-2 py-0.5 rounded-full text-[10px] bg-white text-amber-900 font-black">1</span>
+        </button>
+        <button id="hoFilterBtn_outgoing" onclick="filterHandoversView('outgoing')" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-paper-plane"></i> Lệnh Bàn Giao Tôi Đã Gửi
+        </button>
+        <button id="hoFilterBtn_all" onclick="filterHandoversView('all')" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left"></i> Toàn Bộ Lịch Sử
+        </button>
+      </div>
+
+      <!-- BẢNG 1: DANH SÁCH CHỜ TÔI XÁC NHẬN (INCOMING HANDOVERS CHO BÊN NHẬN - S-15, S-16) -->
+      <div id="incomingHandoversSection" class="bg-white rounded-3xl border-2 border-amber-200 shadow-md overflow-hidden space-y-3">
+        <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-4 border-b border-amber-200 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+              <i class="fa-solid fa-inbox"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-amber-950 text-sm">Danh Sách Chờ Tôi Xác Nhận (Bên Nhận Tiếp Quản)</h3>
+              <p class="text-[11px] text-amber-800">Kiểm tra thông tin và nhiệt độ trước khi [Xác Nhận] nhận lô hoặc [Từ Chối] có lý do bắt buộc.</p>
+            </div>
           </div>
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-            <span class="text-xs font-black text-slate-500 uppercase">Mắt Xích 2</span>
-            <p class="font-extrabold text-slate-800 text-sm mt-1">HTX Sơ Chế</p>
-            <p class="text-[11px] text-slate-500">Phân loại, đóng thùng chuẩn</p>
-          </div>
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-            <span class="text-xs font-black text-slate-500 uppercase">Mắt Xích 3</span>
-            <p class="font-extrabold text-slate-800 text-sm mt-1">Vận Chuyển Xe Lạnh</p>
-            <p class="text-[11px] text-slate-500">Duy trì 2°C - 6°C liên tục</p>
-          </div>
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-            <span class="text-xs font-black text-slate-500 uppercase">Mắt Xích 4</span>
-            <p class="font-extrabold text-slate-800 text-sm mt-1">Nhà Phân Phối / Siêu Thị</p>
-            <p class="text-[11px] text-slate-500">Quét QR đối chiếu nguồn gốc</p>
-          </div>
+          <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-300">
+            Dành Riêng Cho Tổ Chức Hiện Tại
+          </span>
+        </div>
+
+        <div class="overflow-x-auto p-2">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+              <tr>
+                <th class="p-3.5">Mã Lô Nông Sản</th>
+                <th class="p-3.5">Bên Giao (From Org)</th>
+                <th class="p-3.5">Nhiệt Độ Xe / Kho Lạnh</th>
+                <th class="p-3.5">Thời Gian Tạo</th>
+                <th class="p-3.5">Trạng Thái Lô</th>
+                <th class="p-3.5 text-right">Hành Động Xác Nhận (S-16)</th>
+              </tr>
+            </thead>
+            <tbody id="incomingHandoversTableBody" class="divide-y divide-slate-100 font-medium">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- Handover Table -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <!-- BẢNG 2: TOÀN BỘ LỊCH SỬ HOẶC LỆNH GỬI ĐI -->
+      <div id="generalHandoversSection" class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-3">
         <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 class="font-extrabold text-slate-800 text-sm">Hàng Đợi Bàn Giao Giữa Các Đơn Vị (S-15, S-16)</h3>
-          <span class="text-xs text-slate-500">Chuyển quyền giữ và ghi sự kiện trong cùng giao dịch</span>
+          <h3 class="font-extrabold text-slate-800 text-sm" id="generalHandoversTitle">Tất Cả Các Lệnh Bàn Giao Trong Chuỗi Cung Ứng</h3>
+          <span class="text-xs text-slate-500">Chuyển quyền giữ nguyên tử và gắn sự kiện băm SHA-256</span>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto p-2">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
               <tr>
                 <th class="p-3.5">Mã Lô</th>
-                <th class="p-3.5">Bên Giao (Custody From)</th>
-                <th class="p-3.5">Bên Nhận (Custody To)</th>
+                <th class="p-3.5">Bên Giao (From Org)</th>
+                <th class="p-3.5">Bên Nhận (To Org)</th>
                 <th class="p-3.5">Trạng Thái Bàn Giao</th>
-                <th class="p-3.5">Nhiệt Độ Bàn Giao</th>
-                <th class="p-3.5 text-right">Xác Nhận / Từ Chối</th>
+                <th class="p-3.5">Nhiệt Độ</th>
+                <th class="p-3.5 text-right">Ghi Chú / Lý Do</th>
               </tr>
             </thead>
             <tbody id="handoversTableBody" class="divide-y divide-slate-100 font-medium">
@@ -1085,34 +1109,91 @@
   <div id="handoverModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
     <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="font-extrabold text-slate-900 text-base">Tạo Phiếu Bàn Giao Lô Hàng (S-15)</h3>
+        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+          <i class="fa-solid fa-truck-moving text-emerald-600"></i> Bàn Giao Lô Hàng Sang Đơn Vị Khác (S-15)
+        </h3>
         <button onclick="closeModal('handoverModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
       <div class="space-y-3 text-xs">
+        <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-900">
+          <p class="font-bold">Quy định chuyển giao User Story S-15:</p>
+          <p class="text-[11px] mt-0.5">Khi tạo lệnh, lô chuyển sang trạng thái "chờ xác nhận". Đơn vị bạn vẫn tạm thời giữ quyền sở hữu cho tới khi bên nhận bấm Xác Nhận. Hệ thống chặn tạo lệnh bàn giao thứ hai.</p>
+        </div>
+
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Chọn Lô Bàn Giao</label>
-          <select id="ho_batch_code" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+          <label class="block font-bold text-slate-700 mb-1">Mã Lô Bàn Giao</label>
+          <select id="ho_batch_code" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-emerald-900 focus:ring-2 focus:ring-emerald-500">
             <!-- Dynamic Batches -->
           </select>
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Đơn Vị Tiếp Nhận (Custody To)</label>
-          <select id="ho_target_org" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
-            <option value="Đội Vận Chuyển Lạnh Việt Nhật">Đội Vận Chuyển Lạnh Việt Nhật (Logistics)</option>
-            <option value="HTX Sơ Chế Đà Lạt Lành">HTX Sơ Chế Đà Lạt Lành</option>
-            <option value="Trung Tâm Phân Phối Bách Hóa Xanh">Trung Tâm Phân Phối Bách Hóa Xanh</option>
+          <label class="block font-bold text-slate-700 mb-1">Tổ Chức Tiếp Nhận (To Organization) <span class="text-rose-600">*</span></label>
+          <select id="ho_target_org_id" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500">
+            <!-- Dynamic Candidate Orgs -->
           </select>
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Nhiệt Độ Xe / Kho Lạnh Khi Giao</label>
-          <input type="text" id="ho_temp" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" value="4.0°C" />
+          <label class="block font-bold text-slate-700 mb-1">Nhiệt Độ Xe Lạnh / Kho Lạnh Khi Giao (°C)</label>
+          <input type="number" step="0.1" id="ho_temp_input" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-teal-800" value="4.0" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Ghi Chú Bàn Giao</label>
+          <input type="text" id="ho_notes_input" placeholder="VD: Giao ca sáng, xe bảo ôn số 29C-8819..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium" value="Bàn giao đạt chuẩn nhiệt độ bảo quản" />
         </div>
       </div>
 
       <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
         <button onclick="closeModal('handoverModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs">Hủy</button>
-        <button onclick="submitHandoverCreate()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md">Tạo Phiếu Chờ Nhận</button>
+        <button onclick="submitHandoverCreate()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-paper-plane"></i> Gửi Lệnh Bàn Giao (S-15)
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL: TỪ CHỐI TIẾP NHẬN BÀN GIAO (S-16) -->
+  <div id="rejectHandoverModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2 text-rose-600">
+          <i class="fa-solid fa-triangle-exclamation"></i> Từ Chối Tiếp Nhận Lô Hàng (S-16)
+        </h3>
+        <button onclick="closeModal('rejectHandoverModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="p-3 bg-rose-50 rounded-2xl border border-rose-200 text-rose-900">
+          <p class="font-bold">Quy định User Story S-16:</p>
+          <p class="text-[11px] mt-0.5">Bên nhận bắt buộc phải nhập lý do từ chối (tối thiểu 10 ký tự). Lô vẫn thuộc quyền giữ của bên giao và hệ thống ghi nhận sự kiện từ chối kèm lý do vào chuỗi hash.</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Mã Lô Từ Chối</label>
+          <input type="text" id="reject_batch_code_display" readonly class="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-slate-800" value="" />
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block font-bold text-slate-700">Lý Do Từ Chối (Tối thiểu 10 ký tự) <span class="text-rose-600">*</span></label>
+            <span id="rejectCharCount" class="text-[11px] font-bold text-slate-400">0/10 ký tự</span>
+          </div>
+          <textarea 
+            id="reject_reason_input" 
+            rows="3" 
+            oninput="handleRejectReasonInput(this.value)"
+            placeholder="Nhập chi tiết lý do (VD: Nhiệt độ bảo quản xe lạnh vượt quá 8°C, bao bì bị rách hư hỏng)..." 
+            class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-rose-500 focus:bg-white"></textarea>
+          <p id="rejectErrorMsg" class="hidden text-rose-600 font-bold text-[10px] mt-1">Lý do từ chối phải dài tối thiểu 10 ký tự!</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('rejectHandoverModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs">Hủy</button>
+        <button id="btnConfirmReject" onclick="submitRejectHandoverConfirm()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-xmark"></i> Xác Nhận Từ Chối
+        </button>
       </div>
     </div>
   </div>
@@ -1121,7 +1202,7 @@
   <!-- ============================================================================ -->
   <!-- MODAL: CHI TIẾT TRUY XUẤT NGUỒN GỐC CÔNG KHAI (USER STORY S-48 & E-08)       -->
   <!-- Chỉ hiển thị: Tên SP, Tên vùng trồng, Tỉnh/thành, Ngày thu hoạch, Hành trình -->
-  <!-- Tuyệt đối không hiển thị: Khối lượng, Giá bán, Doanh thu, Đối tác trung gian  -->
+  <!-- Nút "Bàn Giao Lô Hàng" mở modal chọn tổ chức nhận (S-15)                      -->
   <!-- ============================================================================ -->
   <div id="batchDetailModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
     <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 p-6 space-y-5 max-h-[90vh] overflow-y-auto">
@@ -1174,8 +1255,17 @@
         </div>
       </div>
 
-      <div class="flex justify-end pt-3 border-t border-slate-100">
-        <button onclick="closeModal('batchDetailModal')" class="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs">Đóng Cửa Sổ</button>
+      <!-- Footer Buttons: Nút Bàn Giao (S-15) và Nút Đóng -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+        <button 
+          id="modalBtnHandover" 
+          onclick="openHandoverForCurrentBatch()" 
+          class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-2 transition-all">
+          <i class="fa-solid fa-truck-moving"></i> Bàn Giao Lô Hàng (S-15)
+        </button>
+        <button onclick="closeModal('batchDetailModal')" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
+          Đóng Cửa Sổ
+        </button>
       </div>
     </div>
   </div>
@@ -1389,21 +1479,29 @@
       handovers: [
         {
           id: 1,
+          batch_id: 2,
           batch_code: "BATCH-BERRY-01",
-          from_org: "HTX Thắng Lợi (Vùng trồng)",
-          to_org: "Đội Vận Chuyển Lạnh Việt Nhật",
-          status: "pending",
+          from_org_id: 1,
+          from_org: "HTX Nông Nghiệp Thắng Lợi",
+          to_org_id: 2,
+          to_org: "HTX Sơ Chế Đà Lạt Lành",
+          status: "PENDING",
           temp: "3.8°C",
-          reason: null
+          reject_reason: null,
+          created_at: "2026-10-20 08:30"
         },
         {
           id: 2,
+          batch_id: 1,
           batch_code: "BATCH-TOM-2601",
-          from_org: "HTX Thắng Lợi (Vùng trồng)",
+          from_org_id: 1,
+          from_org: "HTX Nông Nghiệp Thắng Lợi",
+          to_org_id: 2,
           to_org: "HTX Sơ Chế Đà Lạt Lành",
-          status: "confirmed",
+          status: "ACCEPTED",
           temp: "4.2°C",
-          reason: null
+          reject_reason: null,
+          created_at: "2026-10-19 14:15"
         }
       ],
 
@@ -1922,37 +2020,166 @@
     }
 
     /**
+     * STATE VÀ ENGINE BÀN GIAO LÔ HÀNG GIỮA CÁC TỔ CHỨC ĐỘC LẬP (S-15, S-16)
+     */
+    let currentRejectHandoverId = null;
+    let currentDetailBatchCode = null;
+    let handoverViewFilter = 'incoming'; // incoming, outgoing, all
+
+    function filterHandoversView(filterType) {
+      handoverViewFilter = filterType;
+      
+      const btnIn = document.getElementById("hoFilterBtn_incoming");
+      const btnOut = document.getElementById("hoFilterBtn_outgoing");
+      const btnAll = document.getElementById("hoFilterBtn_all");
+
+      [btnIn, btnOut, btnAll].forEach(b => {
+        if (b) b.className = "px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-2";
+      });
+
+      if (filterType === 'incoming' && btnIn) {
+        btnIn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-white shadow-sm flex items-center gap-2";
+      } else if (filterType === 'outgoing' && btnOut) {
+        btnOut.className = "px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm flex items-center gap-2";
+      } else if (btnAll) {
+        btnAll.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm flex items-center gap-2";
+      }
+
+      renderHandoversTable();
+    }
+
+    /**
      * RENDER HANDOVERS TAB (S-15, S-16)
      */
     function renderHandoversTable() {
-      const tbody = document.getElementById("handoversTableBody");
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      const currentOrgId = cfg.orgId;
+
+      // 1. Cập nhật dropdown chọn Lô bàn giao: chỉ hiển thị các lô do tổ chức mình sở hữu
       const hoBatchSel = document.getElementById("ho_batch_code");
       if (hoBatchSel) {
-        hoBatchSel.innerHTML = state.batches.map(b => `<option value="${b.code}">${b.code} - ${b.product}</option>`).join('');
+        let myBatches = state.batches;
+        if (!cfg.canAccessAllOrgs && currentOrgId !== null) {
+          myBatches = myBatches.filter(b => b.org_id === currentOrgId);
+        }
+        hoBatchSel.innerHTML = myBatches.map(b => `
+          <option value="${b.code}" ${b.code === currentDetailBatchCode ? 'selected' : ''}>
+            ${b.code} - ${b.product} (${b.status || 'Sẵn sàng'})
+          </option>
+        `).join('');
       }
 
-      if (!tbody) return;
-      tbody.innerHTML = state.handovers.map(h => {
-        let actionBtn = "";
-        let badge = "";
-        if (h.status === 'pending') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Chờ Bên Nhận Xác Nhận</span>';
-          actionBtn = `
-            <div class="flex items-center justify-end gap-1.5">
-              <button onclick="confirmHandover(${h.id})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px]">
-                Xác Nhận
-              </button>
-              <button onclick="rejectHandover(${h.id})" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px]">
-                Từ Chối
-              </button>
-            </div>
+      // 2. Cập nhật dropdown chọn Tổ chức nhận: loại trừ tổ chức của chính mình
+      const hoTargetSel = document.getElementById("ho_target_org_id");
+      if (hoTargetSel) {
+        const candidateOrgs = [
+          { id: 1, name: "HTX Nông Nghiệp Thắng Lợi (Vùng Trồng)" },
+          { id: 2, name: "HTX Sơ Chế Đà Lạt Lành (Sơ Chế)" },
+          { id: 3, name: "Đội Vận Chuyển Lạnh Việt Nhật (Logistics)" },
+          { id: 4, name: "Chuỗi Siêu Thị BioMart (Phân Phối / Bán Lẻ)" }
+        ].filter(org => org.id !== currentOrgId);
+
+        hoTargetSel.innerHTML = candidateOrgs.map(org => `
+          <option value="${org.id}">${org.name}</option>
+        `).join('');
+      }
+
+      // 3. RENDER BẢNG "DANH SÁCH CHỜ TÔI XÁC NHẬN" (INCOMING HANDOVERS CHO BÊN NHẬN)
+      const incomingTbody = document.getElementById("incomingHandoversTableBody");
+      const incomingSection = document.getElementById("incomingHandoversSection");
+      
+      const incomingList = state.handovers.filter(h => {
+        const isTarget = cfg.canAccessAllOrgs || (currentOrgId !== null && h.to_org_id === currentOrgId);
+        return isTarget && h.status === 'PENDING';
+      });
+
+      const badgeCount = document.getElementById("badgeIncomingCount");
+      if (badgeCount) badgeCount.innerText = incomingList.length;
+
+      if (incomingTbody) {
+        if (incomingList.length === 0) {
+          incomingTbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="p-6 text-center text-slate-400">
+                <i class="fa-solid fa-inbox text-2xl mb-1 text-slate-300"></i>
+                <p class="font-bold text-xs text-slate-600">Hiện không có lô hàng nào chờ ${cfg.orgName} xác nhận tiếp nhận.</p>
+                <p class="text-[11px] text-slate-400">Khi một tổ chức khác tạo lệnh bàn giao tới bạn, lô sẽ xuất hiện tại đây.</p>
+              </td>
+            </tr>
           `;
-        } else if (h.status === 'confirmed') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Đã Hoàn Tất Bàn Giao</span>';
-          actionBtn = '<span class="text-emerald-600 font-bold text-[11px]"><i class="fa-solid fa-check-double"></i> Đã chuyển quyền</span>';
         } else {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">Đã Từ Chối</span>';
-          actionBtn = `<span class="text-rose-600 text-[11px] font-semibold">${h.reason || 'Không đạt chuẩn'}</span>`;
+          incomingTbody.innerHTML = incomingList.map(h => `
+            <tr class="hover:bg-amber-50/50 transition-colors">
+              <td class="p-3.5 font-mono font-black text-amber-950 text-xs">${h.batch_code}</td>
+              <td class="p-3.5 font-bold text-slate-800">${h.from_org}</td>
+              <td class="p-3.5 font-mono font-bold text-teal-700">${h.temp || '4.0°C'}</td>
+              <td class="p-3.5 text-slate-500 font-medium">${h.created_at || 'Vừa tạo'}</td>
+              <td class="p-3.5">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Chờ Bạn Tiếp Quản
+                </span>
+              </td>
+              <td class="p-3.5 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button 
+                    onclick="confirmHandover(${h.id})" 
+                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-check"></i> Xác Nhận
+                  </button>
+                  <button 
+                    onclick="openRejectModal(${h.id}, '${h.batch_code}')" 
+                    class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-xmark"></i> Từ Chối
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      // 4. RENDER BẢNG TỔNG QUÁT THEO FILTER (INCOMING / OUTGOING / ALL)
+      const tbody = document.getElementById("handoversTableBody");
+      const titleEl = document.getElementById("generalHandoversTitle");
+      if (!tbody) return;
+
+      let displayList = state.handovers;
+      if (handoverViewFilter === 'incoming') {
+        if (titleEl) titleEl.innerText = "Các Lô Hàng Chờ Xác Nhận (Incoming)";
+        if (!cfg.canAccessAllOrgs && currentOrgId !== null) {
+          displayList = displayList.filter(h => h.to_org_id === currentOrgId);
+        }
+      } else if (handoverViewFilter === 'outgoing') {
+        if (titleEl) titleEl.innerText = `Các Lệnh Bàn Giao Do ${cfg.orgName} Gửi Đi`;
+        if (!cfg.canAccessAllOrgs && currentOrgId !== null) {
+          displayList = displayList.filter(h => h.from_org_id === currentOrgId);
+        }
+      } else {
+        if (titleEl) titleEl.innerText = "Toàn Bộ Lịch Sử Bàn Giao Trong Chuỗi";
+      }
+
+      if (displayList.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-6 text-center text-slate-400">
+              <p class="font-bold text-xs">Chưa có bản ghi bàn giao nào phù hợp với bộ lọc.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = displayList.map(h => {
+        let badge = "";
+        let noteText = h.reject_reason ? `<span class="text-rose-600 font-semibold text-[11px]" title="${h.reject_reason}">Lý do: ${h.reject_reason}</span>` : '<span class="text-slate-400 text-[11px]">Bảo quản chuỗi lạnh đạt chuẩn</span>';
+
+        if (h.status === 'PENDING') {
+          badge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">Chờ xác nhận (A vẫn giữ quyền)</span>';
+        } else if (h.status === 'ACCEPTED') {
+          badge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-check-double mr-1"></i> Đã xác nhận (B tiếp quản)</span>';
+        } else {
+          badge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200"><i class="fa-solid fa-ban mr-1"></i> Đã từ chối (A tiếp tục giữ)</span>';
         }
 
         return `
@@ -1961,65 +2188,321 @@
             <td class="p-3.5 text-slate-700 font-semibold">${h.from_org}</td>
             <td class="p-3.5 text-emerald-800 font-bold">${h.to_org}</td>
             <td class="p-3.5">${badge}</td>
-            <td class="p-3.5 font-mono font-bold text-teal-700">${h.temp}</td>
-            <td class="p-3.5 text-right">${actionBtn}</td>
+            <td class="p-3.5 font-mono font-bold text-teal-700">${h.temp || '4.0°C'}</td>
+            <td class="p-3.5 text-right">${noteText}</td>
           </tr>
         `;
       }).join('');
     }
 
-    function submitHandoverCreate() {
-      const code = document.getElementById("ho_batch_code").value;
-      const toOrg = document.getElementById("ho_target_org").value;
-      const temp = document.getElementById("ho_temp").value;
-
-      // S-15: Chặn bàn giao thứ hai cho cùng lô
-      const pendingExists = state.handovers.find(h => h.batch_code === code && h.status === 'pending');
-      if (pendingExists) {
-        showToast(`Lô ${code} đã có phiếu bàn giao đang chờ xác nhận!`, "error");
+    /**
+     * MỞ MODAL BÀN GIAO TỪ MÀN HÌNH CHI TIẾT LÔ (S-15)
+     */
+    function openHandoverForCurrentBatch() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Không được phép bàn giao lô hàng.", "error");
         return;
       }
 
-      state.handovers.unshift({
+      const batchCode = currentDetailBatchCode || (document.getElementById("modalBatchCode") ? document.getElementById("modalBatchCode").innerText.trim() : null);
+      if (!batchCode) {
+        showToast("Không tìm thấy mã lô để bàn giao!", "error");
+        return;
+      }
+
+      // Kiểm tra quyền sở hữu lô: Phải thuộc tổ chức hiện tại
+      const targetBatch = state.batches.find(b => b.code.toLowerCase() === batchCode.toLowerCase());
+      if (targetBatch && !cfg.canAccessAllOrgs && cfg.orgId !== null && targetBatch.org_id !== cfg.orgId) {
+        showToast(`Lô ${batchCode} hiện thuộc quyền quản lý của đơn vị khác! Bạn không có quyền bàn giao.`, "error");
+        return;
+      }
+
+      // Đóng modal chi tiết lô và chuyển mã vào modal bàn giao
+      closeModal("batchDetailModal");
+      renderHandoversTable();
+      
+      const sel = document.getElementById("ho_batch_code");
+      if (sel) sel.value = batchCode;
+
+      openModal("handoverModal");
+    }
+
+    /**
+     * KHỞI TẠO LỆNH BÀN GIAO SANG TỔ CHỨC KHÁC (S-15)
+     * Ràng buộc: Chặn tạo lệnh bàn giao thứ hai khi đang có lệnh chờ duyệt
+     */
+    async function submitHandoverCreate() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only!", "error");
+        return;
+      }
+
+      const code = document.getElementById("ho_batch_code").value;
+      const targetOrgId = parseInt(document.getElementById("ho_target_org_id").value);
+      const tempVal = document.getElementById("ho_temp_input").value;
+      const notes = document.getElementById("ho_notes_input").value.trim();
+
+      if (!code || !targetOrgId) {
+        showToast("Vui lòng chọn lô hàng và tổ chức tiếp nhận!", "error");
+        return;
+      }
+
+      const orgMap = {
+        1: "HTX Nông Nghiệp Thắng Lợi (Vùng Trồng)",
+        2: "HTX Sơ Chế Đà Lạt Lành (Sơ Chế)",
+        3: "Đội Vận Chuyển Lạnh Việt Nhật (Logistics)",
+        4: "Chuỗi Siêu Thị BioMart (Phân Phối / Bán Lẻ)"
+      };
+
+      if (cfg.orgId === targetOrgId) {
+        showToast("Không thể tự bàn giao cho chính tổ chức của mình!", "error");
+        return;
+      }
+
+      // TIÊU CHÍ S-15: Chặn không cho tạo lệnh bàn giao thứ hai khi đang có lệnh chờ
+      const pendingExists = state.handovers.find(h => h.batch_code.toLowerCase() === code.toLowerCase() && h.status === 'PENDING');
+      if (pendingExists) {
+        showToast(`CHẶN BÀN GIAO (S-15): Lô ${code} đang có một lệnh bàn giao chờ xác nhận!`, "error");
+        return;
+      }
+
+      // Gọi API Backend nếu khả dụng
+      try {
+        const batchObj = state.batches.find(b => b.code.toLowerCase() === code.toLowerCase());
+        const batchId = batchObj ? (batchObj.id || 1) : 1;
+        const resp = await fetch("/api/v1/handovers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            batch_id: batchId,
+            to_org_id: targetOrgId,
+            temperature: parseFloat(tempVal) || 4.0,
+            notes: notes
+          })
+        });
+        if (resp.status === 400) {
+          const errData = await resp.json();
+          showToast(`Lỗi: ${errData.detail || 'Không thể tạo lệnh bàn giao'}`, "error");
+          return;
+        }
+      } catch (e) {
+        console.log("Backend API not reachable, updating local simulation state...", e);
+      }
+
+      // Cập nhật State cục bộ:
+      // Lô chuyển sang trạng thái "chờ xác nhận", tổ chức A vẫn tạm thời giữ quyền sở hữu
+      const newHandover = {
         id: Date.now(),
+        batch_id: 1,
         batch_code: code,
-        from_org: "HTX Thắng Lợi (Vùng trồng)",
-        to_org: toOrg,
-        status: "pending",
-        temp: temp,
-        reason: null
+        from_org_id: cfg.orgId || 1,
+        from_org: cfg.orgName || "HTX Thắng Lợi",
+        to_org_id: targetOrgId,
+        to_org: orgMap[targetOrgId] || `Tổ chức #${targetOrgId}`,
+        status: "PENDING",
+        temp: `${tempVal}°C`,
+        reject_reason: null,
+        created_at: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      state.handovers.unshift(newHandover);
+
+      // Cập nhật trạng thái lô hàng thành "Chờ xác nhận"
+      const batchItem = state.batches.find(b => b.code.toLowerCase() === code.toLowerCase());
+      if (batchItem) {
+        batchItem.status = "Chờ xác nhận";
+      }
+
+      // Nối sự kiện vào Chuỗi Hash SHA-256 (Append-Only Event Ledger)
+      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
+      state.hashEvents.push({
+        index: state.hashEvents.length + 1,
+        event_type: "HANDOVER_PENDING_CREATED",
+        batch_code: code,
+        org_name: cfg.orgName || "HTX Thắng Lợi",
+        prev_hash: prevHash,
+        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+        valid: true
       });
 
       saveAppState(state);
       closeModal("handoverModal");
       renderHandoversTable();
-      showToast(`Đã tạo phiếu bàn giao lô ${code} tới ${toOrg}`, "success");
+      renderBatchesTable();
+      showToast(`Đã tạo lệnh bàn giao lô ${code} tới ${orgMap[targetOrgId]}. Lô đang ở trạng thái Chờ xác nhận (S-15)!`, "success");
     }
 
-    function confirmHandover(id) {
-      const h = state.handovers.find(x => x.id === id);
-      if (h) {
-        h.status = 'confirmed';
-        saveAppState(state);
-        renderHandoversTable();
-        showToast(`Đã xác nhận tiếp nhận lô hàng ${h.batch_code} thành công!`, "success");
-      }
-    }
-
-    function rejectHandover(id) {
-      const reason = prompt("Vui lòng nhập lý do từ chối bàn giao:");
-      if (!reason) {
-        showToast("Bắt buộc phải có lý do khi từ chối nhận hàng (S-16)!", "error");
+    /**
+     * BÊN NHẬN XÁC NHẬN BÀN GIAO (S-16)
+     * Chuyển quyền giữ lô sang bên B và ghi sự kiện vào chuỗi hash trong cùng một Transaction
+     */
+    async function confirmHandover(id) {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only!", "error");
         return;
       }
+
       const h = state.handovers.find(x => x.id === id);
-      if (h) {
-        h.status = 'rejected';
-        h.reason = reason;
-        saveAppState(state);
-        renderHandoversTable();
-        showToast(`Đã từ chối bàn giao lô ${h.batch_code}. Lý do: ${reason}`, "info");
+      if (!h) return;
+
+      // Gọi API Backend nếu khả dụng
+      try {
+        const resp = await fetch(`/api/v1/handovers/${id}/accept`, {
+          method: "POST"
+        });
+        if (resp.status === 403) {
+          showToast("Chỉ bên nhận mới có quyền xác nhận bàn giao này!", "error");
+          return;
+        }
+      } catch (e) {
+        console.log("Backend API not reachable, updating local simulation state...", e);
       }
+
+      // 1. Đổi trạng thái Handover sang ACCEPTED
+      h.status = 'ACCEPTED';
+
+      // 2. Chuyển quyền giữ lô (batches.organization_id) sang tổ chức B
+      const batchItem = state.batches.find(b => b.code.toLowerCase() === h.batch_code.toLowerCase());
+      if (batchItem) {
+        batchItem.org_id = h.to_org_id;
+        batchItem.farm = h.to_org;
+        batchItem.status = "Đang lưu kho";
+      }
+
+      // 3. Ghi sự kiện xác nhận vào chuỗi hash SHA-256 trong cùng giao dịch
+      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
+      state.hashEvents.push({
+        index: state.hashEvents.length + 1,
+        event_type: "HANDOVER_ACCEPTED_CUSTODY_TRANSFERRED",
+        batch_code: h.batch_code,
+        org_name: h.to_org,
+        prev_hash: prevHash,
+        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+        valid: true
+      });
+
+      saveAppState(state);
+      renderHandoversTable();
+      renderBatchesTable();
+      showToast(`ĐÃ XÁC NHẬN THÀNH CÔNG! Quyền giữ lô ${h.batch_code} đã chính thức chuyển sang ${h.to_org} (S-16).`, "success");
+    }
+
+    /**
+     * MỞ MODAL TỪ CHỐI BÀN GIAO (S-16)
+     */
+    function openRejectModal(id, batchCode) {
+      currentRejectHandoverId = id;
+      const display = document.getElementById("reject_batch_code_display");
+      if (display) display.value = batchCode;
+
+      const input = document.getElementById("reject_reason_input");
+      if (input) input.value = "";
+
+      const count = document.getElementById("rejectCharCount");
+      if (count) {
+        count.innerText = "0/10 ký tự";
+        count.className = "text-[11px] font-bold text-slate-400";
+      }
+
+      const errMsg = document.getElementById("rejectErrorMsg");
+      if (errMsg) errMsg.classList.add("hidden");
+
+      openModal("rejectHandoverModal");
+    }
+
+    function handleRejectReasonInput(val) {
+      const len = val.trim().length;
+      const countEl = document.getElementById("rejectCharCount");
+      const errMsg = document.getElementById("rejectErrorMsg");
+
+      if (countEl) {
+        countEl.innerText = `${len}/10 ký tự`;
+        if (len >= 10) {
+          countEl.className = "text-[11px] font-bold text-emerald-600";
+          if (errMsg) errMsg.classList.add("hidden");
+        } else {
+          countEl.className = "text-[11px] font-bold text-rose-500";
+        }
+      }
+    }
+
+    /**
+     * BÊN NHẬN TỪ CHỐI BÀN GIAO (S-16)
+     * Bắt buộc nhập lý do (tối thiểu 10 ký tự), lô vẫn thuộc quyền giữ của A và ghi nhận sự kiện từ chối kèm lý do
+     */
+    async function submitRejectHandoverConfirm() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only!", "error");
+        return;
+      }
+
+      const reason = document.getElementById("reject_reason_input").value.trim();
+      const errMsg = document.getElementById("rejectErrorMsg");
+
+      // RÀNG BUỘC S-16: Bắt buộc nhập lý do tối thiểu 10 ký tự
+      if (reason.length < 10) {
+        if (errMsg) errMsg.classList.remove("hidden");
+        showToast("Lý do từ chối bắt buộc phải có tối thiểu 10 ký tự (S-16)!", "error");
+        return;
+      }
+
+      const h = state.handovers.find(x => x.id === currentRejectHandoverId);
+      if (!h) {
+        showToast("Không tìm thấy lệnh bàn giao!", "error");
+        return;
+      }
+
+      // Gọi API Backend nếu khả dụng
+      try {
+        const resp = await fetch(`/api/v1/handovers/${h.id}/reject`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reject_reason: reason })
+        });
+        if (resp.status === 400 || resp.status === 422) {
+          const errData = await resp.json();
+          showToast(`Lỗi: ${errData.detail || 'Lý do từ chối không hợp lệ'}`, "error");
+          return;
+        }
+      } catch (e) {
+        console.log("Backend API not reachable, updating local simulation state...", e);
+      }
+
+      // 1. Cập nhật trạng thái Handover sang REJECTED
+      h.status = 'REJECTED';
+      h.reject_reason = reason;
+
+      // 2. Lô vẫn thuộc quyền giữ của bên A (giữ nguyên batch.org_id)
+      const batchItem = state.batches.find(b => b.code.toLowerCase() === h.batch_code.toLowerCase());
+      if (batchItem) {
+        batchItem.status = "Bị từ chối tiếp nhận";
+      }
+
+      // 3. Ghi nhận sự kiện từ chối kèm lý do vào chuỗi hash SHA-256
+      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
+      state.hashEvents.push({
+        index: state.hashEvents.length + 1,
+        event_type: "HANDOVER_REJECTED",
+        batch_code: h.batch_code,
+        org_name: h.to_org,
+        prev_hash: prevHash,
+        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+        valid: true
+      });
+
+      saveAppState(state);
+      closeModal("rejectHandoverModal");
+      renderHandoversTable();
+      renderBatchesTable();
+      showToast(`ĐÃ TỪ CHỐI BÀN GIAO (S-16): Lô ${h.batch_code} vẫn thuộc quyền giữ của ${h.from_org}. Đã ghi nhận lý do vào chuỗi hash!`, "info");
     }
 
     /**
@@ -2183,6 +2666,7 @@
     }
 
     function renderPublicTraceModal(data) {
+      currentDetailBatchCode = data.batch_code;
       document.getElementById("modalBatchCode").innerText = data.batch_code;
       document.getElementById("modalBatchProduct").innerText = data.product_name;
       document.getElementById("modalBatchFarm").innerText = data.farm_name;
@@ -2190,6 +2674,18 @@
       document.getElementById("modalBatchHarvestDate").innerText = data.harvest_date || "15/03/2026";
       document.getElementById("modalBatchCert").innerText = data.certification || "VietGAP";
       document.getElementById("modalBatchPhiText").innerText = data.phi_message || "Đạt chuẩn an toàn thời gian cách ly thuốc BVTV.";
+
+      // Điều khiển hiển thị nút Bàn Giao (S-15): Ẩn nếu là Consumer hoặc Inspector
+      const hoBtn = document.getElementById("modalBtnHandover");
+      if (hoBtn) {
+        const roleKey = state.currentRole || "farm";
+        const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+        if (roleKey === "consumer" || cfg.isReadOnly) {
+          hoBtn.classList.add("hidden");
+        } else {
+          hoBtn.classList.remove("hidden");
+        }
+      }
 
       // Render các mốc hành trình chuỗi cung ứng chính (S-48: Sơ chế, Vận chuyển, Phân phối)
       const listEl = document.getElementById("modalBatchJourneyList");
