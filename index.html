@@ -113,15 +113,131 @@
           </div>
         </div>
 
-        <!-- Organization Context Badge (Multi-Tenant) -->
-        <div class="flex items-center gap-3">
-          <div class="bg-slate-100 p-1.5 rounded-2xl flex items-center gap-2 border border-slate-200">
-            <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs font-black">
-              <i class="fa-solid fa-building-wheat"></i>
+        <!-- Supply Chain Persona & Organization Switcher (Epic E-02) -->
+        <div class="relative">
+          <button 
+            id="roleDropdownBtn" 
+            onclick="toggleRoleDropdown()" 
+            class="bg-slate-100 hover:bg-slate-200/80 p-1.5 px-3 rounded-2xl flex items-center gap-2.5 border border-slate-200 shadow-sm transition-all text-xs text-left cursor-pointer select-none">
+            <div id="currentRoleIconBox" class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs font-black shadow-sm">
+              <i class="fa-solid fa-seedling" id="currentRoleIcon"></i>
             </div>
-            <div class="text-left text-xs leading-tight pr-2">
-              <p class="font-bold text-slate-800" id="currentOrgName">HTX Nông Nghiệp Thắng Lợi</p>
-              <p class="text-[10px] text-emerald-600 font-semibold" id="currentOrgRole">Tổ chức Vùng trồng (Farm Tenant)</p>
+            <div class="leading-tight pr-1">
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-slate-800" id="currentRoleTitle">Vùng Trồng (Farm)</span>
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200" id="currentRoleBadge">Org #1</span>
+              </div>
+              <p class="text-[10px] text-slate-500 font-medium" id="currentOrgName">HTX Nông Nghiệp Thắng Lợi</p>
+            </div>
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-1"></i>
+          </button>
+
+          <!-- 7 Supply Chain Roles Dropdown Menu (Epic E-02) -->
+          <div id="roleDropdownMenu" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-200/90 py-2.5 z-50 animate-fadeIn">
+            <div class="px-3.5 pb-2 border-b border-slate-100 flex items-center justify-between">
+              <span class="text-[11px] font-black uppercase text-slate-400 tracking-wider">Chuỗi Cung Ứng Đa Tổ Chức (E-02)</span>
+              <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">7 Vai Trò</span>
+            </div>
+            <div class="max-h-[380px] overflow-y-auto p-1.5 space-y-1">
+              
+              <!-- 1. Farm -->
+              <div onclick="selectSupplyChainRole('farm')" class="p-2.5 rounded-2xl hover:bg-emerald-50 cursor-pointer transition-colors flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                  <i class="fa-solid fa-seedling"></i>
+                </div>
+                <div class="flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-800">1. Vùng Trồng (Farm)</span>
+                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-emerald-100 text-emerald-800">Org #1</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 font-medium">HTX Thắng Lợi - Quản lý thửa & thu hoạch</p>
+                </div>
+              </div>
+
+              <!-- 2. Processing Co-op -->
+              <div onclick="selectSupplyChainRole('processing')" class="p-2.5 rounded-2xl hover:bg-blue-50 cursor-pointer transition-colors flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                  <i class="fa-solid fa-industry"></i>
+                </div>
+                <div class="flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-800">2. HTX Sơ Chế (Processing Co-op)</span>
+                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-blue-100 text-blue-800">Org #2</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 font-medium">HTX Sơ Chế Đà Lạt Lành - Sơ chế, đóng gói</p>
+                </div>
+              </div>
+
+              <!-- 3. Logistics -->
+              <div onclick="selectSupplyChainRole('logistics')" class="p-2.5 rounded-2xl hover:bg-cyan-50 cursor-pointer transition-colors flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl bg-cyan-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                  <i class="fa-solid fa-truck-fast"></i>
+                </div>
+                <div class="flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-800">3. Vận Chuyển Lạnh (Logistics)</span>
+                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-cyan-100 text-cyan-800">Org #3</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 font-medium">Đội Xe Lạnh Việt Nhật - Giám sát IoT 2°C - 6°C</p>
+                </div>
+              </div>
+
+              <!-- 4. Retailer -->
+              <div onclick="selectSupplyChainRole('retailer')" class="p-2.5 rounded-2xl hover:bg-amber-50 cursor-pointer transition-colors flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                  <i class="fa-solid fa-shop"></i>
+                </div>
+                <div class="flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-800">4. Nhà Phân Phối / Bán Lẻ</span>
+                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-amber-100 text-amber-800">Org #4</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 font-medium">Chuỗi Siêu Thị BioMart - Điểm bán & quầy kệ</p>
+                </div>
+              </div>
+
+              <!-- 5. Inspector -->
+              <div onclick="selectSupplyChainRole('inspector')" class="p-2.5 rounded-2xl hover:bg-purple-50 cursor-pointer transition-colors flex items-start gap-3 border-t border-slate-100">
+                <div class="w-8 h-8 rounded-xl bg-purple-700 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                  <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <div class="flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-purple-900">5. Cán Bộ Kiểm Tra (Inspector)</span>
+                    <span class="text-[9px] font-black px-1.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">CHỈ ĐỌC</span>
+                  </div>
+                  <p class="text-[11px] text-purple-700 font-medium">Chi Cục Quản Lý Chất Lượng - Read-only toàn chuỗi</p>
+                </div>
+              </div>
+
+              <!-- 6. System Admin -->
+              <div onclick="selectSupplyChainRole('system_admin')" class="p-2.5 rounded-2xl hover:bg-slate-100 cursor-pointer transition-colors flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                  <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div class="flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-900">6. Quản Trị Hệ Thống (Admin)</span>
+                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-slate-200 text-slate-800">Toàn Quyền</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 font-medium">Ban Quản Trị Nền Tảng - An ninh & SecurityLog</p>
+                </div>
+              </div>
+
+              <!-- 7. Consumer -->
+              <div onclick="selectSupplyChainRole('consumer')" class="p-2.5 rounded-2xl hover:bg-emerald-50 cursor-pointer transition-colors flex items-start gap-3 border-t border-slate-100">
+                <div class="w-8 h-8 rounded-xl bg-emerald-800 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                  <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <div class="flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-800">7. Người Tiêu Dùng (Consumer)</span>
+                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-slate-100 text-slate-600">Không Login</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 font-medium">Khách quét QR tra cứu công khai (S-48)</p>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -182,6 +298,17 @@
           <i class="fa-solid fa-qrcode text-emerald-600"></i> Tra Cứu Công Khai (S-48)
         </button>
 
+      </div>
+    </div>
+
+    <!-- Inspector Read-Only Alert Banner (Epic E-02) -->
+    <div id="inspectorBanner" class="hidden bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-800 text-white px-4 py-2.5 text-xs font-medium border-b border-purple-700 shadow-md">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <i class="fa-solid fa-clipboard-check text-amber-300 text-sm"></i>
+          <span><strong>Chế độ Cán Bộ Kiểm Tra (Inspector - Epic E-02):</strong> Bạn có quyền tra cứu lô hàng trên <strong>mọi tổ chức độc lập</strong> toàn chuỗi, nhưng hệ thống được khóa ở <strong>chế độ CHỈ ĐỌC (Read-only)</strong>. Mọi hành vi tạo/sửa/xóa sẽ bị từ chối HTTP 403 Forbidden.</span>
+        </div>
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-700/80 text-purple-200 border border-purple-500 shrink-0">READ-ONLY AUDIT</span>
       </div>
     </div>
   </header>
@@ -347,7 +474,7 @@
           <p class="text-xs text-slate-500 mt-1">Mã lô ngẫu nhiên đủ dài, tìm kiếm không phân biệt hoa thường, phân trang 20 lô/trang</p>
         </div>
         <div class="flex items-center gap-2">
-          <button onclick="openModal('addBatchModal')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
+          <button id="addBatchBtn" onclick="handleAddBatchClick()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
             <i class="fa-solid fa-plus"></i> Tạo Lô Thu Hoạch Mới
           </button>
         </div>
@@ -413,7 +540,7 @@
           <h2 class="text-2xl font-black text-slate-900 mt-1">Khai Báo Thửa Đất Thuộc Tổ Chức Mình (S-06)</h2>
           <p class="text-xs text-slate-500 mt-1">Diện tích phải &gt; 0, toạ độ GPS dạng số thực, chỉ thấy thửa của tổ chức mình</p>
         </div>
-        <button onclick="openModal('addPlotModal')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
+        <button id="addPlotBtn" onclick="handleAddPlotClick()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
           <i class="fa-solid fa-plus"></i> Khai Báo Thửa Đất Mới
         </button>
       </div>
@@ -440,7 +567,7 @@
           <h2 class="text-2xl sm:text-3xl font-black text-white mt-2">Nhật Ký Vật Tư & Kiểm Tra Thời Gian Cách Ly (S-62)</h2>
           <p class="text-xs sm:text-sm text-amber-100 mt-1">Ghi nhận phân bón, thuốc BVTV đã dùng gắn với một lô hàng cụ thể để kiểm tra thời gian cách ly (PHI) khi thu hoạch</p>
         </div>
-        <button onclick="openModal('recordBatchMaterialModal')" class="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-900 font-black rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 whitespace-nowrap">
+        <button id="addMaterialBtn" onclick="handleAddMaterialClick()" class="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-900 font-black rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 whitespace-nowrap">
           <i class="fa-solid fa-plus-circle text-amber-600"></i> Ghi Nhận Vật Tư Cho Lô
         </button>
       </div>
@@ -1109,25 +1236,101 @@
      * Loại bỏ hoàn toàn Farm ERP (P&L, lương, chấm công, sâu bệnh, đề xuất vật tư)
      * Tập trung: S-06, S-08, S-09, S-10, S-12, S-13, S-14, S-15, S-16, S-62
      */
-    const APP_STORAGE_KEY = "nsl_supplychain_state_v5";
+    const APP_STORAGE_KEY = "nsl_supplychain_state_v6";
+
+    // 7 Chuỗi Cung Ứng Roles Configuration (Epic E-02)
+    const SUPPLY_CHAIN_ROLES = {
+      farm: {
+        name: "1. Vùng Trồng (Farm)",
+        orgId: 1,
+        orgName: "HTX Nông Nghiệp Thắng Lợi",
+        badge: "Org #1",
+        icon: "fa-seedling",
+        iconBg: "bg-emerald-600",
+        isReadOnly: false,
+        canAccessAllOrgs: false
+      },
+      processing: {
+        name: "2. HTX Sơ Chế (Processing Co-op)",
+        orgId: 2,
+        orgName: "HTX Sơ Chế Đà Lạt Lành",
+        badge: "Org #2",
+        icon: "fa-industry",
+        iconBg: "bg-blue-600",
+        isReadOnly: false,
+        canAccessAllOrgs: false
+      },
+      logistics: {
+        name: "3. Vận Chuyển Lạnh (Logistics)",
+        orgId: 3,
+        orgName: "Đội Vận Chuyển Lạnh Việt Nhật",
+        badge: "Org #3",
+        icon: "fa-truck-fast",
+        iconBg: "bg-cyan-600",
+        isReadOnly: false,
+        canAccessAllOrgs: false
+      },
+      retailer: {
+        name: "4. Nhà Phân Phối / Bán Lẻ",
+        orgId: 4,
+        orgName: "Chuỗi Siêu Thị BioMart",
+        badge: "Org #4",
+        icon: "fa-shop",
+        iconBg: "bg-amber-600",
+        isReadOnly: false,
+        canAccessAllOrgs: false
+      },
+      inspector: {
+        name: "5. Cán Bộ Kiểm Tra (Inspector)",
+        orgId: 99,
+        orgName: "Chi Cục Quản Lý Chất Lượng NLTS",
+        badge: "CHỈ ĐỌC",
+        icon: "fa-clipboard-check",
+        iconBg: "bg-purple-700",
+        isReadOnly: true,
+        canAccessAllOrgs: true
+      },
+      system_admin: {
+        name: "6. Quản Trị Hệ Thống (Admin)",
+        orgId: 0,
+        orgName: "Ban Quản Trị Nền Tảng Chuỗi Cung Ứng",
+        badge: "Toàn Quyền",
+        icon: "fa-user-shield",
+        iconBg: "bg-slate-900",
+        isReadOnly: false,
+        canAccessAllOrgs: true
+      },
+      consumer: {
+        name: "7. Người Tiêu Dùng (Consumer)",
+        orgId: null,
+        orgName: "Khách Quét QR (Không Login)",
+        badge: "Công Khai",
+        icon: "fa-qrcode",
+        iconBg: "bg-emerald-800",
+        isReadOnly: true,
+        canAccessAllOrgs: false
+      }
+    };
 
     // Initial Supply Chain Seed Data
     const defaultData = {
       activeTab: "overview", // overview, batches, plots, materials_phi, handovers, traceability, public
+      currentRole: "farm",
 
-      // S-06: Thửa đất vùng trồng
+      // S-06: Thửa đất vùng trồng (cô lập theo org_id)
       plots: [
-        { id: 1, name: "Thửa A1 - Nhà Màng Cà Chua Beef", area: 2500, unit: "m2", lat: "11.9404", lng: "108.4583", address: "Xã Đạ Sar, Lạc Dương, Lâm Đồng" },
-        { id: 2, name: "Thửa B2 - Vườn Dâu Tây Hữu Cơ", area: 1800, unit: "m2", lat: "11.9421", lng: "108.4595", address: "Xã Đạ Sar, Lạc Dương, Lâm Đồng" },
-        { id: 3, name: "Thửa C1 - Khu Dưa Lưới Huỳnh Long", area: 3200, unit: "m2", lat: "11.7821", lng: "108.5714", address: "Thôn Lạc Nghiệp, Đơn Dương, Lâm Đồng" }
+        { id: 1, org_id: 1, name: "Thửa A1 - Nhà Màng Cà Chua Beef", area: 2500, unit: "m2", lat: "11.9404", lng: "108.4583", address: "Xã Đạ Sar, Lạc Dương, Lâm Đồng" },
+        { id: 2, org_id: 1, name: "Thửa B2 - Vườn Dâu Tây Hữu Cơ", area: 1800, unit: "m2", lat: "11.9421", lng: "108.4595", address: "Xã Đạ Sar, Lạc Dương, Lâm Đồng" },
+        { id: 3, org_id: 1, name: "Thửa C1 - Khu Dưa Lưới Huỳnh Long", area: 3200, unit: "m2", lat: "11.7821", lng: "108.5714", address: "Thôn Lạc Nghiệp, Đơn Dương, Lâm Đồng" }
       ],
 
-      // S-08, S-14: Lô nông sản
+      // S-08, S-14, E-02: Lô nông sản của các tổ chức độc lập trong chuỗi
       batches: [
-        { code: "BATCH-TOM-2601", product: "Cà Chua Beef Hữu Cơ", farm: "HTX Thắng Lợi", qty: 1200, status: "Đang lưu kho", temp: "4.2°C", cert: "GlobalGAP", plot: "Thửa A1" },
-        { code: "BATCH-BERRY-01", product: "Dâu Tây New Zealand", farm: "HTX Thắng Lợi", qty: 450, status: "Đang vận chuyển", temp: "3.8°C", cert: "VietGAP", plot: "Thửa B2" },
-        { code: "BATCH-MELON-02", product: "Dưa Lưới Huỳnh Long", farm: "HTX Thắng Lợi", qty: 2100, status: "Đang lưu kho", temp: "5.1°C", cert: "Organic EU", plot: "Thửa C1" },
-        { code: "BATCH-AVO-03", product: "Bơ Sáp 034 Đặc Sản", farm: "HTX Thắng Lợi", qty: 850, status: "Đã thu hoạch", temp: "6.0°C", cert: "VietGAP", plot: "Thửa A1" }
+        { code: "BATCH-TOM-2601", product: "Cà Chua Beef Hữu Cơ", org_id: 1, farm: "HTX Thắng Lợi", qty: 1200, status: "Đang lưu kho", temp: "4.2°C", cert: "GlobalGAP", plot: "Thửa A1" },
+        { code: "BATCH-BERRY-01", product: "Dâu Tây New Zealand", org_id: 1, farm: "HTX Thắng Lợi", qty: 450, status: "Đang lưu kho", temp: "3.8°C", cert: "VietGAP", plot: "Thửa B2" },
+        { code: "BATCH-MELON-02", product: "Dưa Lưới Sơ Chế Đóng Gói", org_id: 2, farm: "HTX Sơ Chế Đà Lạt Lành", qty: 2100, status: "Đang sơ chế", temp: "5.1°C", cert: "Organic EU", plot: "Xưởng Sơ Chế #1" },
+        { code: "BATCH-AVO-03", product: "Bơ Sáp 034 Chuỗi Lạnh", org_id: 3, farm: "Đội Xe Lạnh Việt Nhật", qty: 850, status: "Đang vận chuyển", temp: "3.5°C", cert: "VietGAP", plot: "Container 29C-8819" },
+        { code: "BATCH-GRAPE-04", product: "Nho Hạ Đen Quầy Kệ", org_id: 4, farm: "Chuỗi Siêu Thị BioMart", qty: 650, status: "Điểm bán lẻ", temp: "6.0°C", cert: "VietGAP", plot: "Quầy Kệ K12 BioMart" }
       ],
 
       // S-62: Nhật ký vật tư & Thời gian cách ly thu hoạch (PHI)
@@ -1240,7 +1443,10 @@
     function getAppState() {
       try {
         const stored = localStorage.getItem(APP_STORAGE_KEY);
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.batches && parsed.batches.length > 0) return parsed;
+        }
       } catch(e) {}
       localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(defaultData));
       return defaultData;
@@ -1251,6 +1457,108 @@
     }
 
     let state = getAppState();
+
+    /**
+     * SUPPLY CHAIN ROLE & DROPDOWN MANAGEMENT (Epic E-02)
+     */
+    function toggleRoleDropdown() {
+      const menu = document.getElementById("roleDropdownMenu");
+      if (menu) menu.classList.toggle("hidden");
+    }
+
+    document.addEventListener("click", (e) => {
+      const btn = document.getElementById("roleDropdownBtn");
+      const menu = document.getElementById("roleDropdownMenu");
+      if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+        menu.classList.add("hidden");
+      }
+    });
+
+    function updateRoleUI() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
+      const iconBox = document.getElementById("currentRoleIconBox");
+      const icon = document.getElementById("currentRoleIcon");
+      const title = document.getElementById("currentRoleTitle");
+      const badge = document.getElementById("currentRoleBadge");
+      const orgName = document.getElementById("currentOrgName");
+      const inspectorBanner = document.getElementById("inspectorBanner");
+
+      if (iconBox) iconBox.className = `w-8 h-8 rounded-xl ${cfg.iconBg} text-white flex items-center justify-center text-xs font-black shadow-sm`;
+      if (icon) icon.className = `fa-solid ${cfg.icon}`;
+      if (title) title.innerText = cfg.name;
+      if (badge) {
+        badge.innerText = cfg.badge;
+        if (roleKey === "inspector") {
+          badge.className = "text-[9px] font-black px-1.5 py-0.2 rounded-full bg-purple-100 text-purple-800 border border-purple-200";
+        } else {
+          badge.className = "text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200";
+        }
+      }
+      if (orgName) orgName.innerText = cfg.orgName;
+
+      // Hiển thị hoặc ẩn banner Cán Bộ Kiểm Tra (Epic E-02: Inspector Read-Only)
+      if (inspectorBanner) {
+        if (roleKey === "inspector") {
+          inspectorBanner.classList.remove("hidden");
+        } else {
+          inspectorBanner.classList.add("hidden");
+        }
+      }
+    }
+
+    function selectSupplyChainRole(roleKey) {
+      if (!SUPPLY_CHAIN_ROLES[roleKey]) return;
+      state.currentRole = roleKey;
+      saveAppState(state);
+
+      const menu = document.getElementById("roleDropdownMenu");
+      if (menu) menu.classList.add("hidden");
+
+      updateRoleUI();
+
+      if (roleKey === "consumer") {
+        switchNavTab("public");
+        showToast("Đã chuyển sang vai trò Người Tiêu Dùng (Tra cứu công khai không cần đăng nhập)", "info");
+      } else {
+        switchNavTab(state.activeTab || "overview");
+        showToast(`Đã chuyển vai trò: ${SUPPLY_CHAIN_ROLES[roleKey].name}`, "success");
+      }
+    }
+
+    /**
+     * ACTION GUARDS FOR INSPECTOR READ-ONLY (Epic E-02 Criterion 3)
+     */
+    function handleAddBatchClick() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi ghi đã bị chặn và ghi log an ninh.", "error");
+        return;
+      }
+      openModal('addBatchModal');
+    }
+
+    function handleAddPlotClick() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi ghi đã bị chặn và ghi log an ninh.", "error");
+        return;
+      }
+      openModal('addPlotModal');
+    }
+
+    function handleAddMaterialClick() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi ghi đã bị chặn và ghi log an ninh.", "error");
+        return;
+      }
+      openModal('recordBatchMaterialModal');
+    }
 
     /**
      * NAVIGATION TAB SWITCHER
@@ -1303,13 +1611,36 @@
       const tbody = document.getElementById("batchesTableBody");
       if (!tbody) return;
 
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
+      // Epic E-02: Cô lập dữ liệu theo Organization ID:
+      // Mỗi tổ chức chỉ xem các lô hàng đang thuộc quyền quản lý của mình.
+      // Riêng cán bộ kiểm tra (Inspector) và Quản trị hệ thống (Admin) tra cứu lô trên mọi tổ chức.
       let list = state.batches;
+      if (!cfg.canAccessAllOrgs && cfg.orgId !== null) {
+        list = list.filter(b => b.org_id === cfg.orgId);
+      }
+
       if (filterText) {
         const lower = filterText.toLowerCase();
         list = list.filter(b => b.code.toLowerCase().includes(lower) || b.product.toLowerCase().includes(lower));
       }
       if (productFilter !== 'all') {
         list = list.filter(b => b.product === productFilter);
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="p-8 text-center text-slate-400">
+              <i class="fa-solid fa-box-open text-3xl mb-2 text-slate-300"></i>
+              <p class="font-bold text-xs">Không có lô hàng nào thuộc quyền quản lý của ${cfg.orgName}</p>
+              <p class="text-[11px] text-slate-400 mt-1">Dữ liệu được cô lập chặt chẽ theo Organization ID (Epic E-02)</p>
+            </td>
+          </tr>
+        `;
+        return;
       }
 
       tbody.innerHTML = list.map(b => {
@@ -1357,7 +1688,27 @@
       const container = document.getElementById("plotsGrid");
       if (!container) return;
 
-      container.innerHTML = state.plots.map(p => `
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
+      // Cô lập thửa đất theo organization_id (riêng Inspector và Admin xem được tất cả)
+      let list = state.plots;
+      if (!cfg.canAccessAllOrgs && cfg.orgId !== null) {
+        list = list.filter(p => !p.org_id || p.org_id === cfg.orgId);
+      }
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full p-8 text-center text-slate-400 bg-white rounded-3xl border border-slate-200">
+            <i class="fa-solid fa-map-location-dot text-3xl mb-2 text-slate-300"></i>
+            <p class="font-bold text-xs">Không có thửa đất nào thuộc quyền quản lý của ${cfg.orgName}</p>
+            <p class="text-[11px] text-slate-400 mt-1">Mỗi tổ chức chỉ xem và khai báo thửa đất thuộc quyền quản lý của mình (S-06, Epic E-02)</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(p => `
         <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4 hover:shadow-md transition-shadow">
           <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <h4 class="font-black text-slate-800 text-base">${p.name}</h4>
@@ -1388,6 +1739,13 @@
     }
 
     function deletePlotItem(id) {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi xóa đã bị chặn và ghi log an ninh.", "error");
+        return;
+      }
+
       if (confirm("Bạn có chắc chắn muốn xóa thửa đất này?")) {
         state.plots = state.plots.filter(p => p.id !== id);
         saveAppState(state);
@@ -1504,6 +1862,13 @@
      * SUBMIT MATERIAL USAGE LOG (S-62)
      */
     function submitBatchMaterialLog() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi ghi đã bị chặn và ghi log an ninh.", "error");
+        return;
+      }
+
       const batchCode = document.getElementById("modal_mat_batch_code").value;
       const matName = document.getElementById("modal_mat_name").value.trim();
       const category = document.getElementById("modal_mat_category").value;
@@ -1898,6 +2263,13 @@
     }
 
     function saveBatchSubmit() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi ghi đã bị chặn và ghi log an ninh.", "error");
+        return;
+      }
+
       const code = document.getElementById("batch_code").value.trim() || generateSecureBatchCode();
       const product = document.getElementById("batch_product").value.trim();
       const qty = parseInt(document.getElementById("batch_quantity").value) || 0;
@@ -1911,7 +2283,8 @@
       state.batches.unshift({
         code: code,
         product: product,
-        farm: "HTX Thắng Lợi",
+        org_id: cfg.orgId || 1,
+        farm: cfg.orgName || "HTX Thắng Lợi",
         qty: qty,
         status: "Đã thu hoạch",
         temp: "4.5°C",
@@ -1925,7 +2298,7 @@
         index: state.hashEvents.length + 1,
         event_type: "BATCH_HARVEST_CREATED",
         batch_code: code,
-        org_name: "HTX Thắng Lợi",
+        org_name: cfg.orgName || "HTX Thắng Lợi",
         prev_hash: prevHash,
         curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15),
         valid: true
@@ -1950,6 +2323,13 @@
     }
 
     function savePlotSubmit() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi ghi đã bị chặn và ghi log an ninh.", "error");
+        return;
+      }
+
       const name = document.getElementById("plot_name").value.trim();
       const area = parseFloat(document.getElementById("plot_area").value);
       const unit = document.getElementById("plot_unit").value;
@@ -1964,6 +2344,7 @@
 
       state.plots.push({
         id: Date.now(),
+        org_id: cfg.orgId || 1,
         name: name,
         area: area,
         unit: unit,
@@ -2005,6 +2386,7 @@
 
     // Initial Load
     document.addEventListener("DOMContentLoaded", () => {
+      updateRoleUI();
       switchNavTab(state.activeTab || 'overview');
     });
   </script>
