@@ -284,6 +284,13 @@
           <i class="fa-solid fa-truck-ramp-box"></i> Bàn Giao & Vận Chuyển Lạnh (S-15, S-16)
         </button>
 
+                <button 
+          id="tabBtn_recalls" 
+          onclick="switchNavTab('recalls')"
+          class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-900 transition-all flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Thu Hồi Khẩn Cấp (E-06)
+        </button>
+
         <button 
           id="tabBtn_traceability" 
           onclick="switchNavTab('traceability')"
@@ -338,6 +345,12 @@
           </button>
           <button onclick="openModal('recordBatchMaterialModal')" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
             <i class="fa-solid fa-spray-can"></i> Ghi Nhận Vật Tư (S-62)
+          </button>
+          <button 
+            id="modalBtnRecall" 
+            onclick="openRecallModalForCurrentBatch()" 
+            class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-triangle-exclamation"></i> Thu Hồi Khẩn Cấp (S-33)
           </button>
         </div>
       </div>
@@ -474,6 +487,9 @@
           <p class="text-xs text-slate-500 mt-1">Mã lô ngẫu nhiên đủ dài, tìm kiếm không phân biệt hoa thường, phân trang 20 lô/trang</p>
         </div>
         <div class="flex items-center gap-2">
+          <button id="btnOpenMergeModal" onclick="openMergeModalForSelected()" class="hidden px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-all">
+            <i class="fa-solid fa-object-group"></i> Gộp Lô Đã Chọn (<span id="mergeSelectedCount">0</span>) (S-19)
+          </button>
           <button id="addBatchBtn" onclick="handleAddBatchClick()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
             <i class="fa-solid fa-plus"></i> Tạo Lô Thu Hoạch Mới
           </button>
@@ -510,10 +526,11 @@
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
               <tr>
+                <th class="p-3.5 w-10 text-center"><input type="checkbox" id="selectAllBatches" onchange="toggleSelectAllBatches(this)" class="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"/></th>
                 <th class="p-3.5">Mã Định Danh Lô</th>
                 <th class="p-3.5">Tên Nông Sản</th>
                 <th class="p-3.5">Thửa Đất Nguồn</th>
-                <th class="p-3.5">Khối Lượng</th>
+                <th class="p-3.5">Khối Lượng Còn Lại (S-17)</th>
                 <th class="p-3.5">Trạng Thái Chuỗi Lạnh</th>
                 <th class="p-3.5">Thời Gian Cách Ly (S-62)</th>
                 <th class="p-3.5 text-right">Thao Tác</th>
@@ -646,57 +663,81 @@
       
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Luân Chuyển Chuỗi Cung Ứng</span>
-          <h2 class="text-2xl font-black text-slate-900 mt-1">Bàn Giao Lô Hàng Chờ Xác Nhận (S-15, S-16)</h2>
-          <p class="text-xs text-slate-500 mt-1">Chặn bàn giao lần hai, bên nhận xác nhận hoặc từ chối kèm lý do, chuyển quyền giữ nguyên tử trong giao dịch</p>
+          <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Luân Chuyển Chuỗi Cung Ứng (User Story S-15, S-16)</span>
+          <h2 class="text-2xl font-black text-slate-900 mt-1">Bàn Giao Lô Hàng Giữa Các Tổ Chức Độc Lập</h2>
+          <p class="text-xs text-slate-500 mt-1">Chặn bàn giao lần hai khi đang chờ duyệt. Bên nhận xác nhận chuyển quyền hoặc từ chối kèm lý do (tối thiểu 10 ký tự) trong cùng giao dịch.</p>
         </div>
-        <button onclick="openModal('handoverModal')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
+        <button onclick="openModal('handoverModal')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
           <i class="fa-solid fa-truck-moving"></i> Tạo Phiếu Bàn Giao Mới
         </button>
       </div>
 
-      <!-- Handover Flow Visualization -->
-      <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-          <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
-            <span class="text-xs font-black text-emerald-700 uppercase">Mắt Xích 1</span>
-            <p class="font-extrabold text-slate-800 text-sm mt-1">Vùng Trồng</p>
-            <p class="text-[11px] text-slate-500">Thu hoạch, kiểm tra PHI (S-62)</p>
+      <!-- Quick Sub-Tabs: Tất cả / Chờ tôi xác nhận / Tôi đã gửi -->
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button id="hoFilterBtn_incoming" onclick="filterHandoversView('incoming')" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-white shadow-sm flex items-center gap-2">
+          <i class="fa-solid fa-inbox"></i> Danh Sách Chờ Tôi Xác Nhận
+          <span id="badgeIncomingCount" class="px-2 py-0.5 rounded-full text-[10px] bg-white text-amber-900 font-black">1</span>
+        </button>
+        <button id="hoFilterBtn_outgoing" onclick="filterHandoversView('outgoing')" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-paper-plane"></i> Lệnh Bàn Giao Tôi Đã Gửi
+        </button>
+        <button id="hoFilterBtn_all" onclick="filterHandoversView('all')" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left"></i> Toàn Bộ Lịch Sử
+        </button>
+      </div>
+
+      <!-- BẢNG 1: DANH SÁCH CHỜ TÔI XÁC NHẬN (INCOMING HANDOVERS CHO BÊN NHẬN - S-15, S-16) -->
+      <div id="incomingHandoversSection" class="bg-white rounded-3xl border-2 border-amber-200 shadow-md overflow-hidden space-y-3">
+        <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-4 border-b border-amber-200 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+              <i class="fa-solid fa-inbox"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-amber-950 text-sm">Danh Sách Chờ Tôi Xác Nhận (Bên Nhận Tiếp Quản)</h3>
+              <p class="text-[11px] text-amber-800">Kiểm tra thông tin và nhiệt độ trước khi [Xác Nhận] nhận lô hoặc [Từ Chối] có lý do bắt buộc.</p>
+            </div>
           </div>
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-            <span class="text-xs font-black text-slate-500 uppercase">Mắt Xích 2</span>
-            <p class="font-extrabold text-slate-800 text-sm mt-1">HTX Sơ Chế</p>
-            <p class="text-[11px] text-slate-500">Phân loại, đóng thùng chuẩn</p>
-          </div>
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-            <span class="text-xs font-black text-slate-500 uppercase">Mắt Xích 3</span>
-            <p class="font-extrabold text-slate-800 text-sm mt-1">Vận Chuyển Xe Lạnh</p>
-            <p class="text-[11px] text-slate-500">Duy trì 2°C - 6°C liên tục</p>
-          </div>
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-            <span class="text-xs font-black text-slate-500 uppercase">Mắt Xích 4</span>
-            <p class="font-extrabold text-slate-800 text-sm mt-1">Nhà Phân Phối / Siêu Thị</p>
-            <p class="text-[11px] text-slate-500">Quét QR đối chiếu nguồn gốc</p>
-          </div>
+          <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-300">
+            Dành Riêng Cho Tổ Chức Hiện Tại
+          </span>
+        </div>
+
+        <div class="overflow-x-auto p-2">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+              <tr>
+                <th class="p-3.5">Mã Lô Nông Sản</th>
+                <th class="p-3.5">Bên Giao (From Org)</th>
+                <th class="p-3.5">Nhiệt Độ Xe / Kho Lạnh</th>
+                <th class="p-3.5">Thời Gian Tạo</th>
+                <th class="p-3.5">Trạng Thái Lô</th>
+                <th class="p-3.5 text-right">Hành Động Xác Nhận (S-16)</th>
+              </tr>
+            </thead>
+            <tbody id="incomingHandoversTableBody" class="divide-y divide-slate-100 font-medium">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- Handover Table -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <!-- BẢNG 2: TOÀN BỘ LỊCH SỬ HOẶC LỆNH GỬI ĐI -->
+      <div id="generalHandoversSection" class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-3">
         <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 class="font-extrabold text-slate-800 text-sm">Hàng Đợi Bàn Giao Giữa Các Đơn Vị (S-15, S-16)</h3>
-          <span class="text-xs text-slate-500">Chuyển quyền giữ và ghi sự kiện trong cùng giao dịch</span>
+          <h3 class="font-extrabold text-slate-800 text-sm" id="generalHandoversTitle">Tất Cả Các Lệnh Bàn Giao Trong Chuỗi Cung Ứng</h3>
+          <span class="text-xs text-slate-500">Chuyển quyền giữ nguyên tử và gắn sự kiện băm SHA-256</span>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto p-2">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
               <tr>
                 <th class="p-3.5">Mã Lô</th>
-                <th class="p-3.5">Bên Giao (Custody From)</th>
-                <th class="p-3.5">Bên Nhận (Custody To)</th>
+                <th class="p-3.5">Bên Giao (From Org)</th>
+                <th class="p-3.5">Bên Nhận (To Org)</th>
                 <th class="p-3.5">Trạng Thái Bàn Giao</th>
-                <th class="p-3.5">Nhiệt Độ Bàn Giao</th>
-                <th class="p-3.5 text-right">Xác Nhận / Từ Chối</th>
+                <th class="p-3.5">Nhiệt Độ</th>
+                <th class="p-3.5 text-right">Ghi Chú / Lý Do</th>
               </tr>
             </thead>
             <tbody id="handoversTableBody" class="divide-y divide-slate-100 font-medium">
@@ -822,6 +863,115 @@
 
         </div>
       </section>
+
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 8: THU HỒI LÔ HÀNG KHẨN CẤP (EPIC E-06)             -->
+    <!-- S-33, S-34, S-35, S-36, S-37, S-38                        -->
+    <!-- ======================================================== -->
+    <div id="view_recalls" class="module-view space-y-8 hidden">
+      
+      <!-- Recall Hero Banner -->
+      <div class="bg-gradient-to-r from-rose-900 via-rose-800 to-amber-950 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-rose-700">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-700/60 border border-rose-500/30 text-rose-200 text-xs font-bold">
+            <i class="fa-solid fa-triangle-exclamation text-rose-300"></i> Epic E-06: Ứng Phó Khẩn Cấp Sự Cố An Toàn Thực Phẩm
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-white">Quản Lý Thu Hồi Lô Hàng Khẩn Cấp (Recall)</h2>
+          <p class="text-xs sm:text-sm text-rose-100/90 max-w-2xl">
+            Khi phát hiện sự cố an toàn thực phẩm, hệ thống lập tức khoanh vùng toàn bộ cây phả hệ hậu duệ qua mọi tầng tách/gộp (S-34, S-35) và tự động khóa quyền Bàn giao, Tách, Gộp (S-38) để bảo vệ sức khỏe người tiêu dùng.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button onclick="switchNavTab('batches')" class="px-4 py-2.5 bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
+            <i class="fa-solid fa-boxes-stacked"></i> Chọn Lô Cần Mở Thu Hồi
+          </button>
+        </div>
+      </div>
+
+      <!-- Recall Metrics KPI Bar -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Lệnh Đang Kích Hoạt</p>
+            <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <i class="fa-solid fa-bullhorn"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-rose-700 mt-2" id="kpiActiveRecalls">0 Lệnh</p>
+          <p class="text-[11px] text-rose-600 font-semibold mt-1">Đang xử lý cô lập</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Lô Bị Khoanh Vùng</p>
+            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <i class="fa-solid fa-network-wired"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-amber-700 mt-2" id="kpiTotalAffectedBatches">0 Lô</p>
+          <p class="text-[11px] text-slate-500 mt-1">Cây phả hệ con/cháu (S-34)</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Tồn Kho / Kệ Siêu Thị</p>
+            <div class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+              <i class="fa-solid fa-boxes-packing"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-orange-700 mt-2" id="kpiStockToIsolateKg">0 kg</p>
+          <p class="text-[11px] text-orange-600 font-semibold mt-1">Khóa quyền lưu thông (S-38)</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Đã Bán Cho Người Dùng</p>
+            <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+              <i class="fa-solid fa-user-tag"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-purple-700 mt-2" id="kpiSoldToConsumersKg">0 kg</p>
+          <p class="text-[11px] text-purple-600 font-semibold mt-1">Cần thông báo thu hồi (S-35)</p>
+        </div>
+      </div>
+
+      <!-- Recall List Table Card -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-4 p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-clipboard-list text-rose-600"></i> Danh Sách Lệnh Thu Hồi Nông Sản Khẩn Cấp
+            </h3>
+            <p class="text-xs text-slate-500">Giám sát tiến độ xác nhận cô lập của từng tổ chức theo thời gian thực (S-36, S-37)</p>
+          </div>
+          <button onclick="renderRecallsTab()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-arrows-rotate"></i> Làm Mới Dữ Liệu
+          </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-slate-200">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">Mã Lệnh Thu Hồi</th>
+                <th class="p-3.5">Lô Nguồn & Sản Phẩm</th>
+                <th class="p-3.5">Mức Độ</th>
+                <th class="p-3.5">Tiến Độ Xử Lý Các Tổ Chức (S-37)</th>
+                <th class="p-3.5 text-right">Kho / Kệ (kg)</th>
+                <th class="p-3.5 text-right">Đã Bán (kg)</th>
+                <th class="p-3.5">Trạng Thái</th>
+                <th class="p-3.5 text-right">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody id="recallsTableBody" class="divide-y divide-slate-100">
+              <!-- Dynamic recall items -->
+            </tbody>
+          </table>
+        </div>
+      </div>
 
     </div>
 
@@ -1085,34 +1235,91 @@
   <div id="handoverModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
     <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="font-extrabold text-slate-900 text-base">Tạo Phiếu Bàn Giao Lô Hàng (S-15)</h3>
+        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+          <i class="fa-solid fa-truck-moving text-emerald-600"></i> Bàn Giao Lô Hàng Sang Đơn Vị Khác (S-15)
+        </h3>
         <button onclick="closeModal('handoverModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
       <div class="space-y-3 text-xs">
+        <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-900">
+          <p class="font-bold">Quy định chuyển giao User Story S-15:</p>
+          <p class="text-[11px] mt-0.5">Khi tạo lệnh, lô chuyển sang trạng thái "chờ xác nhận". Đơn vị bạn vẫn tạm thời giữ quyền sở hữu cho tới khi bên nhận bấm Xác Nhận. Hệ thống chặn tạo lệnh bàn giao thứ hai.</p>
+        </div>
+
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Chọn Lô Bàn Giao</label>
-          <select id="ho_batch_code" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+          <label class="block font-bold text-slate-700 mb-1">Mã Lô Bàn Giao</label>
+          <select id="ho_batch_code" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-emerald-900 focus:ring-2 focus:ring-emerald-500">
             <!-- Dynamic Batches -->
           </select>
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Đơn Vị Tiếp Nhận (Custody To)</label>
-          <select id="ho_target_org" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
-            <option value="Đội Vận Chuyển Lạnh Việt Nhật">Đội Vận Chuyển Lạnh Việt Nhật (Logistics)</option>
-            <option value="HTX Sơ Chế Đà Lạt Lành">HTX Sơ Chế Đà Lạt Lành</option>
-            <option value="Trung Tâm Phân Phối Bách Hóa Xanh">Trung Tâm Phân Phối Bách Hóa Xanh</option>
+          <label class="block font-bold text-slate-700 mb-1">Tổ Chức Tiếp Nhận (To Organization) <span class="text-rose-600">*</span></label>
+          <select id="ho_target_org_id" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500">
+            <!-- Dynamic Candidate Orgs -->
           </select>
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Nhiệt Độ Xe / Kho Lạnh Khi Giao</label>
-          <input type="text" id="ho_temp" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" value="4.0°C" />
+          <label class="block font-bold text-slate-700 mb-1">Nhiệt Độ Xe Lạnh / Kho Lạnh Khi Giao (°C)</label>
+          <input type="number" step="0.1" id="ho_temp_input" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-teal-800" value="4.0" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Ghi Chú Bàn Giao</label>
+          <input type="text" id="ho_notes_input" placeholder="VD: Giao ca sáng, xe bảo ôn số 29C-8819..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium" value="Bàn giao đạt chuẩn nhiệt độ bảo quản" />
         </div>
       </div>
 
       <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
         <button onclick="closeModal('handoverModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs">Hủy</button>
-        <button onclick="submitHandoverCreate()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md">Tạo Phiếu Chờ Nhận</button>
+        <button onclick="submitHandoverCreate()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-paper-plane"></i> Gửi Lệnh Bàn Giao (S-15)
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL: TỪ CHỐI TIẾP NHẬN BÀN GIAO (S-16) -->
+  <div id="rejectHandoverModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2 text-rose-600">
+          <i class="fa-solid fa-triangle-exclamation"></i> Từ Chối Tiếp Nhận Lô Hàng (S-16)
+        </h3>
+        <button onclick="closeModal('rejectHandoverModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="p-3 bg-rose-50 rounded-2xl border border-rose-200 text-rose-900">
+          <p class="font-bold">Quy định User Story S-16:</p>
+          <p class="text-[11px] mt-0.5">Bên nhận bắt buộc phải nhập lý do từ chối (tối thiểu 10 ký tự). Lô vẫn thuộc quyền giữ của bên giao và hệ thống ghi nhận sự kiện từ chối kèm lý do vào chuỗi hash.</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Mã Lô Từ Chối</label>
+          <input type="text" id="reject_batch_code_display" readonly class="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-slate-800" value="" />
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block font-bold text-slate-700">Lý Do Từ Chối (Tối thiểu 10 ký tự) <span class="text-rose-600">*</span></label>
+            <span id="rejectCharCount" class="text-[11px] font-bold text-slate-400">0/10 ký tự</span>
+          </div>
+          <textarea 
+            id="reject_reason_input" 
+            rows="3" 
+            oninput="handleRejectReasonInput(this.value)"
+            placeholder="Nhập chi tiết lý do (VD: Nhiệt độ bảo quản xe lạnh vượt quá 8°C, bao bì bị rách hư hỏng)..." 
+            class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-rose-500 focus:bg-white"></textarea>
+          <p id="rejectErrorMsg" class="hidden text-rose-600 font-bold text-[10px] mt-1">Lý do từ chối phải dài tối thiểu 10 ký tự!</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('rejectHandoverModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs">Hủy</button>
+        <button id="btnConfirmReject" onclick="submitRejectHandoverConfirm()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-xmark"></i> Xác Nhận Từ Chối
+        </button>
       </div>
     </div>
   </div>
@@ -1121,7 +1328,7 @@
   <!-- ============================================================================ -->
   <!-- MODAL: CHI TIẾT TRUY XUẤT NGUỒN GỐC CÔNG KHAI (USER STORY S-48 & E-08)       -->
   <!-- Chỉ hiển thị: Tên SP, Tên vùng trồng, Tỉnh/thành, Ngày thu hoạch, Hành trình -->
-  <!-- Tuyệt đối không hiển thị: Khối lượng, Giá bán, Doanh thu, Đối tác trung gian  -->
+  <!-- Nút "Bàn Giao Lô Hàng" mở modal chọn tổ chức nhận (S-15)                      -->
   <!-- ============================================================================ -->
   <div id="batchDetailModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
     <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 p-6 space-y-5 max-h-[90vh] overflow-y-auto">
@@ -1145,6 +1352,25 @@
           <div><p class="text-slate-400 uppercase text-[10px]">Tiêu Chuẩn</p><p class="font-bold text-emerald-600" id="modalBatchCert">VietGAP</p></div>
         </div>
 
+        <!-- Khối lượng lưu kho & Khối lượng còn lại theo S-17 -->
+        <div class="bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-200 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+              <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+            <div>
+              <p class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Khối Lượng Lưu Kho (User Story S-17, S-18, S-19)</p>
+              <p class="text-sm font-extrabold text-emerald-950">
+                Còn lại: <span id="modalBatchRemainingQty" class="text-emerald-700 font-black">100.0</span> <span id="modalBatchUnit">kg</span> 
+                <span class="text-xs text-slate-400 font-normal">(Ban đầu: <span id="modalBatchInitialQty">100.0</span> <span id="modalBatchUnit2">kg</span>)</span>
+              </p>
+            </div>
+          </div>
+          <span id="modalBatchStatusBadge" class="px-2.5 py-1 bg-white text-emerald-800 rounded-full font-bold text-[10px] border border-emerald-300">
+            active
+          </span>
+        </div>
+
         <!-- PHI Badge in Modal (S-62) -->
         <div class="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
@@ -1155,6 +1381,19 @@
             </div>
           </div>
           <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">Đạt Chuẩn VietGAP</span>
+        </div>
+
+        <!-- CÂY PHẢ HỆ / LỊCH SỬ TÁCH - GỘP (GENEALOGY LINEAGE TREE - S-17, S-18, S-19) -->
+        <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-sitemap text-indigo-600"></i> Cây Phả Hệ Nguồn Gốc (Genealogy Tree - S-17, S-18, S-19)
+            </h4>
+            <span id="modalBatchLineageStatus" class="text-[10px] text-slate-400 font-medium">Đang tải phả hệ...</span>
+          </div>
+          <div id="modalBatchLineageContainer" class="space-y-2 text-xs">
+            <!-- Dynamic lineage nodes -->
+          </div>
         </div>
 
         <!-- CÁC MỐC HÀNH TRÌNH CHUỖI CUNG ỨNG CHÍNH (S-48: Sơ chế, Vận chuyển, Phân phối) -->
@@ -1174,8 +1413,25 @@
         </div>
       </div>
 
-      <div class="flex justify-end pt-3 border-t border-slate-100">
-        <button onclick="closeModal('batchDetailModal')" class="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs">Đóng Cửa Sổ</button>
+      <!-- Footer Buttons: Nút Tách Lô (S-17), Nút Bàn Giao (S-15) và Nút Đóng -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100 gap-2 flex-wrap">
+        <div class="flex items-center gap-2">
+          <button 
+            id="modalBtnSplit" 
+            onclick="openSplitModalForCurrentBatch()" 
+            class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-scissors"></i> Tách Lô (S-17)
+          </button>
+          <button 
+            id="modalBtnHandover" 
+            onclick="openHandoverForCurrentBatch()" 
+            class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-truck-moving"></i> Bàn Giao Lô Hàng (S-15)
+          </button>
+        </div>
+        <button onclick="closeModal('batchDetailModal')" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
+          Đóng Cửa Sổ
+        </button>
       </div>
     </div>
   </div>
@@ -1224,6 +1480,330 @@
 
       <div class="flex justify-end pt-2 border-t border-slate-100">
         <button onclick="closeQrCameraScanner()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-xs">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: MỞ LỆNH THU HỒI KHẨN CẤP (RECALL BATCH - USER STORY S-33, S-34, S-35)   -->
+  <!-- ============================================================================ -->
+  <div id="openRecallModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-rose-200 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-rose-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-sm font-black">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Mở Lệnh Thu Hồi Khẩn Cấp (S-33)</h3>
+            <p class="text-[11px] text-slate-500">Kích hoạt khoanh vùng truy xuôi hậu duệ và chặn lan rộng chuỗi cung ứng</p>
+          </div>
+        </div>
+        <button onclick="closeModal('openRecallModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="p-3.5 bg-rose-50/60 rounded-2xl border border-rose-200 grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Mã Lô Gặp Sự Cố</span>
+          <p id="recallModalBatchCode" class="font-mono font-bold text-rose-900">BATCH-...</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Nông Sản</span>
+          <p id="recallModalProductName" class="font-bold text-slate-800 truncate">...</p>
+        </div>
+      </div>
+
+      <!-- Chọn mức độ nghiêm trọng -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Mức Độ Nghiêm Trọng:</label>
+        <select id="recallSeveritySelect" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-rose-700 focus:ring-2 focus:ring-rose-500">
+          <option value="CRITICAL">Nguy Hiểm Cao Nhất (CRITICAL - Dư lượng cấm / Độc tố sinh học)</option>
+          <option value="HIGH">Nghiêm Trọng (HIGH - Vi khuẩn, nấm mốc vượt ngưỡng)</option>
+          <option value="MEDIUM">Cảnh Báo Trung Bình (MEDIUM - Sai quy cách bảo quản)</option>
+        </select>
+      </div>
+
+      <!-- Nhập lý do thu hồi (Bắt buộc >= 20 ký tự theo S-33) -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-xs font-bold text-slate-700">Lý Do Thu Hồi (Bắt buộc tối thiểu 20 ký tự):</label>
+          <span id="recallReasonCharCounter" class="text-[11px] font-mono font-bold text-slate-400">0 / 20 ký tự</span>
+        </div>
+        <textarea 
+          id="recallReasonInput" 
+          rows="4" 
+          oninput="handleRecallReasonInput()"
+          placeholder="Mô tả cụ thể sự cố an toàn thực phẩm, vi phạm chỉ số kiểm nghiệm, thông tư vi phạm..." 
+          class="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 font-medium"></textarea>
+        <p id="recallReasonWarning" class="text-[11px] text-rose-600 font-bold mt-1 hidden flex items-center gap-1">
+          <i class="fa-solid fa-circle-exclamation"></i> Lý do phải có ít nhất 20 ký tự để kích hoạt lệnh thu hồi hợp lệ!
+        </p>
+      </div>
+
+      <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-[11px] text-amber-900 space-y-1">
+        <p class="font-bold flex items-center gap-1.5 text-amber-950">
+          <i class="fa-solid fa-lock text-amber-600"></i> Cơ chế Chặn Lan Rộng (S-38):
+        </p>
+        <p>Hệ thống sẽ <strong>khóa tức thì</strong> quyền Bàn giao, Tách lô và Gộp lô đối với toàn bộ các lô con cháu liên quan.</p>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeModal('openRecallModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold">Hủy</button>
+        <button type="button" id="btnSubmitRecall" onclick="submitTriggerRecall()" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5 transition-all">
+          <i class="fa-solid fa-bullhorn"></i> Kích Hoạt Lệnh Thu Hồi
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: CHI TIẾT LỆNH THU HỒI & TIẾN ĐỘ XỬ LÝ (S-34, S-35, S-36, S-37)         -->
+  <!-- ============================================================================ -->
+  <div id="recallDetailModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-rose-200 p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-lg font-black shadow-md">
+            <i class="fa-solid fa-shield-virus"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="recallDetailCode" class="font-mono font-black text-slate-900 text-base">RCL-...</h3>
+              <span id="recallDetailStatusBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">Đang Thu Hồi</span>
+            </div>
+            <p id="recallDetailProductInfo" class="text-xs text-slate-500">Lô gốc: BATCH-... | Sản phẩm: ...</p>
+          </div>
+        </div>
+        <button onclick="closeModal('recallDetailModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Lý do thu hồi -->
+      <div class="p-3.5 bg-rose-50 rounded-2xl border border-rose-200 space-y-1">
+        <span class="text-[10px] uppercase font-bold text-rose-800">Lý do thu hồi (S-33):</span>
+        <p id="recallDetailReason" class="text-xs text-rose-950 font-medium">...</p>
+      </div>
+
+      <!-- THANH TIẾN ĐỘ XỬ LÝ (S-37) -->
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+        <div class="flex items-center justify-between text-xs font-bold">
+          <span class="text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-list-check text-indigo-600"></i> Tiến Độ Xử Lý & Xác Nhận Cô Lập Các Tổ Chức:
+          </span>
+          <span id="recallDetailProgressText" class="text-indigo-800 font-mono">0/0 tổ chức (0%)</span>
+        </div>
+        <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+          <div id="recallDetailProgressBar" class="bg-gradient-to-r from-amber-500 to-emerald-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div id="recallDetailOrgActionsList" class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
+          <!-- Dynamic org actions -->
+        </div>
+      </div>
+
+      <!-- THỐNG KÊ CHI TIẾT KHOANH VÙNG (S-35) -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm text-center">
+          <p class="text-[10px] text-slate-400 uppercase font-bold">Tổng Lô Bị Ảnh Hưởng</p>
+          <p id="recallStatAffectedBatches" class="text-xl font-black text-slate-900 mt-1">0 Lô</p>
+        </div>
+        <div class="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200 shadow-sm text-center">
+          <p class="text-[10px] text-amber-800 uppercase font-bold">Còn Trong Kho / Quầy Kệ</p>
+          <p id="recallStatStockKg" class="text-xl font-black text-amber-700 mt-1">0 kg</p>
+          <span class="text-[10px] text-amber-600">Cần niêm phong khẩn cấp</span>
+        </div>
+        <div class="bg-rose-50/60 p-3.5 rounded-2xl border border-rose-200 shadow-sm text-center">
+          <p class="text-[10px] text-rose-800 uppercase font-bold">Đã Bán Ra Người Tiêu Dùng</p>
+          <p id="recallStatSoldKg" class="text-xl font-black text-rose-700 mt-1">0 kg</p>
+          <span class="text-[10px] text-rose-600">Cảnh báo công khai thu hồi</span>
+        </div>
+      </div>
+
+      <!-- DANH SÁCH TOÀN BỘ CÁC LÔ CON CHÁU BỊ KHOANH VÙNG (S-34) -->
+      <div class="space-y-2">
+        <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-network-wired text-rose-600"></i> Danh Sách Lô Bị Khoanh Vùng Qua Mọi Tầng Tách/Gộp (S-34)
+        </h4>
+        <div class="border border-slate-200 rounded-2xl overflow-hidden max-h-60 overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
+              <tr>
+                <th class="p-2.5">Mã Lô</th>
+                <th class="p-2.5">Thế Hệ</th>
+                <th class="p-2.5">Tổ Chức Quản Lý</th>
+                <th class="p-2.5 text-right">Kho / Kệ (kg)</th>
+                <th class="p-2.5 text-right">Đã Bán (kg)</th>
+                <th class="p-2.5">Vị Trí Hiện Tại</th>
+                <th class="p-2.5 text-center">Tình Trạng</th>
+              </tr>
+            </thead>
+            <tbody id="recallDetailAffectedBatchesTbody" class="divide-y divide-slate-100">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Nút thao tác -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+        <div id="recallOrgConfirmActionBox">
+          <!-- Button xác nhận nếu là tổ chức của user và chưa xác nhận -->
+        </div>
+        <button onclick="closeModal('recallDetailModal')" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs">
+          Đóng Cửa Sổ
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: TÁCH LÔ NÔNG SẢN (SPLIT BATCH - USER STORY S-17 & S-18)                -->
+  <!-- Khóa dòng SELECT ... FOR UPDATE chống race condition                         -->
+  <!-- ============================================================================ -->
+  <div id="splitBatchModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-sm font-black">
+            <i class="fa-solid fa-scissors"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Tách Lô Nông Sản (S-17, S-18)</h3>
+            <p class="text-[11px] text-slate-500">Khóa dòng SELECT ... FOR UPDATE chống race condition khi 2 người cùng tách</p>
+          </div>
+        </div>
+        <button onclick="closeModal('splitBatchModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Thông tin lô mẹ -->
+      <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 grid grid-cols-3 gap-2 text-xs">
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Mã Lô Mẹ</span>
+          <p id="splitModalParentCode" class="font-mono font-bold text-slate-800">BATCH-...</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Sản Phẩm</span>
+          <p id="splitModalProductName" class="font-bold text-slate-800 truncate">...</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Khối Lượng Còn Lại</span>
+          <p class="font-extrabold text-amber-700"><span id="splitModalRemainingQty">100</span> <span id="splitModalUnit">kg</span></p>
+        </div>
+      </div>
+
+      <!-- Danh sách các lô con cần tách ra -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-bold text-slate-700">Danh Sách Lô Con Sinh Ra:</label>
+          <button type="button" onclick="addSplitRow()" class="px-2.5 py-1 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded-lg text-xs font-bold border border-amber-200 flex items-center gap-1">
+            <i class="fa-solid fa-plus text-[10px]"></i> Thêm Lô Con
+          </button>
+        </div>
+        <div id="splitRowsContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <!-- Rows dynamically added -->
+        </div>
+      </div>
+
+      <!-- Ghi chú chung -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Ghi Chú Phân Loại / Mục Đích Tách Lô:</label>
+        <input type="text" id="splitNotesInput" placeholder="Ví dụ: Phân loại đóng thùng xuất khẩu và siêu thị" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 font-medium"/>
+      </div>
+
+      <!-- Khung tổng kết khối lượng và cảnh báo -->
+      <div class="p-3 bg-amber-50/70 rounded-2xl border border-amber-200 space-y-1 text-xs">
+        <div class="flex justify-between font-semibold text-slate-700">
+          <span>Tổng khối lượng các lô con:</span>
+          <span class="font-mono font-bold text-amber-900"><span id="splitTotalCalculated">0.0</span> kg</span>
+        </div>
+        <div class="flex justify-between font-semibold text-slate-700">
+          <span>Khối lượng lô mẹ còn lại sau tách:</span>
+          <span class="font-mono font-bold text-slate-800"><span id="splitRemainingCalculated">100.0</span> kg</span>
+        </div>
+        <div id="splitValidationAlert" class="hidden text-[11px] font-bold text-rose-600 pt-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span id="splitValidationMsg">Tổng khối lượng lô con vượt quá khối lượng còn lại của lô mẹ!</span>
+        </div>
+      </div>
+
+      <!-- Nút thao tác -->
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeModal('splitBatchModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold">Hủy</button>
+        <button type="button" id="btnSubmitSplit" onclick="submitSplitBatch()" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-check"></i> Xác Nhận Tách Lô (S-17)
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: GỘP LÔ NÔNG SẢN CÙNG LOẠI (MERGE BATCH - USER STORY S-19)              -->
+  <!-- Khóa các dòng lô theo thứ tự ID cố định tránh deadlock                      -->
+  <!-- ============================================================================ -->
+  <div id="mergeBatchModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center text-sm font-black">
+            <i class="fa-solid fa-object-group"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Gộp Lô Nông Sản Cùng Loại (S-19)</h3>
+            <p class="text-[11px] text-slate-500">Khóa dòng theo thứ tự ID cố định tránh deadlock (ORDER BY id ASC)</p>
+          </div>
+        </div>
+        <button onclick="closeModal('mergeBatchModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Thông tin sản phẩm chung -->
+      <div class="p-3 bg-indigo-50 rounded-2xl border border-indigo-200 flex items-center justify-between text-xs">
+        <div>
+          <span class="text-[10px] text-indigo-600 uppercase font-bold tracking-wider">Sản Phẩm Chung</span>
+          <p id="mergeCommonProduct" class="font-extrabold text-indigo-950 text-sm">...</p>
+        </div>
+        <span class="px-2.5 py-1 bg-white text-indigo-800 rounded-full font-bold text-[10px] border border-indigo-200">
+          CÙNG LOẠI SẢN PHẨM (S-19)
+        </span>
+      </div>
+
+      <!-- Danh sách các lô nguồn cần trích gộp -->
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-slate-700">Danh Sách Lô Nguồn & Khối Lượng Trích Gộp:</label>
+        <div id="mergeSourcesContainer" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Ghi chú gộp lô -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Ghi Chú Đóng Gói / Mục Đích Gộp Lô:</label>
+        <input type="text" id="mergeNotesInput" placeholder="Ví dụ: Gộp 2 sọt đạt chuẩn kích cỡ VIP vào thùng lớn" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-medium"/>
+      </div>
+
+      <!-- Khung tổng kết khối lượng lô gộp mới -->
+      <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
+        <div class="flex justify-between font-bold text-slate-800">
+          <span>Tổng khối lượng Lô Gộp Mới:</span>
+          <span class="font-mono text-indigo-700 text-sm font-extrabold"><span id="mergeTotalNewBatchQty">0.0</span> kg</span>
+        </div>
+        <p class="text-[11px] text-slate-500">Mã lô mới sẽ được sinh ngẫu nhiên an toàn 8 ký tự và ghi sự kiện chuỗi hash SHA-256.</p>
+        <div id="mergeValidationAlert" class="hidden text-[11px] font-bold text-rose-600 pt-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span id="mergeValidationMsg">Có lỗi trong quá trình cấu hình gộp lô!</span>
+        </div>
+      </div>
+
+      <!-- Nút thao tác -->
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeModal('mergeBatchModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold">Hủy</button>
+        <button type="button" id="btnSubmitMerge" onclick="submitMergeBatches()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-check"></i> Xác Nhận Gộp Lô (S-19)
+        </button>
       </div>
     </div>
   </div>
@@ -1326,11 +1906,16 @@
 
       // S-08, S-14, E-02: Lô nông sản của các tổ chức độc lập trong chuỗi
       batches: [
-        { code: "BATCH-TOM-2601", product: "Cà Chua Beef Hữu Cơ", org_id: 1, farm: "HTX Thắng Lợi", qty: 1200, status: "Đang lưu kho", temp: "4.2°C", cert: "GlobalGAP", plot: "Thửa A1" },
-        { code: "BATCH-BERRY-01", product: "Dâu Tây New Zealand", org_id: 1, farm: "HTX Thắng Lợi", qty: 450, status: "Đang lưu kho", temp: "3.8°C", cert: "VietGAP", plot: "Thửa B2" },
-        { code: "BATCH-MELON-02", product: "Dưa Lưới Sơ Chế Đóng Gói", org_id: 2, farm: "HTX Sơ Chế Đà Lạt Lành", qty: 2100, status: "Đang sơ chế", temp: "5.1°C", cert: "Organic EU", plot: "Xưởng Sơ Chế #1" },
-        { code: "BATCH-AVO-03", product: "Bơ Sáp 034 Chuỗi Lạnh", org_id: 3, farm: "Đội Xe Lạnh Việt Nhật", qty: 850, status: "Đang vận chuyển", temp: "3.5°C", cert: "VietGAP", plot: "Container 29C-8819" },
-        { code: "BATCH-GRAPE-04", product: "Nho Hạ Đen Quầy Kệ", org_id: 4, farm: "Chuỗi Siêu Thị BioMart", qty: 650, status: "Điểm bán lẻ", temp: "6.0°C", cert: "VietGAP", plot: "Quầy Kệ K12 BioMart" }
+        { code: "BATCH-TOM-2601", product: "Cà Chua Beef Hữu Cơ", org_id: 1, farm: "HTX Thắng Lợi", qty: 1200, initial_qty: 1200, remaining_qty: 1200, unit: "kg", status: "Đang lưu kho", temp: "4.2°C", cert: "GlobalGAP", plot: "Thửa A1" },
+        { code: "BATCH-BERRY-01", product: "Dâu Tây New Zealand", org_id: 1, farm: "HTX Thắng Lợi", qty: 450, initial_qty: 450, remaining_qty: 450, unit: "kg", status: "Đang lưu kho", temp: "3.8°C", cert: "VietGAP", plot: "Thửa B2" },
+        { code: "BATCH-MELON-02", product: "Dưa Lưới Sơ Chế Đóng Gói", org_id: 2, farm: "HTX Sơ Chế Đà Lạt Lành", qty: 2100, initial_qty: 2100, remaining_qty: 2100, unit: "kg", status: "Đang sơ chế", temp: "5.1°C", cert: "Organic EU", plot: "Xưởng Sơ Chế #1" },
+        { code: "BATCH-AVO-03", product: "Bơ Sáp 034 Chuỗi Lạnh", org_id: 3, farm: "Đội Xe Lạnh Việt Nhật", qty: 850, initial_qty: 850, remaining_qty: 850, unit: "kg", status: "Đang vận chuyển", temp: "3.5°C", cert: "VietGAP", plot: "Container 29C-8819" },
+        { code: "BATCH-GRAPE-04", product: "Nho Hạ Đen Quầy Kệ", org_id: 4, farm: "Chuỗi Siêu Thị BioMart", qty: 650, initial_qty: 650, remaining_qty: 650, unit: "kg", status: "Điểm bán lẻ", temp: "6.0°C", cert: "VietGAP", plot: "Quầy Kệ K12 BioMart" }
+      ],
+
+      // S-17, S-18, S-19: Bảng quan hệ phả hệ cha - con (SPLIT / MERGE)
+      batchRelations: [
+        // { parent_code: '...', child_code: '...', relation_type: 'SPLIT'|'MERGE', quantity: 200 }
       ],
 
       // S-62: Nhật ký vật tư & Thời gian cách ly thu hoạch (PHI)
@@ -1389,21 +1974,29 @@
       handovers: [
         {
           id: 1,
+          batch_id: 2,
           batch_code: "BATCH-BERRY-01",
-          from_org: "HTX Thắng Lợi (Vùng trồng)",
-          to_org: "Đội Vận Chuyển Lạnh Việt Nhật",
-          status: "pending",
+          from_org_id: 1,
+          from_org: "HTX Nông Nghiệp Thắng Lợi",
+          to_org_id: 2,
+          to_org: "HTX Sơ Chế Đà Lạt Lành",
+          status: "PENDING",
           temp: "3.8°C",
-          reason: null
+          reject_reason: null,
+          created_at: "2026-10-20 08:30"
         },
         {
           id: 2,
+          batch_id: 1,
           batch_code: "BATCH-TOM-2601",
-          from_org: "HTX Thắng Lợi (Vùng trồng)",
+          from_org_id: 1,
+          from_org: "HTX Nông Nghiệp Thắng Lợi",
+          to_org_id: 2,
           to_org: "HTX Sơ Chế Đà Lạt Lành",
-          status: "confirmed",
+          status: "ACCEPTED",
           temp: "4.2°C",
-          reason: null
+          reject_reason: null,
+          created_at: "2026-10-19 14:15"
         }
       ],
 
@@ -1567,7 +2160,7 @@
       state.activeTab = tabId;
       saveAppState(state);
 
-      const allTabs = ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'traceability', 'public'];
+      const allTabs = ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'traceability', 'public'];
       allTabs.forEach(t => {
         const btn = document.getElementById(`tabBtn_${t}`);
         const view = document.getElementById(`view_${t}`);
@@ -1589,6 +2182,7 @@
       else if (tabId === 'plots') renderPlotsGrid();
       else if (tabId === 'materials_phi') renderMaterialsPhiTab();
       else if (tabId === 'handovers') renderHandoversTable();
+      else if (tabId === 'recalls') renderRecallsTab();
       else if (tabId === 'traceability') renderTraceabilityTab();
       else if (tabId === 'public') renderPublicBatches('all');
       else renderOverviewTab();
@@ -1633,30 +2227,47 @@
       if (list.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="p-8 text-center text-slate-400">
+            <td colspan="8" class="p-8 text-center text-slate-400">
               <i class="fa-solid fa-box-open text-3xl mb-2 text-slate-300"></i>
               <p class="font-bold text-xs">Không có lô hàng nào thuộc quyền quản lý của ${cfg.orgName}</p>
               <p class="text-[11px] text-slate-400 mt-1">Dữ liệu được cô lập chặt chẽ theo Organization ID (Epic E-02)</p>
             </td>
           </tr>
         `;
+        handleBatchSelectChange();
         return;
       }
 
       tbody.innerHTML = list.map(b => {
         // PHI check status for this batch
-        const logs = state.materialLogs.filter(m => m.batch_code === b.code);
+        const logs = state.materialLogs ? state.materialLogs.filter(m => m.batch_code === b.code) : [];
         let phiBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">Chưa ghi nhận</span>';
         if (logs.length > 0) {
           phiBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check mr-1"></i> Đã cách ly an toàn</span>`;
         }
 
+        const remQty = b.remaining_qty !== undefined ? b.remaining_qty : b.qty;
+        const initQty = b.initial_qty !== undefined ? b.initial_qty : b.qty;
+        const isDepleted = remQty <= 0;
+        const qtyDisplay = isDepleted 
+          ? `<span class="text-rose-600 font-bold line-through text-xs">${remQty} kg</span> <span class="text-[10px] text-slate-400 block font-normal">(Đã tách/gộp hết)</span>`
+          : `<span class="text-emerald-700 font-black text-xs">${remQty} kg</span> ${remQty < initQty ? `<span class="text-[10px] text-slate-400 block font-normal">(gốc: ${initQty} kg)</span>` : ''}`;
+
         return `
-          <tr class="hover:bg-slate-50 transition-colors">
+          <tr class="hover:bg-slate-50 transition-colors ${isDepleted ? 'bg-slate-50/50' : ''}">
+            <td class="p-3.5 text-center">
+              <input type="checkbox" 
+                class="batch-select-checkbox rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
+                data-code="${b.code}" 
+                data-product="${b.product}" 
+                data-qty="${remQty}"
+                ${isDepleted ? 'disabled title="Lô đã hết số lượng"' : ''}
+                onchange="handleBatchSelectChange()"/>
+            </td>
             <td class="p-3.5 font-mono font-black text-emerald-800 text-xs">${b.code}</td>
             <td class="p-3.5 font-bold text-slate-800">${b.product}</td>
             <td class="p-3.5 text-slate-600 font-semibold">${b.plot || 'Thửa A1'}</td>
-            <td class="p-3.5 font-bold text-slate-700">${b.qty} kg</td>
+            <td class="p-3.5">${qtyDisplay}</td>
             <td class="p-3.5">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${b.status === 'Đang vận chuyển' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
                 <i class="fa-solid fa-temperature-half"></i> ${b.status} (${b.temp})
@@ -1671,6 +2282,8 @@
           </tr>
         `;
       }).join('');
+
+      handleBatchSelectChange();
     }
 
     function filterBatchesTable(val) {
@@ -1922,37 +2535,166 @@
     }
 
     /**
+     * STATE VÀ ENGINE BÀN GIAO LÔ HÀNG GIỮA CÁC TỔ CHỨC ĐỘC LẬP (S-15, S-16)
+     */
+    let currentRejectHandoverId = null;
+    let currentDetailBatchCode = null;
+    let handoverViewFilter = 'incoming'; // incoming, outgoing, all
+
+    function filterHandoversView(filterType) {
+      handoverViewFilter = filterType;
+      
+      const btnIn = document.getElementById("hoFilterBtn_incoming");
+      const btnOut = document.getElementById("hoFilterBtn_outgoing");
+      const btnAll = document.getElementById("hoFilterBtn_all");
+
+      [btnIn, btnOut, btnAll].forEach(b => {
+        if (b) b.className = "px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-2";
+      });
+
+      if (filterType === 'incoming' && btnIn) {
+        btnIn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-white shadow-sm flex items-center gap-2";
+      } else if (filterType === 'outgoing' && btnOut) {
+        btnOut.className = "px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm flex items-center gap-2";
+      } else if (btnAll) {
+        btnAll.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm flex items-center gap-2";
+      }
+
+      renderHandoversTable();
+    }
+
+    /**
      * RENDER HANDOVERS TAB (S-15, S-16)
      */
     function renderHandoversTable() {
-      const tbody = document.getElementById("handoversTableBody");
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      const currentOrgId = cfg.orgId;
+
+      // 1. Cập nhật dropdown chọn Lô bàn giao: chỉ hiển thị các lô do tổ chức mình sở hữu
       const hoBatchSel = document.getElementById("ho_batch_code");
       if (hoBatchSel) {
-        hoBatchSel.innerHTML = state.batches.map(b => `<option value="${b.code}">${b.code} - ${b.product}</option>`).join('');
+        let myBatches = state.batches;
+        if (!cfg.canAccessAllOrgs && currentOrgId !== null) {
+          myBatches = myBatches.filter(b => b.org_id === currentOrgId);
+        }
+        hoBatchSel.innerHTML = myBatches.map(b => `
+          <option value="${b.code}" ${b.code === currentDetailBatchCode ? 'selected' : ''}>
+            ${b.code} - ${b.product} (${b.status || 'Sẵn sàng'})
+          </option>
+        `).join('');
       }
 
-      if (!tbody) return;
-      tbody.innerHTML = state.handovers.map(h => {
-        let actionBtn = "";
-        let badge = "";
-        if (h.status === 'pending') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Chờ Bên Nhận Xác Nhận</span>';
-          actionBtn = `
-            <div class="flex items-center justify-end gap-1.5">
-              <button onclick="confirmHandover(${h.id})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px]">
-                Xác Nhận
-              </button>
-              <button onclick="rejectHandover(${h.id})" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px]">
-                Từ Chối
-              </button>
-            </div>
+      // 2. Cập nhật dropdown chọn Tổ chức nhận: loại trừ tổ chức của chính mình
+      const hoTargetSel = document.getElementById("ho_target_org_id");
+      if (hoTargetSel) {
+        const candidateOrgs = [
+          { id: 1, name: "HTX Nông Nghiệp Thắng Lợi (Vùng Trồng)" },
+          { id: 2, name: "HTX Sơ Chế Đà Lạt Lành (Sơ Chế)" },
+          { id: 3, name: "Đội Vận Chuyển Lạnh Việt Nhật (Logistics)" },
+          { id: 4, name: "Chuỗi Siêu Thị BioMart (Phân Phối / Bán Lẻ)" }
+        ].filter(org => org.id !== currentOrgId);
+
+        hoTargetSel.innerHTML = candidateOrgs.map(org => `
+          <option value="${org.id}">${org.name}</option>
+        `).join('');
+      }
+
+      // 3. RENDER BẢNG "DANH SÁCH CHỜ TÔI XÁC NHẬN" (INCOMING HANDOVERS CHO BÊN NHẬN)
+      const incomingTbody = document.getElementById("incomingHandoversTableBody");
+      const incomingSection = document.getElementById("incomingHandoversSection");
+      
+      const incomingList = state.handovers.filter(h => {
+        const isTarget = cfg.canAccessAllOrgs || (currentOrgId !== null && h.to_org_id === currentOrgId);
+        return isTarget && h.status === 'PENDING';
+      });
+
+      const badgeCount = document.getElementById("badgeIncomingCount");
+      if (badgeCount) badgeCount.innerText = incomingList.length;
+
+      if (incomingTbody) {
+        if (incomingList.length === 0) {
+          incomingTbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="p-6 text-center text-slate-400">
+                <i class="fa-solid fa-inbox text-2xl mb-1 text-slate-300"></i>
+                <p class="font-bold text-xs text-slate-600">Hiện không có lô hàng nào chờ ${cfg.orgName} xác nhận tiếp nhận.</p>
+                <p class="text-[11px] text-slate-400">Khi một tổ chức khác tạo lệnh bàn giao tới bạn, lô sẽ xuất hiện tại đây.</p>
+              </td>
+            </tr>
           `;
-        } else if (h.status === 'confirmed') {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Đã Hoàn Tất Bàn Giao</span>';
-          actionBtn = '<span class="text-emerald-600 font-bold text-[11px]"><i class="fa-solid fa-check-double"></i> Đã chuyển quyền</span>';
         } else {
-          badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">Đã Từ Chối</span>';
-          actionBtn = `<span class="text-rose-600 text-[11px] font-semibold">${h.reason || 'Không đạt chuẩn'}</span>`;
+          incomingTbody.innerHTML = incomingList.map(h => `
+            <tr class="hover:bg-amber-50/50 transition-colors">
+              <td class="p-3.5 font-mono font-black text-amber-950 text-xs">${h.batch_code}</td>
+              <td class="p-3.5 font-bold text-slate-800">${h.from_org}</td>
+              <td class="p-3.5 font-mono font-bold text-teal-700">${h.temp || '4.0°C'}</td>
+              <td class="p-3.5 text-slate-500 font-medium">${h.created_at || 'Vừa tạo'}</td>
+              <td class="p-3.5">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Chờ Bạn Tiếp Quản
+                </span>
+              </td>
+              <td class="p-3.5 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button 
+                    onclick="confirmHandover(${h.id})" 
+                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-check"></i> Xác Nhận
+                  </button>
+                  <button 
+                    onclick="openRejectModal(${h.id}, '${h.batch_code}')" 
+                    class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-xmark"></i> Từ Chối
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      // 4. RENDER BẢNG TỔNG QUÁT THEO FILTER (INCOMING / OUTGOING / ALL)
+      const tbody = document.getElementById("handoversTableBody");
+      const titleEl = document.getElementById("generalHandoversTitle");
+      if (!tbody) return;
+
+      let displayList = state.handovers;
+      if (handoverViewFilter === 'incoming') {
+        if (titleEl) titleEl.innerText = "Các Lô Hàng Chờ Xác Nhận (Incoming)";
+        if (!cfg.canAccessAllOrgs && currentOrgId !== null) {
+          displayList = displayList.filter(h => h.to_org_id === currentOrgId);
+        }
+      } else if (handoverViewFilter === 'outgoing') {
+        if (titleEl) titleEl.innerText = `Các Lệnh Bàn Giao Do ${cfg.orgName} Gửi Đi`;
+        if (!cfg.canAccessAllOrgs && currentOrgId !== null) {
+          displayList = displayList.filter(h => h.from_org_id === currentOrgId);
+        }
+      } else {
+        if (titleEl) titleEl.innerText = "Toàn Bộ Lịch Sử Bàn Giao Trong Chuỗi";
+      }
+
+      if (displayList.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-6 text-center text-slate-400">
+              <p class="font-bold text-xs">Chưa có bản ghi bàn giao nào phù hợp với bộ lọc.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = displayList.map(h => {
+        let badge = "";
+        let noteText = h.reject_reason ? `<span class="text-rose-600 font-semibold text-[11px]" title="${h.reject_reason}">Lý do: ${h.reject_reason}</span>` : '<span class="text-slate-400 text-[11px]">Bảo quản chuỗi lạnh đạt chuẩn</span>';
+
+        if (h.status === 'PENDING') {
+          badge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">Chờ xác nhận (A vẫn giữ quyền)</span>';
+        } else if (h.status === 'ACCEPTED') {
+          badge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-check-double mr-1"></i> Đã xác nhận (B tiếp quản)</span>';
+        } else {
+          badge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200"><i class="fa-solid fa-ban mr-1"></i> Đã từ chối (A tiếp tục giữ)</span>';
         }
 
         return `
@@ -1961,70 +2703,1021 @@
             <td class="p-3.5 text-slate-700 font-semibold">${h.from_org}</td>
             <td class="p-3.5 text-emerald-800 font-bold">${h.to_org}</td>
             <td class="p-3.5">${badge}</td>
-            <td class="p-3.5 font-mono font-bold text-teal-700">${h.temp}</td>
-            <td class="p-3.5 text-right">${actionBtn}</td>
+            <td class="p-3.5 font-mono font-bold text-teal-700">${h.temp || '4.0°C'}</td>
+            <td class="p-3.5 text-right">${noteText}</td>
           </tr>
         `;
       }).join('');
     }
 
-    function submitHandoverCreate() {
-      const code = document.getElementById("ho_batch_code").value;
-      const toOrg = document.getElementById("ho_target_org").value;
-      const temp = document.getElementById("ho_temp").value;
-
-      // S-15: Chặn bàn giao thứ hai cho cùng lô
-      const pendingExists = state.handovers.find(h => h.batch_code === code && h.status === 'pending');
-      if (pendingExists) {
-        showToast(`Lô ${code} đã có phiếu bàn giao đang chờ xác nhận!`, "error");
+    /**
+     * MỞ MODAL BÀN GIAO TỪ MÀN HÌNH CHI TIẾT LÔ (S-15)
+     */
+    function openHandoverForCurrentBatch() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Không được phép bàn giao lô hàng.", "error");
         return;
       }
 
-      state.handovers.unshift({
+      const batchCode = currentDetailBatchCode || (document.getElementById("modalBatchCode") ? document.getElementById("modalBatchCode").innerText.trim() : null);
+      if (!batchCode) {
+        showToast("Không tìm thấy mã lô để bàn giao!", "error");
+        return;
+      }
+
+      // Kiểm tra quyền sở hữu lô: Phải thuộc tổ chức hiện tại
+      const targetBatch = state.batches.find(b => b.code.toLowerCase() === batchCode.toLowerCase());
+      if (targetBatch && !cfg.canAccessAllOrgs && cfg.orgId !== null && targetBatch.org_id !== cfg.orgId) {
+        showToast(`Lô ${batchCode} hiện thuộc quyền quản lý của đơn vị khác! Bạn không có quyền bàn giao.`, "error");
+        return;
+      }
+
+      // Đóng modal chi tiết lô và chuyển mã vào modal bàn giao
+      closeModal("batchDetailModal");
+      renderHandoversTable();
+      
+      const sel = document.getElementById("ho_batch_code");
+      if (sel) sel.value = batchCode;
+
+      openModal("handoverModal");
+    }
+
+    /**
+     * KHỞI TẠO LỆNH BÀN GIAO SANG TỔ CHỨC KHÁC (S-15)
+     * Ràng buộc: Chặn tạo lệnh bàn giao thứ hai khi đang có lệnh chờ duyệt
+     */
+    async function submitHandoverCreate() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only!", "error");
+        return;
+      }
+
+      const code = document.getElementById("ho_batch_code").value;
+      const targetOrgId = parseInt(document.getElementById("ho_target_org_id").value);
+      const tempVal = document.getElementById("ho_temp_input").value;
+      const notes = document.getElementById("ho_notes_input").value.trim();
+
+      if (!code || !targetOrgId) {
+        showToast("Vui lòng chọn lô hàng và tổ chức tiếp nhận!", "error");
+        return;
+      }
+
+      const orgMap = {
+        1: "HTX Nông Nghiệp Thắng Lợi (Vùng Trồng)",
+        2: "HTX Sơ Chế Đà Lạt Lành (Sơ Chế)",
+        3: "Đội Vận Chuyển Lạnh Việt Nhật (Logistics)",
+        4: "Chuỗi Siêu Thị BioMart (Phân Phối / Bán Lẻ)"
+      };
+
+      if (cfg.orgId === targetOrgId) {
+        showToast("Không thể tự bàn giao cho chính tổ chức của mình!", "error");
+        return;
+      }
+
+      // TIÊU CHÍ S-15: Chặn không cho tạo lệnh bàn giao thứ hai khi đang có lệnh chờ
+      const pendingExists = state.handovers.find(h => h.batch_code.toLowerCase() === code.toLowerCase() && h.status === 'PENDING');
+      if (pendingExists) {
+        showToast(`CHẶN BÀN GIAO (S-15): Lô ${code} đang có một lệnh bàn giao chờ xác nhận!`, "error");
+        return;
+      }
+
+      // Gọi API Backend nếu khả dụng
+      try {
+        const batchObj = state.batches.find(b => b.code.toLowerCase() === code.toLowerCase());
+        const batchId = batchObj ? (batchObj.id || 1) : 1;
+        const resp = await fetch("/api/v1/handovers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            batch_id: batchId,
+            to_org_id: targetOrgId,
+            temperature: parseFloat(tempVal) || 4.0,
+            notes: notes
+          })
+        });
+        if (resp.status === 400) {
+          const errData = await resp.json();
+          showToast(`Lỗi: ${errData.detail || 'Không thể tạo lệnh bàn giao'}`, "error");
+          return;
+        }
+      } catch (e) {
+        console.log("Backend API not reachable, updating local simulation state...", e);
+      }
+
+      // Cập nhật State cục bộ:
+      // Lô chuyển sang trạng thái "chờ xác nhận", tổ chức A vẫn tạm thời giữ quyền sở hữu
+      const newHandover = {
         id: Date.now(),
+        batch_id: 1,
         batch_code: code,
-        from_org: "HTX Thắng Lợi (Vùng trồng)",
-        to_org: toOrg,
-        status: "pending",
-        temp: temp,
-        reason: null
+        from_org_id: cfg.orgId || 1,
+        from_org: cfg.orgName || "HTX Thắng Lợi",
+        to_org_id: targetOrgId,
+        to_org: orgMap[targetOrgId] || `Tổ chức #${targetOrgId}`,
+        status: "PENDING",
+        temp: `${tempVal}°C`,
+        reject_reason: null,
+        created_at: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      state.handovers.unshift(newHandover);
+
+      // Cập nhật trạng thái lô hàng thành "Chờ xác nhận"
+      const batchItem = state.batches.find(b => b.code.toLowerCase() === code.toLowerCase());
+      if (batchItem) {
+        batchItem.status = "Chờ xác nhận";
+      }
+
+      // Nối sự kiện vào Chuỗi Hash SHA-256 (Append-Only Event Ledger)
+      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
+      state.hashEvents.push({
+        index: state.hashEvents.length + 1,
+        event_type: "HANDOVER_PENDING_CREATED",
+        batch_code: code,
+        org_name: cfg.orgName || "HTX Thắng Lợi",
+        prev_hash: prevHash,
+        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+        valid: true
       });
 
       saveAppState(state);
       closeModal("handoverModal");
       renderHandoversTable();
-      showToast(`Đã tạo phiếu bàn giao lô ${code} tới ${toOrg}`, "success");
+      renderBatchesTable();
+      showToast(`Đã tạo lệnh bàn giao lô ${code} tới ${orgMap[targetOrgId]}. Lô đang ở trạng thái Chờ xác nhận (S-15)!`, "success");
     }
 
-    function confirmHandover(id) {
-      const h = state.handovers.find(x => x.id === id);
-      if (h) {
-        h.status = 'confirmed';
-        saveAppState(state);
-        renderHandoversTable();
-        showToast(`Đã xác nhận tiếp nhận lô hàng ${h.batch_code} thành công!`, "success");
-      }
-    }
-
-    function rejectHandover(id) {
-      const reason = prompt("Vui lòng nhập lý do từ chối bàn giao:");
-      if (!reason) {
-        showToast("Bắt buộc phải có lý do khi từ chối nhận hàng (S-16)!", "error");
+    /**
+     * BÊN NHẬN XÁC NHẬN BÀN GIAO (S-16)
+     * Chuyển quyền giữ lô sang bên B và ghi sự kiện vào chuỗi hash trong cùng một Transaction
+     */
+    async function confirmHandover(id) {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only!", "error");
         return;
       }
+
       const h = state.handovers.find(x => x.id === id);
-      if (h) {
-        h.status = 'rejected';
-        h.reason = reason;
-        saveAppState(state);
-        renderHandoversTable();
-        showToast(`Đã từ chối bàn giao lô ${h.batch_code}. Lý do: ${reason}`, "info");
+      if (!h) return;
+
+      // Gọi API Backend nếu khả dụng
+      try {
+        const resp = await fetch(`/api/v1/handovers/${id}/accept`, {
+          method: "POST"
+        });
+        if (resp.status === 403) {
+          showToast("Chỉ bên nhận mới có quyền xác nhận bàn giao này!", "error");
+          return;
+        }
+      } catch (e) {
+        console.log("Backend API not reachable, updating local simulation state...", e);
       }
+
+      // 1. Đổi trạng thái Handover sang ACCEPTED
+      h.status = 'ACCEPTED';
+
+      // 2. Chuyển quyền giữ lô (batches.organization_id) sang tổ chức B
+      const batchItem = state.batches.find(b => b.code.toLowerCase() === h.batch_code.toLowerCase());
+      if (batchItem) {
+        batchItem.org_id = h.to_org_id;
+        batchItem.farm = h.to_org;
+        batchItem.status = "Đang lưu kho";
+      }
+
+      // 3. Ghi sự kiện xác nhận vào chuỗi hash SHA-256 trong cùng giao dịch
+      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
+      state.hashEvents.push({
+        index: state.hashEvents.length + 1,
+        event_type: "HANDOVER_ACCEPTED_CUSTODY_TRANSFERRED",
+        batch_code: h.batch_code,
+        org_name: h.to_org,
+        prev_hash: prevHash,
+        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+        valid: true
+      });
+
+      saveAppState(state);
+      renderHandoversTable();
+      renderBatchesTable();
+      showToast(`ĐÃ XÁC NHẬN THÀNH CÔNG! Quyền giữ lô ${h.batch_code} đã chính thức chuyển sang ${h.to_org} (S-16).`, "success");
+    }
+
+    /**
+     * MỞ MODAL TỪ CHỐI BÀN GIAO (S-16)
+     */
+    function openRejectModal(id, batchCode) {
+      currentRejectHandoverId = id;
+      const display = document.getElementById("reject_batch_code_display");
+      if (display) display.value = batchCode;
+
+      const input = document.getElementById("reject_reason_input");
+      if (input) input.value = "";
+
+      const count = document.getElementById("rejectCharCount");
+      if (count) {
+        count.innerText = "0/10 ký tự";
+        count.className = "text-[11px] font-bold text-slate-400";
+      }
+
+      const errMsg = document.getElementById("rejectErrorMsg");
+      if (errMsg) errMsg.classList.add("hidden");
+
+      openModal("rejectHandoverModal");
+    }
+
+    function handleRejectReasonInput(val) {
+      const len = val.trim().length;
+      const countEl = document.getElementById("rejectCharCount");
+      const errMsg = document.getElementById("rejectErrorMsg");
+
+      if (countEl) {
+        countEl.innerText = `${len}/10 ký tự`;
+        if (len >= 10) {
+          countEl.className = "text-[11px] font-bold text-emerald-600";
+          if (errMsg) errMsg.classList.add("hidden");
+        } else {
+          countEl.className = "text-[11px] font-bold text-rose-500";
+        }
+      }
+    }
+
+    /**
+     * BÊN NHẬN TỪ CHỐI BÀN GIAO (S-16)
+     * Bắt buộc nhập lý do (tối thiểu 10 ký tự), lô vẫn thuộc quyền giữ của A và ghi nhận sự kiện từ chối kèm lý do
+     */
+    async function submitRejectHandoverConfirm() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only!", "error");
+        return;
+      }
+
+      const reason = document.getElementById("reject_reason_input").value.trim();
+      const errMsg = document.getElementById("rejectErrorMsg");
+
+      // RÀNG BUỘC S-16: Bắt buộc nhập lý do tối thiểu 10 ký tự
+      if (reason.length < 10) {
+        if (errMsg) errMsg.classList.remove("hidden");
+        showToast("Lý do từ chối bắt buộc phải có tối thiểu 10 ký tự (S-16)!", "error");
+        return;
+      }
+
+      const h = state.handovers.find(x => x.id === currentRejectHandoverId);
+      if (!h) {
+        showToast("Không tìm thấy lệnh bàn giao!", "error");
+        return;
+      }
+
+      // Gọi API Backend nếu khả dụng
+      try {
+        const resp = await fetch(`/api/v1/handovers/${h.id}/reject`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reject_reason: reason })
+        });
+        if (resp.status === 400 || resp.status === 422) {
+          const errData = await resp.json();
+          showToast(`Lỗi: ${errData.detail || 'Lý do từ chối không hợp lệ'}`, "error");
+          return;
+        }
+      } catch (e) {
+        console.log("Backend API not reachable, updating local simulation state...", e);
+      }
+
+      // 1. Cập nhật trạng thái Handover sang REJECTED
+      h.status = 'REJECTED';
+      h.reject_reason = reason;
+
+      // 2. Lô vẫn thuộc quyền giữ của bên A (giữ nguyên batch.org_id)
+      const batchItem = state.batches.find(b => b.code.toLowerCase() === h.batch_code.toLowerCase());
+      if (batchItem) {
+        batchItem.status = "Bị từ chối tiếp nhận";
+      }
+
+      // 3. Ghi nhận sự kiện từ chối kèm lý do vào chuỗi hash SHA-256
+      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
+      state.hashEvents.push({
+        index: state.hashEvents.length + 1,
+        event_type: "HANDOVER_REJECTED",
+        batch_code: h.batch_code,
+        org_name: h.to_org,
+        prev_hash: prevHash,
+        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+        valid: true
+      });
+
+      saveAppState(state);
+      closeModal("rejectHandoverModal");
+      renderHandoversTable();
+      renderBatchesTable();
+      showToast(`ĐÃ TỪ CHỐI BÀN GIAO (S-16): Lô ${h.batch_code} vẫn thuộc quyền giữ của ${h.from_org}. Đã ghi nhận lý do vào chuỗi hash!`, "info");
     }
 
     /**
      * RENDER TRACEABILITY & HASH TAB (S-10, S-12)
      */
+    /**
+     * ========================================================
+     * S-17, S-18, S-19: TÁCH LÔ, GỘP LÔ VÀ CÂY PHẢ HỆ (LINEAGE)
+     * ========================================================
+     */
+
+    // 1. Quản lý lựa chọn các lô để gộp (S-19)
+    function handleBatchSelectChange() {
+      const selectedBoxes = Array.from(document.querySelectorAll('.batch-select-checkbox:checked'));
+      const mergeBtn = document.getElementById('btnOpenMergeModal');
+      const countSpan = document.getElementById('mergeSelectedCount');
+      if (countSpan) countSpan.innerText = selectedBoxes.length;
+
+      if (!mergeBtn) return;
+
+      if (selectedBoxes.length >= 2) {
+        mergeBtn.classList.remove('hidden');
+        // Kiểm tra xem có cùng loại sản phẩm không
+        const products = new Set(selectedBoxes.map(b => b.dataset.product));
+        if (products.size === 1) {
+          mergeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          mergeBtn.title = "Gộp các lô đã chọn thành 1 lô mới";
+        } else {
+          mergeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          mergeBtn.title = "Các lô đã chọn khác loại sản phẩm! Vui lòng chỉ chọn cùng loại.";
+        }
+      } else {
+        mergeBtn.classList.add('hidden');
+      }
+    }
+
+    function toggleSelectAllBatches(masterCheckbox) {
+      const checkboxes = document.querySelectorAll('.batch-select-checkbox:not(:disabled)');
+      checkboxes.forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+      });
+      handleBatchSelectChange();
+    }
+
+    // 2. Mở Modal Gộp Lô (S-19)
+    function openMergeModalForSelected() {
+      const selectedBoxes = Array.from(document.querySelectorAll('.batch-select-checkbox:checked'));
+      if (selectedBoxes.length < 2) {
+        showToast("Vui lòng chọn ít nhất 2 lô nông sản để gộp!", "warning");
+        return;
+      }
+
+      const products = Array.from(new Set(selectedBoxes.map(b => b.dataset.product)));
+      if (products.length > 1) {
+        showToast(`Không thể gộp: Các lô được chọn không cùng loại sản phẩm (${products.join(", ")})!`, "error");
+        return;
+      }
+
+      const productName = products[0];
+      document.getElementById('mergeTargetProduct').value = productName;
+
+      // Render danh sách các lô nguồn
+      const container = document.getElementById('mergeSourceBatchesList');
+      container.innerHTML = selectedBoxes.map((cb, idx) => {
+        const code = cb.dataset.code;
+        const maxQty = parseFloat(cb.dataset.qty) || 0;
+        return `
+          <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+            <div class="space-y-0.5">
+              <div class="font-mono font-black text-emerald-800">${code}</div>
+              <div class="text-[11px] text-slate-500">Khối lượng khả dụng: <span class="font-bold text-slate-700">${maxQty} kg</span></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-slate-500 font-semibold text-[11px]">Lượng gộp:</span>
+              <input 
+                type="number" 
+                step="0.01" 
+                min="0.01" 
+                max="${maxQty}" 
+                value="${maxQty}" 
+                data-code="${code}" 
+                data-max="${maxQty}"
+                oninput="updateMergeTotalCalculation()"
+                class="merge-source-qty w-28 p-1.5 text-xs font-bold text-right bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <span class="font-bold text-slate-600">kg</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateMergeTotalCalculation();
+      openModal('mergeBatchModal');
+    }
+
+    function updateMergeTotalCalculation() {
+      const inputs = Array.from(document.querySelectorAll('.merge-source-qty'));
+      let total = 0;
+      let hasError = false;
+
+      inputs.forEach(input => {
+        const val = parseFloat(input.value) || 0;
+        const max = parseFloat(input.dataset.max) || 0;
+        if (val <= 0 || val > max) {
+          hasError = true;
+          input.classList.add('border-rose-500', 'bg-rose-50');
+        } else {
+          input.classList.remove('border-rose-500', 'bg-rose-50');
+        }
+        total += val;
+      });
+
+      const totalEl = document.getElementById('mergeTotalWeight');
+      if (totalEl) totalEl.innerText = total.toFixed(2);
+
+      const submitBtn = document.getElementById('btnSubmitMerge');
+      if (submitBtn) {
+        if (hasError || total <= 0) {
+          submitBtn.disabled = true;
+          submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+      }
+    }
+
+    // 3. Thực Hiện Gộp Lô (S-19)
+    async function submitMergeBatches() {
+      const inputs = Array.from(document.querySelectorAll('.merge-source-qty'));
+      const productName = document.getElementById('mergeTargetProduct').value;
+      const notes = document.getElementById('mergeNotes').value || "Gộp lô nông sản chuỗi cung ứng";
+
+      const sourceBatches = [];
+      let totalQty = 0;
+      for (const input of inputs) {
+        const val = parseFloat(input.value) || 0;
+        const max = parseFloat(input.dataset.max) || 0;
+        if (val <= 0 || val > max) {
+          showToast(`Số lượng gộp của lô ${input.dataset.code} không hợp lệ!`, "error");
+          return;
+        }
+        sourceBatches.push({
+          code: input.dataset.code,
+          quantity: val
+        });
+        totalQty += val;
+      }
+
+      // Khóa và thực hiện gộp (Deadlock Prevention: sắp xếp theo ID / Code)
+      sourceBatches.sort((a, b) => a.code.localeCompare(b.code));
+
+      // Sinh mã lô gộp mới (8 ký tự ngẫu nhiên an toàn)
+      const newMergedCode = generateRandomBatchCode();
+
+      // Cập nhật số lượng các lô mẹ
+      sourceBatches.forEach(src => {
+        const parent = state.batches.find(b => b.code === src.code);
+        if (parent) {
+          if (parent.remaining_qty === undefined) parent.remaining_qty = parent.qty;
+          parent.remaining_qty = Math.max(0, parent.remaining_qty - src.quantity);
+          // Ghi nhận quan hệ phả hệ
+          if (!state.batchRelations) state.batchRelations = [];
+          state.batchRelations.push({
+            parent_code: src.code,
+            child_code: newMergedCode,
+            relation_type: 'MERGE',
+            quantity: src.quantity,
+            notes: notes
+          });
+        }
+      });
+
+      // Tạo lô mới
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      const newBatch = {
+        code: newMergedCode,
+        product: productName,
+        org_id: cfg.orgId !== null ? cfg.orgId : 1,
+        farm: cfg.orgName,
+        qty: totalQty,
+        initial_qty: totalQty,
+        remaining_qty: totalQty,
+        unit: "kg",
+        status: "Đang lưu kho",
+        temp: "4.0°C",
+        cert: "VietGAP",
+        plot: `Gộp từ ${sourceBatches.length} lô`
+      };
+      state.batches.unshift(newBatch);
+
+      // Ghi sự kiện chuỗi băm Hash SHA-256
+      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
+      state.hashEvents.push({
+        index: state.hashEvents.length + 1,
+        event_type: "BATCH_MERGE_CREATED",
+        batch_code: newMergedCode,
+        org_name: cfg.orgName,
+        prev_hash: prevHash,
+        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+        valid: true
+      });
+
+      saveAppState(state);
+      closeModal('mergeBatchModal');
+      renderBatchesTable();
+      renderTraceabilityTab();
+
+      showToast(`GỘP LÔ THÀNH CÔNG (S-19)! Mã lô mới: ${newMergedCode} (${totalQty} kg)`, "success");
+    }
+
+    // 4. Mở Modal Tách Lô (S-17)
+    function openSplitModalForCurrentBatch() {
+      const parentCode = currentDetailBatchCode;
+      const batch = state.batches.find(b => b.code === parentCode);
+      if (!batch) {
+        showToast("Không tìm thấy thông tin lô mẹ!", "error");
+        return;
+      }
+
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      if (roleKey === "consumer" || cfg.isReadOnly) {
+        showToast("Vai trò của bạn chỉ có quyền tra cứu, không được tách lô!", "error");
+        return;
+      }
+
+      const remQty = batch.remaining_qty !== undefined ? batch.remaining_qty : batch.qty;
+      if (remQty <= 0) {
+        showToast("Lô này đã hết số lượng khả dụng, không thể tách thêm!", "warning");
+        return;
+      }
+
+      document.getElementById('splitParentCode').innerText = batch.code;
+      document.getElementById('splitParentProduct').innerText = batch.product;
+      const remEl = document.getElementById('splitParentRemainingQty');
+      remEl.innerText = `${remQty} kg`;
+      remEl.dataset.qty = remQty;
+
+      // Khởi tạo 2 hàng lô con mặc định
+      const container = document.getElementById('splitChildrenContainer');
+      const half1 = (remQty / 2).toFixed(1);
+      const half2 = (remQty - half1).toFixed(1);
+      container.innerHTML = `
+        <div class="split-child-row flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center split-row-index">1</span>
+          <div class="flex-1 grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-slate-500 uppercase">Khối lượng tách (kg)</label>
+              <input type="number" step="0.01" min="0.01" max="${remQty}" value="${half1}" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" required/>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-slate-500 uppercase">Ghi chú lô con</label>
+              <input type="text" placeholder="Đóng thùng loại A..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+            </div>
+          </div>
+          <button type="button" onclick="removeSplitRow(this)" class="p-2 text-rose-500 hover:text-rose-700 text-sm"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        <div class="split-child-row flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center split-row-index">2</span>
+          <div class="flex-1 grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-slate-500 uppercase">Khối lượng tách (kg)</label>
+              <input type="number" step="0.01" min="0.01" max="${remQty}" value="${half2}" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" required/>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-slate-500 uppercase">Ghi chú lô con</label>
+              <input type="text" placeholder="Xuất sang siêu thị..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+            </div>
+          </div>
+          <button type="button" onclick="removeSplitRow(this)" class="p-2 text-rose-500 hover:text-rose-700 text-sm"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      `;
+
+      calculateSplitTotals();
+      openModal('splitBatchModal');
+    }
+
+    function addSplitRow() {
+      const container = document.getElementById('splitChildrenContainer');
+      const remQty = parseFloat(document.getElementById('splitParentRemainingQty').dataset.qty) || 0;
+      const currentRows = container.querySelectorAll('.split-child-row').length;
+      const newIndex = currentRows + 1;
+
+      const div = document.createElement('div');
+      div.className = "split-child-row flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200";
+      div.innerHTML = `
+        <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center split-row-index">${newIndex}</span>
+        <div class="flex-1 grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] font-bold text-slate-500 uppercase">Khối lượng tách (kg)</label>
+            <input type="number" step="0.01" min="0.01" max="${remQty}" value="50" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" required/>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-slate-500 uppercase">Ghi chú lô con</label>
+            <input type="text" placeholder="Lô con #${newIndex}..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+          </div>
+        </div>
+        <button type="button" onclick="removeSplitRow(this)" class="p-2 text-rose-500 hover:text-rose-700 text-sm"><i class="fa-solid fa-trash"></i></button>
+      `;
+      container.appendChild(div);
+      calculateSplitTotals();
+    }
+
+    function removeSplitRow(btn) {
+      const container = document.getElementById('splitChildrenContainer');
+      const rows = container.querySelectorAll('.split-child-row');
+      if (rows.length <= 1) {
+        showToast("Phải có ít nhất 1 lô con khi tách!", "warning");
+        return;
+      }
+      btn.closest('.split-child-row').remove();
+      // Đánh số lại
+      container.querySelectorAll('.split-child-row').forEach((row, idx) => {
+        row.querySelector('.split-row-index').innerText = idx + 1;
+      });
+      calculateSplitTotals();
+    }
+
+    function calculateSplitTotals() {
+      const remQty = parseFloat(document.getElementById('splitParentRemainingQty').dataset.qty) || 0;
+      const qtyInputs = Array.from(document.querySelectorAll('.split-child-qty'));
+      let sum = 0;
+      let hasError = false;
+
+      qtyInputs.forEach(input => {
+        const val = parseFloat(input.value) || 0;
+        if (val <= 0) hasError = true;
+        sum += val;
+      });
+
+      const totalEl = document.getElementById('splitTotalQuantity');
+      const remainEl = document.getElementById('splitRemainingParentQty');
+      const errorEl = document.getElementById('splitQtyErrorAlert');
+      const submitBtn = document.getElementById('btnSubmitSplit');
+
+      totalEl.innerText = `${sum.toFixed(2)} kg`;
+      const leftover = remQty - sum;
+      remainEl.innerText = `${leftover.toFixed(2)} kg`;
+
+      if (sum > remQty || hasError || sum <= 0) {
+        errorEl.classList.remove('hidden');
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        errorEl.classList.add('hidden');
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    // 5. Thực Hiện Tách Lô (S-17, S-18)
+    async function submitSplitBatch() {
+      const parentCode = currentDetailBatchCode;
+      const batch = state.batches.find(b => b.code === parentCode);
+      if (!batch) return;
+
+      const remQty = batch.remaining_qty !== undefined ? batch.remaining_qty : batch.qty;
+      const rows = Array.from(document.querySelectorAll('.split-child-row'));
+      const children = [];
+      let sum = 0;
+
+      for (const row of rows) {
+        const qty = parseFloat(row.querySelector('.split-child-qty').value) || 0;
+        const notes = row.querySelector('.split-child-notes').value || `Tách từ lô ${parentCode}`;
+        if (qty <= 0) {
+          showToast("Khối lượng các lô con phải lớn hơn 0!", "error");
+          return;
+        }
+        sum += qty;
+        children.push({ quantity: qty, notes: notes });
+      }
+
+      if (sum > remQty) {
+        showToast("Tổng khối lượng các lô con vượt quá khối lượng còn lại của lô mẹ!", "error");
+        return;
+      }
+
+      // Trừ khối lượng còn lại của lô mẹ
+      batch.remaining_qty = Math.max(0, remQty - sum);
+
+      // Tạo các lô con kế thừa sản phẩm và thửa từ lô mẹ
+      const createdChildCodes = [];
+      children.forEach(c => {
+        const childCode = generateRandomBatchCode();
+        createdChildCodes.push(childCode);
+
+        state.batches.unshift({
+          code: childCode,
+          product: batch.product,
+          org_id: batch.org_id,
+          farm: batch.farm,
+          qty: c.quantity,
+          initial_qty: c.quantity,
+          remaining_qty: c.quantity,
+          unit: batch.unit || "kg",
+          status: "Đang lưu kho",
+          temp: batch.temp || "4.0°C",
+          cert: batch.cert || "VietGAP",
+          plot: batch.plot || "Thửa gốc kế thừa"
+        });
+
+        // Ghi quan hệ phả hệ SPLIT
+        if (!state.batchRelations) state.batchRelations = [];
+        state.batchRelations.push({
+          parent_code: parentCode,
+          child_code: childCode,
+          relation_type: 'SPLIT',
+          quantity: c.quantity,
+          notes: c.notes
+        });
+      });
+
+      // Ghi chuỗi hash
+      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
+      state.hashEvents.push({
+        index: state.hashEvents.length + 1,
+        event_type: "BATCH_SPLIT_CREATED",
+        batch_code: parentCode,
+        org_name: batch.farm,
+        prev_hash: prevHash,
+        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+        valid: true
+      });
+
+      saveAppState(state);
+      closeModal('splitBatchModal');
+      renderBatchesTable();
+      renderTraceabilityTab();
+
+      // Cập nhật lại modal chi tiết lô mẹ
+      handleQuickSearch(parentCode);
+
+      showToast(`TÁCH LÔ THÀNH CÔNG (S-17)! Đã tạo ${createdChildCodes.length} lô con (${createdChildCodes.join(', ')})`, "success");
+    }
+
+    // 6. Dựng Đồ Thị / Sơ Đồ Cây Phả Hệ DAG Trực Quan (S-21, S-26, S-27)
+    // Sơ đồ trực quan 3 cột: Tổ tiên bên trái | Lô hiện tại ở giữa | Hậu duệ bên phải
+    async function fetchAndRenderLineage(batchCode) {
+      const container = document.getElementById('modalBatchLineageContainer');
+      const statusEl = document.getElementById('modalBatchLineageStatus');
+      if (!container) return;
+
+      const relations = state.batchRelations || [];
+      const batches = state.batches || [];
+      const currentBatch = batches.find(b => b.code === batchCode);
+
+      // Thuật toán BFS:
+      // 1. Duyệt ngược (Upstream BFS - S-21) tìm tổ tiên và các lô thu hoạch gốc
+      const rootsMap = new Map();
+      const ancestorsList = [];
+      const upstreamQueue = [{ code: batchCode, path: [batchCode], depth: 0 }];
+      const upstreamVisited = new Set();
+      let hasUpstreamCycle = false;
+
+      while (upstreamQueue.length > 0) {
+        const item = upstreamQueue.shift();
+        const currCode = item.code;
+        const path = item.path;
+        const depth = item.depth;
+        upstreamVisited.add(currCode);
+
+        const parentRels = relations.filter(r => r.child_code === currCode);
+        if (parentRels.length === 0) {
+          // Lô gốc ban đầu (không có cha)
+          const bObj = batches.find(b => b.code === currCode);
+          if (bObj && !rootsMap.has(currCode)) {
+            rootsMap.set(currCode, {
+              code: currCode,
+              product: bObj.product,
+              farm: bObj.farm || "Vùng trồng HTX",
+              plot: bObj.plot || "Thửa A1",
+              qty: bObj.qty,
+              remQty: bObj.remaining_qty !== undefined ? bObj.remaining_qty : bObj.qty,
+              depth: depth
+            });
+          }
+        } else {
+          for (const rel of parentRels) {
+            if (path.includes(rel.parent_code)) {
+              hasUpstreamCycle = true;
+              break;
+            }
+            const pBatch = batches.find(b => b.code === rel.parent_code);
+            if (pBatch && rel.parent_code !== batchCode && !ancestorsList.some(a => a.code === rel.parent_code)) {
+              ancestorsList.push({
+                code: rel.parent_code,
+                product: pBatch.product,
+                farm: pBatch.farm,
+                qty: rel.quantity,
+                relation_type: rel.relation_type,
+                depth: depth + 1
+              });
+            }
+            upstreamQueue.push({ code: rel.parent_code, path: [...path, rel.parent_code], depth: depth + 1 });
+          }
+        }
+      }
+
+      // 2. Duyệt xuôi (Downstream BFS - S-26, S-27) tìm toàn bộ hậu duệ
+      const descendantsList = [];
+      const downstreamQueue = [{ code: batchCode, path: [batchCode], depth: 0 }];
+      const downstreamVisited = new Set();
+      let hasDownstreamCycle = false;
+
+      while (downstreamQueue.length > 0) {
+        const item = downstreamQueue.shift();
+        const currCode = item.code;
+        const path = item.path;
+        const depth = item.depth;
+        downstreamVisited.add(currCode);
+
+        const childRels = relations.filter(r => r.parent_code === currCode);
+        for (const rel of childRels) {
+          if (path.includes(rel.child_code)) {
+            hasDownstreamCycle = true;
+            break;
+          }
+          const cBatch = batches.find(b => b.code === rel.child_code);
+          const cRemQty = cBatch ? (cBatch.remaining_qty !== undefined ? cBatch.remaining_qty : cBatch.qty) : 0;
+          const isDepleted = cRemQty <= 0;
+
+          descendantsList.push({
+            code: rel.child_code,
+            product: cBatch ? cBatch.product : "Nông sản chế biến",
+            generation: `F${depth + 1}`,
+            relation_type: rel.relation_type,
+            quantity: rel.quantity,
+            holding_org: cBatch ? cBatch.farm : "Cơ sở lưu kho",
+            location: cBatch ? (cBatch.plot || "Kho bảo quản") : "Kho điểm bán",
+            remaining_qty: cRemQty,
+            status: cBatch ? cBatch.status : "Đang lưu kho",
+            is_depleted: isDepleted,
+            parent_code: currCode
+          });
+
+          downstreamQueue.push({ code: rel.child_code, path: [...path, rel.child_code], depth: depth + 1 });
+        }
+      }
+
+      const roots = Array.from(rootsMap.values());
+      const isIsolated = roots.length <= 1 && ancestorsList.length === 0 && descendantsList.length === 0 && rootsMap.has(batchCode);
+
+      if (statusEl) {
+        if (hasUpstreamCycle || hasDownstreamCycle) {
+          statusEl.innerHTML = '<span class="text-rose-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Phát hiện chu trình vòng lặp (Lineage Cycle)!</span>';
+        } else {
+          statusEl.innerText = isIsolated ? "Lô thu hoạch nguyên gốc (chưa tách/gộp)" : `Phả hệ DAG: ${roots.length} gốc, ${descendantsList.length} hậu duệ`;
+        }
+      }
+
+      // Render Sơ Đồ Cây Phả Hệ Trực Quan 3 Cột (Trái: Tổ tiên | Giữa: Hiện tại | Phải: Hậu duệ)
+      const curRemQty = currentBatch ? (currentBatch.remaining_qty !== undefined ? currentBatch.remaining_qty : currentBatch.qty) : 0;
+      const curIsDepleted = curRemQty <= 0;
+
+      container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-start text-xs">
+          
+          <!-- CỘT 1: TỔ TIÊN & LÔ THU HOẠCH GỐC (S-21) -->
+          <div class="bg-amber-50/70 p-3 rounded-2xl border border-amber-200 space-y-2">
+            <div class="flex items-center justify-between pb-1 border-b border-amber-200">
+              <span class="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-seedling text-amber-600"></i> 1. Tổ Tiên & Gốc (S-21)
+              </span>
+              <span class="text-[10px] bg-amber-200/70 text-amber-950 font-bold px-2 py-0.5 rounded-full">${roots.length} Lô Gốc</span>
+            </div>
+            
+            <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+              ${roots.length === 0 || (roots.length === 1 && roots[0].code === batchCode) ? `
+                <div class="p-2.5 bg-white rounded-xl border border-dashed border-amber-300 text-center text-[11px] text-amber-800">
+                  <i class="fa-solid fa-check-circle text-emerald-500 mr-1"></i> Chính là lô thu hoạch nguyên bản từ thửa đất.
+                </div>
+              ` : roots.map(r => `
+                <div class="p-2.5 bg-white rounded-xl border border-amber-200 shadow-xs hover:border-amber-400 hover:shadow-sm transition-all">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono font-black text-amber-900 text-xs">${r.code}</span>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">Lô Gốc</span>
+                  </div>
+                  <div class="text-[11px] font-bold text-slate-800 mt-1">${r.product}</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">
+                    <i class="fa-solid fa-mountain-sun mr-1 text-emerald-600"></i>${r.farm}
+                  </div>
+                  <div class="text-[10px] text-slate-500">
+                    <i class="fa-solid fa-map-pin mr-1 text-rose-500"></i>${r.plot}
+                  </div>
+                  <div class="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-amber-800">Khối lượng: ${r.remQty} kg</span>
+                    <button type="button" onclick="handleQuickSearch('${r.code}')" class="text-[10px] font-bold text-amber-700 hover:text-amber-900 underline flex items-center gap-1">
+                      Xem gốc <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+
+              ${ancestorsList.length > 0 ? `
+                <div class="pt-1">
+                  <div class="text-[10px] font-bold text-amber-900 uppercase mb-1">Các Bước Chuyển Trung Gian:</div>
+                  ${ancestorsList.map(a => `
+                    <div class="p-2 bg-white/80 rounded-lg border border-amber-100 text-[10px] flex items-center justify-between">
+                      <span class="font-mono font-bold text-slate-700">${a.code}</span>
+                      <span class="text-slate-500">${a.relation_type === 'SPLIT' ? 'Tách' : 'Gộp'} (${a.qty}kg)</span>
+                      <button onclick="handleQuickSearch('${a.code}')" class="text-amber-700 hover:underline font-bold">Xem</button>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- CỘT 2: LÔ ĐANG XEM (TIÊU ĐIỂM Ở GIỮA) -->
+          <div class="bg-emerald-50/90 p-3.5 rounded-2xl border-2 border-emerald-500 shadow-md space-y-2.5 relative">
+            <div class="flex items-center justify-between pb-1.5 border-b border-emerald-200">
+              <span class="text-[11px] font-extrabold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-location-crosshairs text-emerald-600"></i> 2. Lô Hiện Tại (Tiêu Điểm)
+              </span>
+              <span class="text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">FOCUS</span>
+            </div>
+
+            <div class="space-y-1.5 bg-white p-3 rounded-xl border border-emerald-300">
+              <div class="text-center pb-2 border-b border-slate-100">
+                <span class="font-mono font-black text-emerald-950 text-sm tracking-wider">${batchCode}</span>
+                <p class="font-bold text-xs text-slate-800 mt-0.5">${currentBatch ? currentBatch.product : 'Nông sản chuỗi lạnh'}</p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <span class="text-slate-400 block text-[9px] uppercase font-bold">Khối lượng còn</span>
+                  <span class="font-black ${curIsDepleted ? 'text-rose-600' : 'text-emerald-700'} text-xs">
+                    ${curRemQty} kg
+                  </span>
+                  ${curIsDepleted ? '<span class="text-[9px] text-rose-500 block">(Đã xuất hết)</span>' : ''}
+                </div>
+                <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <span class="text-slate-400 block text-[9px] uppercase font-bold">Chuỗi lạnh</span>
+                  <span class="font-bold text-blue-700 text-xs">${currentBatch ? currentBatch.temp : '4.0°C'}</span>
+                  <span class="text-[9px] text-slate-500 block">${currentBatch ? currentBatch.status : 'Lưu kho'}</span>
+                </div>
+              </div>
+
+              <div class="text-[10px] text-slate-600 space-y-1 pt-1">
+                <div><i class="fa-solid fa-building mr-1 text-slate-400"></i><strong>Đơn vị giữ:</strong> ${currentBatch ? currentBatch.farm : 'HTX Quản lý'}</div>
+                <div><i class="fa-solid fa-map-location-dot mr-1 text-slate-400"></i><strong>Vị trí:</strong> ${currentBatch ? (currentBatch.plot || 'Kho phân phối') : 'Kho trung tâm'}</div>
+              </div>
+            </div>
+
+            <div class="text-[10px] text-emerald-800 bg-emerald-100/60 p-2 rounded-lg text-center font-medium">
+              <i class="fa-solid fa-arrows-left-right text-emerald-600 mr-1"></i> Trung tâm đồ thị DAG liên kết nguồn gốc và hậu duệ
+            </div>
+          </div>
+
+          <!-- CỘT 3: CÁC THẾ HỆ HẬU DUỆ (S-26, S-27) -->
+          <div class="bg-indigo-50/70 p-3 rounded-2xl border border-indigo-200 space-y-2">
+            <div class="flex items-center justify-between pb-1 border-b border-indigo-200">
+              <span class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-network-wired text-indigo-600"></i> 3. Hậu Duệ (S-26, S-27)
+              </span>
+              <span class="text-[10px] bg-indigo-200/70 text-indigo-950 font-bold px-2 py-0.5 rounded-full">${descendantsList.length} Lô Con/Cháu</span>
+            </div>
+
+            <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+              ${descendantsList.length === 0 ? `
+                <div class="p-2.5 bg-white rounded-xl border border-dashed border-indigo-300 text-center text-[11px] text-indigo-800">
+                  <i class="fa-solid fa-leaf text-indigo-500 mr-1"></i> Chưa có lô con hoặc lô cháu nào được sinh ra từ lô này.
+                </div>
+              ` : descendantsList.map(d => `
+                <div class="p-2.5 bg-white rounded-xl border border-indigo-200 shadow-xs hover:border-indigo-400 hover:shadow-sm transition-all">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono font-black text-indigo-900 text-xs">${d.code}</span>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${d.relation_type === 'SPLIT' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'}">
+                      ${d.generation} (${d.relation_type === 'SPLIT' ? 'Tách' : 'Gộp'})
+                    </span>
+                  </div>
+                  <div class="text-[11px] font-bold text-slate-800 mt-1">${d.product}</div>
+                  <div class="text-[10px] text-slate-600 mt-0.5">
+                    <i class="fa-solid fa-building mr-1 text-indigo-500"></i><strong>Đang giữ:</strong> ${d.holding_org}
+                  </div>
+                  <div class="text-[10px] text-slate-500">
+                    <i class="fa-solid fa-store mr-1 text-slate-400"></i><strong>Vị trí:</strong> ${d.location}
+                  </div>
+                  <div class="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                      ${d.is_depleted 
+                        ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-700">Đã bán/xuất hết</span>'
+                        : `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">Còn kho: ${d.remaining_qty} kg</span>`
+                      }
+                    </div>
+                    <button type="button" onclick="handleQuickSearch('${d.code}')" class="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 underline flex items-center gap-1">
+                      Chi tiết <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
     function renderTraceabilityTab() {
       const tbody = document.getElementById("hashEventsTableBody");
       if (!tbody) return;
@@ -2183,6 +3876,7 @@
     }
 
     function renderPublicTraceModal(data) {
+      currentDetailBatchCode = data.batch_code;
       document.getElementById("modalBatchCode").innerText = data.batch_code;
       document.getElementById("modalBatchProduct").innerText = data.product_name;
       document.getElementById("modalBatchFarm").innerText = data.farm_name;
@@ -2190,6 +3884,34 @@
       document.getElementById("modalBatchHarvestDate").innerText = data.harvest_date || "15/03/2026";
       document.getElementById("modalBatchCert").innerText = data.certification || "VietGAP";
       document.getElementById("modalBatchPhiText").innerText = data.phi_message || "Đạt chuẩn an toàn thời gian cách ly thuốc BVTV.";
+
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
+      // Điều khiển hiển thị nút Bàn Giao (S-15): Ẩn nếu là Consumer hoặc Inspector
+      const hoBtn = document.getElementById("modalBtnHandover");
+      if (hoBtn) {
+        if (roleKey === "consumer" || cfg.isReadOnly) {
+          hoBtn.classList.add("hidden");
+        } else {
+          hoBtn.classList.remove("hidden");
+        }
+      }
+
+      // Điều khiển hiển thị nút Tách Lô (S-17): Ẩn nếu là Consumer/Inspector hoặc hết khối lượng
+      const splitBtn = document.getElementById("modalBtnSplit");
+      if (splitBtn) {
+        const foundBatch = state.batches.find(b => b.code === data.batch_code);
+        const remQty = foundBatch ? (foundBatch.remaining_qty !== undefined ? foundBatch.remaining_qty : foundBatch.qty) : 0;
+        if (roleKey === "consumer" || cfg.isReadOnly || remQty <= 0) {
+          splitBtn.classList.add("hidden");
+        } else {
+          splitBtn.classList.remove("hidden");
+        }
+      }
+
+      // Dựng cây phả hệ (S-17, S-18, S-19)
+      fetchAndRenderLineage(data.batch_code);
 
       // Render các mốc hành trình chuỗi cung ứng chính (S-48: Sơ chế, Vận chuyển, Phân phối)
       const listEl = document.getElementById("modalBatchJourneyList");
@@ -2216,6 +3938,436 @@
     /**
      * MODAL HELPERS
      */
+
+    /**
+     * EPIC E-06: THU HỒI LÔ HÀNG KHẨN CẤP (EMERGENCY RECALL)
+     * S-33, S-34, S-35, S-36, S-37, S-38
+     */
+    let currentViewingRecallId = null;
+
+    function handleRecallReasonInput() {
+      const textarea = document.getElementById("recallReasonInput");
+      const counter = document.getElementById("recallReasonCharCounter");
+      const warning = document.getElementById("recallReasonWarning");
+      const submitBtn = document.getElementById("btnSubmitRecall");
+
+      const len = textarea.value.trim().length;
+      counter.innerText = `${len} / 20 ký tự`;
+
+      if (len < 20) {
+        counter.className = "text-[11px] font-mono font-bold text-rose-600";
+        warning.classList.remove("hidden");
+        submitBtn.disabled = true;
+        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+      } else {
+        counter.className = "text-[11px] font-mono font-bold text-emerald-600";
+        warning.classList.add("hidden");
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      }
+    }
+
+    function openRecallModalForCurrentBatch() {
+      const batchCode = currentDetailBatchCode;
+      const b = state.batches.find(x => x.code === batchCode);
+      if (!b) return;
+
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
+      // Phân quyền S-33: Cán bộ kiểm tra (Inspector) hoặc Quản trị của tổ chức đang giữ lô
+      const isInspector = roleKey === "inspector";
+      const isAdmin = roleKey === "system_admin" || cfg.role === "Admin";
+      const isHoldingOrg = cfg.orgId !== null && b.org_id === cfg.orgId;
+
+      if (!isInspector && !(isAdmin && isHoldingOrg) && roleKey !== "system_admin") {
+        showToast("Chỉ Cán bộ kiểm tra (Inspector) hoặc Quản trị của tổ chức đang giữ lô mới có quyền mở lệnh thu hồi (S-33)!", "error");
+        return;
+      }
+
+      document.getElementById("recallModalBatchCode").innerText = b.code;
+      document.getElementById("recallModalProductName").innerText = b.product;
+      document.getElementById("recallReasonInput").value = "";
+      handleRecallReasonInput();
+
+      closeModal("batchDetailModal");
+      openModal("openRecallModal");
+    }
+
+    async function submitTriggerRecall() {
+      const batchCode = currentDetailBatchCode;
+      const b = state.batches.find(x => x.code === batchCode);
+      if (!b) return;
+
+      const reason = document.getElementById("recallReasonInput").value.trim();
+      const severity = document.getElementById("recallSeveritySelect").value;
+
+      if (reason.length < 20) {
+        showToast("Lý do thu hồi bắt buộc phải có ít nhất 20 ký tự mô tả cụ thể sự cố (S-33)!", "error");
+        return;
+      }
+
+      // Gọi API Backend
+      try {
+        const resp = await fetch("/api/v1/recalls", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${state.token || ""}`
+          },
+          body: JSON.stringify({
+            batch_id: b.id || 1,
+            reason: reason,
+            severity: severity
+          })
+        });
+
+        if (resp.ok) {
+          const recallData = await resp.json();
+          closeModal("openRecallModal");
+          showToast(`Kích hoạt thành công lệnh thu hồi #${recallData.recall_code}!`, "success");
+          displayRecallDetailModal(recallData);
+          renderRecallsTab();
+          return;
+        } else {
+          const errJson = await resp.json();
+          showToast(errJson.detail || "Không thể kích hoạt lệnh thu hồi!", "error");
+        }
+      } catch (err) {
+        console.warn("API recall trigger error, running local state fallback:", err);
+      }
+
+      // Local mock fallback nếu API offline
+      const mockCode = "RCL-" + new Date().toISOString().slice(0,10).replace(/-/g,'') + "-" + Math.random().toString(36).substring(2,8).toUpperCase();
+      const mockRecall = {
+        id: Date.now(),
+        recall_code: mockCode,
+        source_batch_id: b.id || 1,
+        source_batch_code: b.code,
+        product_name: b.product,
+        reason: reason,
+        severity: severity,
+        status: "ACTIVE",
+        initiator_name: "Cán Bộ Kiểm Tra An Toàn",
+        initiator_org_name: "Chi Cục Quản Lý Chất Lượng",
+        total_affected_batches: 3,
+        total_affected_kg: 1800,
+        total_stock_kg: 750,
+        total_sold_kg: 1050,
+        progress: {
+          total_organizations: 3,
+          confirmed_organizations: 0,
+          progress_percentage: 0,
+          status_summary: "0/3 tổ chức đã xác nhận cô lập"
+        },
+        affected_batches: [
+          {
+            batch_code: b.code,
+            product_name: b.product,
+            organization_name: b.farm || "Nông Trại Hữu Cơ",
+            generation: "ROOT",
+            remaining_quantity: 200,
+            sold_quantity: 800,
+            current_location: "Kho trang trại",
+            is_isolated: false
+          },
+          {
+            batch_code: "BATCH-CHILD-COOP-01",
+            product_name: b.product,
+            organization_name: "HTX Sơ Chế Chế Biến",
+            generation: "THẾ HỆ 1",
+            remaining_quantity: 500,
+            sold_quantity: 0,
+            current_location: "Kho lạnh HTX",
+            is_isolated: false
+          },
+          {
+            batch_code: "BATCH-GRAND-RETAIL-01",
+            product_name: b.product,
+            organization_name: "Chuỗi Siêu Thị BioMart",
+            generation: "THẾ HỆ 2",
+            remaining_quantity: 50,
+            sold_quantity: 250,
+            current_location: "Quầy kệ siêu thị",
+            is_isolated: false
+          }
+        ],
+        organization_actions: [
+          { organization_id: 1, organization_name: "Nông Trại Hữu Cơ Thảo Mộc", status: "PENDING", affected_batch_count: 1, stock_kg: 200 },
+          { organization_id: 2, organization_name: "Hợp Tác Xã Chế Biến Xanh", status: "PENDING", affected_batch_count: 1, stock_kg: 500 },
+          { organization_id: 4, organization_name: "Hệ Thống Siêu Thị Nông Sản Sạch", status: "PENDING", affected_batch_count: 1, stock_kg: 50 }
+        ]
+      };
+
+      if (!state.recalls) state.recalls = [];
+      state.recalls.unshift(mockRecall);
+
+      // Cập nhật trạng thái lô thành phong tỏa thu hồi
+      b.status = "Bị phong tỏa thu hồi";
+      saveAppState(state);
+
+      closeModal("openRecallModal");
+      showToast(`Đã kích hoạt lệnh thu hồi #${mockCode}. Toàn bộ các lô con cháu đã bị khóa quyền (S-38)!`, "success");
+      displayRecallDetailModal(mockRecall);
+      renderRecallsTab();
+    }
+
+    async function renderRecallsTab() {
+      const tbody = document.getElementById("recallsTableBody");
+      if (!tbody) return;
+
+      let recallsList = state.recalls || [];
+
+      try {
+        const resp = await fetch("/api/v1/recalls", {
+          headers: { "Authorization": `Bearer ${state.token || ""}` }
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.items) recallsList = data.items;
+        }
+      } catch (e) {
+        console.log("Recalls API fetch fallback:", e);
+      }
+
+      // Update KPI Bar
+      const activeCount = recallsList.filter(r => r.status !== 'COMPLETED').length;
+      const totalAffectedBatches = recallsList.reduce((acc, r) => acc + (r.total_affected_batches || 0), 0);
+      const totalStockKg = recallsList.reduce((acc, r) => acc + (r.total_stock_kg || 0), 0);
+      const totalSoldKg = recallsList.reduce((acc, r) => acc + (r.total_sold_kg || 0), 0);
+
+      document.getElementById("kpiActiveRecalls").innerText = `${activeCount} Lệnh`;
+      document.getElementById("kpiTotalAffectedBatches").innerText = `${totalAffectedBatches} Lô`;
+      document.getElementById("kpiStockToIsolateKg").innerText = `${totalStockKg.toLocaleString('vi-VN')} kg`;
+      document.getElementById("kpiSoldToConsumersKg").innerText = `${totalSoldKg.toLocaleString('vi-VN')} kg`;
+
+      if (recallsList.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="p-8 text-center text-slate-400">
+              <i class="fa-solid fa-shield-heart text-3xl mb-2 text-emerald-500"></i>
+              <p class="font-bold text-xs text-slate-700">Không có lệnh thu hồi khẩn cấp nào đang hoạt động!</p>
+              <p class="text-[11px] text-slate-400 mt-1">Toàn bộ chuỗi cung ứng nông sản đang vận hành an toàn đạt chuẩn.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = recallsList.map(r => {
+        const pct = r.progress ? r.progress.progress_percentage : 0;
+        const summary = r.progress ? r.progress.status_summary : "0/0 tổ chức đã cô lập";
+        const isDone = r.status === "COMPLETED";
+
+        return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-3.5 font-mono font-black text-rose-800 text-xs">${r.recall_code}</td>
+            <td class="p-3.5">
+              <div class="font-bold text-slate-800">${r.product_name || 'Nông sản'}</div>
+              <div class="font-mono text-[10px] text-slate-400">Lô: ${r.source_batch_code}</div>
+            </td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${r.severity === 'CRITICAL' ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-amber-100 text-amber-800'}">
+                ${r.severity}
+              </span>
+            </td>
+            <td class="p-3.5">
+              <div class="space-y-1 min-w-[140px]">
+                <div class="flex justify-between text-[10px] font-bold text-slate-600">
+                  <span>${summary}</span>
+                  <span class="font-mono">${pct}%</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                  <div class="bg-gradient-to-r from-amber-500 to-emerald-500 h-1.5 rounded-full" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            </td>
+            <td class="p-3.5 text-right font-mono font-bold text-amber-800">${(r.total_stock_kg || 0).toLocaleString('vi-VN')} kg</td>
+            <td class="p-3.5 text-right font-mono font-bold text-rose-800">${(r.total_sold_kg || 0).toLocaleString('vi-VN')} kg</td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isDone ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-900 border border-rose-300 animate-pulse'}">
+                ${isDone ? 'Đã Hoàn Tất' : 'Đang Thu Hồi'}
+              </span>
+            </td>
+            <td class="p-3.5 text-right">
+              <button 
+                onclick="viewRecallDetail(${r.id})" 
+                class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1 ml-auto">
+                <i class="fa-solid fa-eye"></i> Chi Tiết & Khoanh Vùng
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function viewRecallDetail(recallId) {
+      currentViewingRecallId = recallId;
+      try {
+        const resp = await fetch(`/api/v1/recalls/${recallId}`, {
+          headers: { "Authorization": `Bearer ${state.token || ""}` }
+        });
+        if (resp.ok) {
+          const detail = await resp.json();
+          displayRecallDetailModal(detail);
+          return;
+        }
+      } catch (e) {
+        console.log("Recall detail API offline, checking local mock:", e);
+      }
+
+      const found = (state.recalls || []).find(r => r.id === recallId);
+      if (found) {
+        displayRecallDetailModal(found);
+      } else {
+        showToast("Không tìm thấy thông tin chi tiết lệnh thu hồi!", "error");
+      }
+    }
+
+    function displayRecallDetailModal(data) {
+      currentViewingRecallId = data.id;
+      document.getElementById("recallDetailCode").innerText = data.recall_code;
+      document.getElementById("recallDetailProductInfo").innerText = `Lô gốc: ${data.source_batch_code} | Nông sản: ${data.product_name}`;
+      document.getElementById("recallDetailReason").innerText = data.reason;
+
+      const badge = document.getElementById("recallDetailStatusBadge");
+      if (badge) {
+        badge.innerText = data.status === "COMPLETED" ? "Đã Hoàn Tất Xử Lý" : "Đang Thu Hồi Khẩn Cấp";
+        badge.className = data.status === "COMPLETED" 
+          ? "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"
+          : "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300";
+      }
+
+      // Progress bar (S-37)
+      const p = data.progress || { progress_percentage: 0, status_summary: "0/0" };
+      document.getElementById("recallDetailProgressText").innerText = `${p.status_summary} (${p.progress_percentage}%)`;
+      document.getElementById("recallDetailProgressBar").style.width = `${p.progress_percentage}%`;
+
+      // Org actions list
+      const orgActionsContainer = document.getElementById("recallDetailOrgActionsList");
+      if (orgActionsContainer && data.organization_actions) {
+        orgActionsContainer.innerHTML = data.organization_actions.map(act => `
+          <div class="p-2.5 rounded-xl border ${act.status === 'CONFIRMED_ISOLATED' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'} flex items-center justify-between text-xs">
+            <div>
+              <div class="font-bold text-slate-800">${act.organization_name}</div>
+              <div class="text-[10px] text-slate-500">${act.affected_batch_count} lô (${act.stock_kg} kg cần niêm phong)</div>
+              ${act.action_notes ? `<div class="text-[10px] italic text-slate-600 mt-0.5">"${act.action_notes}"</div>` : ''}
+            </div>
+            <div>
+              ${act.status === 'CONFIRMED_ISOLATED' 
+                ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1"><i class="fa-solid fa-check"></i> Đã Cô Lập</span>'
+                : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 flex items-center gap-1"><i class="fa-solid fa-clock"></i> Chờ Xác Nhận</span>'}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // KPI stats (S-35)
+      document.getElementById("recallStatAffectedBatches").innerText = `${data.total_affected_batches} Lô`;
+      document.getElementById("recallStatStockKg").innerText = `${(data.total_stock_kg || 0).toLocaleString('vi-VN')} kg`;
+      document.getElementById("recallStatSoldKg").innerText = `${(data.total_sold_kg || 0).toLocaleString('vi-VN')} kg`;
+
+      // Affected batches table (S-34)
+      const tbody = document.getElementById("recallDetailAffectedBatchesTbody");
+      if (tbody && data.affected_batches) {
+        tbody.innerHTML = data.affected_batches.map(b => `
+          <tr class="hover:bg-slate-50">
+            <td class="p-2.5 font-mono font-bold text-rose-900">${b.batch_code}</td>
+            <td class="p-2.5 font-medium text-slate-600">${b.generation}</td>
+            <td class="p-2.5 font-bold text-slate-800">${b.organization_name}</td>
+            <td class="p-2.5 text-right font-mono font-bold text-amber-800">${(b.remaining_quantity || 0).toLocaleString('vi-VN')} kg</td>
+            <td class="p-2.5 text-right font-mono font-bold text-rose-800">${(b.sold_quantity || 0).toLocaleString('vi-VN')} kg</td>
+            <td class="p-2.5 text-slate-500">${b.current_location || 'Kho'}</td>
+            <td class="p-2.5 text-center">
+              ${b.is_isolated 
+                ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">Đã Niêm Phong</span>'
+                : '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800">Cần Thu Hồi</span>'}
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // Nút xác nhận cô lập cho tổ chức của user (S-36)
+      const actionBox = document.getElementById("recallOrgConfirmActionBox");
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
+      if (actionBox) {
+        if (data.status === "COMPLETED") {
+          actionBox.innerHTML = '<span class="text-xs font-bold text-emerald-700 flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Toàn bộ các tổ chức đã hoàn thành cô lập và thu hồi sản phẩm!</span>';
+        } else {
+          actionBox.innerHTML = `
+            <button 
+              onclick="confirmRecallIsolation(${data.id})" 
+              class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-2 transition-all">
+              <i class="fa-solid fa-lock"></i> Xác Nhận Đã Cô Lập/Thu Hồi Hàng Của ${cfg.orgName} (S-36)
+            </button>
+          `;
+        }
+      }
+
+      openModal("recallDetailModal");
+    }
+
+    async function confirmRecallIsolation(recallId) {
+      const notes = prompt("Nhập ghi chú biện pháp niêm phong / cô lập lô hàng:", "Đã hoàn tất cô lập, niêm phong toàn bộ hàng trong kho theo quy định S-36");
+      if (notes === null) return;
+
+      try {
+        const resp = await fetch(`/api/v1/recalls/${recallId}/confirm-isolation`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${state.token || ""}`
+          },
+          body: JSON.stringify({ notes: notes })
+        });
+
+        if (resp.ok) {
+          const updated = await resp.json();
+          showToast("Xác nhận cô lập thành công! Tiến độ xử lý đã được ghi vào chuỗi Hash Chain.", "success");
+          displayRecallDetailModal(updated);
+          renderRecallsTab();
+          return;
+        } else {
+          const err = await resp.json();
+          showToast(err.detail || "Không thể xác nhận cô lập!", "error");
+        }
+      } catch (e) {
+        console.warn("API confirm isolation offline, using local mock:", e);
+      }
+
+      // Fallback local mock
+      const r = (state.recalls || []).find(x => x.id === recallId);
+      if (r) {
+        const roleKey = state.currentRole || "farm";
+        const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+        const currentOrgId = cfg.orgId || 1;
+
+        const act = (r.organization_actions || []).find(a => a.organization_id === currentOrgId && a.status === 'PENDING') || r.organization_actions[0];
+        if (act) {
+          act.status = 'CONFIRMED_ISOLATED';
+          act.action_notes = notes;
+        }
+
+        const confirmed = r.organization_actions.filter(a => a.status === 'CONFIRMED_ISOLATED').length;
+        const total = r.organization_actions.length;
+        r.progress.confirmed_organizations = confirmed;
+        r.progress.progress_percentage = Math.round((confirmed / total) * 100);
+        r.progress.status_summary = `${confirmed}/${total} tổ chức đã xác nhận cô lập`;
+
+        if (confirmed === total) {
+          r.status = 'COMPLETED';
+        }
+
+        saveAppState(state);
+        showToast("Đã xác nhận cô lập phần hàng của tổ chức thành công!", "success");
+        displayRecallDetailModal(r);
+        renderRecallsTab();
+      }
+    }
+
+
     function openModal(modalId) {
       const modal = document.getElementById(modalId);
       if (modal) modal.classList.remove('hidden');

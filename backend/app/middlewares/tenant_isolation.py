@@ -99,12 +99,17 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
 
         client_ip = request.client.host if request.client else "unknown"
 
-        # 4. Kiểm tra Cán bộ kiểm tra (Inspector) cố tình tạo mới lô hàng
+        # 4. Kiểm tra Cán bộ kiểm tra (Inspector) cố tình tạo mới lô hàng, tách/gộp hoặc thao tác bàn giao
         if (
-            path == "/api/v1/batches"
-            and method == "POST"
-            and user_role == UserRole.INSPECTOR.value
-        ):
+            (
+                path.startswith("/api/v1/batches")
+                and method in ["POST", "PUT", "PATCH", "DELETE"]
+            )
+            or (
+                path.startswith("/api/v1/handovers")
+                and method in ["POST", "PUT", "PATCH", "DELETE"]
+            )
+        ) and user_role == UserRole.INSPECTOR.value:
             db, should_close = _get_db_session()
             try:
                 user_obj = UserRepository.get_by_email(db, user_email)
@@ -115,13 +120,13 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                     user_email=user_email,
                     user_org_id=user_org_id,
                     attempt_type="inspector_write_violation",
-                    target_resource="batch",
-                    target_id="new_batch",
+                    target_resource="handover" if "handover" in path else "batch",
+                    target_id="write_action",
                     target_org_id=None,
                     endpoint=path,
                     method=method,
                     ip_address=client_ip,
-                    description="Cán bộ kiểm tra cố gắng tạo mới lô hàng (chỉ được phép đọc).",
+                    description="Cán bộ kiểm tra cố gắng thực hiện thao tác ghi/sửa (chỉ được phép đọc).",
                 )
             finally:
                 if should_close:
