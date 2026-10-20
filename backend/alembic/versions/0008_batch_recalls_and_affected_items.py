@@ -13,7 +13,7 @@ def upgrade():
     op.create_table(
         "recalls",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("recall_code", sa.String(50), unique=True, nullable=False, index=True),
+        sa.Column("recall_code", sa.String(50), unique=True, nullable=False),
         sa.Column(
             "source_batch_id",
             sa.Integer(),
@@ -36,12 +36,12 @@ def upgrade():
             index=True,
         ),
         sa.Column("reason", sa.String(1000), nullable=False),
-        sa.Column("severity", sa.String(50), nullable=False, server_default="CRITICAL"),
-        sa.Column("status", sa.String(50), nullable=False, server_default="ACTIVE", index=True),
-        sa.Column("total_affected_batches", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("total_affected_kg", sa.Float(), nullable=False, server_default="0.0"),
-        sa.Column("total_stock_kg", sa.Float(), nullable=False, server_default="0.0"),
-        sa.Column("total_sold_kg", sa.Float(), nullable=False, server_default="0.0"),
+        sa.Column("severity", sa.String(50), nullable=False, server_default=sa.text("'CRITICAL'")),
+        sa.Column("status", sa.String(50), nullable=False, server_default=sa.text("'ACTIVE'"), index=True),
+        sa.Column("total_affected_batches", sa.Integer(), nullable=False, server_default=sa.text("0")),
+        sa.Column("total_affected_kg", sa.Float(), nullable=False, server_default=sa.text("0.0")),
+        sa.Column("total_stock_kg", sa.Float(), nullable=False, server_default=sa.text("0.0")),
+        sa.Column("total_sold_kg", sa.Float(), nullable=False, server_default=sa.text("0.0")),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -81,13 +81,13 @@ def upgrade():
             nullable=False,
             index=True,
         ),
-        sa.Column("generation", sa.String(20), nullable=False, server_default="ROOT"),
-        sa.Column("initial_quantity", sa.Float(), nullable=False, server_default="0.0"),
-        sa.Column("remaining_quantity", sa.Float(), nullable=False, server_default="0.0"),
-        sa.Column("sold_quantity", sa.Float(), nullable=False, server_default="0.0"),
+        sa.Column("generation", sa.String(20), nullable=False, server_default=sa.text("'ROOT'")),
+        sa.Column("initial_quantity", sa.Float(), nullable=False, server_default=sa.text("0.0")),
+        sa.Column("remaining_quantity", sa.Float(), nullable=False, server_default=sa.text("0.0")),
+        sa.Column("sold_quantity", sa.Float(), nullable=False, server_default=sa.text("0.0")),
         sa.Column("current_location", sa.String(255), nullable=True),
         sa.Column("batch_status_before", sa.String(50), nullable=True),
-        sa.Column("is_isolated", sa.Boolean(), nullable=False, server_default="false"),
+        sa.Column("is_isolated", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("isolated_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column(
             "created_at",
@@ -115,7 +115,7 @@ def upgrade():
             nullable=False,
             index=True,
         ),
-        sa.Column("status", sa.String(50), nullable=False, server_default="PENDING", index=True),
+        sa.Column("status", sa.String(50), nullable=False, server_default=sa.text("'PENDING'"), index=True),
         sa.Column("action_notes", sa.String(500), nullable=True),
         sa.Column(
             "confirmed_by_user_id",
@@ -124,8 +124,8 @@ def upgrade():
             nullable=True,
         ),
         sa.Column("confirmed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("affected_batch_count", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("stock_kg", sa.Float(), nullable=False, server_default="0.0"),
+        sa.Column("affected_batch_count", sa.Integer(), nullable=False, server_default=sa.text("0")),
+        sa.Column("stock_kg", sa.Float(), nullable=False, server_default=sa.text("0.0")),
     )
 
 
