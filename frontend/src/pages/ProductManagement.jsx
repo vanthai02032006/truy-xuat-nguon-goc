@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useAuthRole } from '../context/AuthRoleContext';
 
 export default function ProductManagement() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMsg, setSuccessMsg] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const auth = useAuthRole();
+  const currentRole = auth?.currentRole || 'admin';
+  const getAuthHeaders = auth?.getAuthHeaders || (() => ({ 'Content-Type': 'application/json' }));
 
-  // Giả lập vai trò hiện tại trong phiên làm việc (Admin vs Vùng trồng / Inspector)
-  const [currentRole, setCurrentRole] = useState('admin'); // 'admin' | 'farm' | 'inspector'
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -72,7 +69,7 @@ export default function ProductManagement() {
   }, [searchTerm]);
 
   const handleOpenAddModal = () => {
-    if (currentRole !== 'admin') {
+    if (!['admin', 'system_admin'].includes(currentRole)) {
       alert('Chỉ vai trò Quản trị hệ thống (Admin) mới có quyền thêm sản phẩm mới (HTTP 403 Forbidden)!');
       return;
     }
@@ -85,7 +82,7 @@ export default function ProductManagement() {
   };
 
   const handleOpenEditModal = (product) => {
-    if (currentRole !== 'admin') {
+    if (!['admin', 'system_admin'].includes(currentRole)) {
       alert('Chỉ vai trò Quản trị hệ thống (Admin) mới có quyền chỉnh sửa sản phẩm (HTTP 403 Forbidden)!');
       return;
     }
@@ -106,7 +103,7 @@ export default function ProductManagement() {
     setError(null);
     setSuccessMsg(null);
 
-    if (currentRole !== 'admin') {
+    if (!['admin', 'system_admin'].includes(currentRole)) {
       setError('HTTP 403 Forbidden: Chỉ Quản trị hệ thống mới có quyền ghi dữ liệu!');
       return;
     }
@@ -139,7 +136,7 @@ export default function ProductManagement() {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(formData),
       });
 
@@ -157,7 +154,7 @@ export default function ProductManagement() {
   };
 
   const handleDelete = async (id, name) => {
-    if (currentRole !== 'admin') {
+    if (!['admin', 'system_admin'].includes(currentRole)) {
       alert('Chỉ vai trò Quản trị hệ thống (Admin) mới có quyền xóa sản phẩm (HTTP 403 Forbidden)!');
       return;
     }
@@ -166,7 +163,10 @@ export default function ProductManagement() {
     }
 
     try {
-      const res = await fetch(`/api/v1/products/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/v1/products/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.detail || 'Không thể xóa sản phẩm.');
@@ -178,7 +178,8 @@ export default function ProductManagement() {
     }
   };
 
-  const isAdmin = currentRole === 'admin';
+  const isAdmin = ['admin', 'system_admin'].includes(currentRole);
+
 
   return (
     <div className="space-y-6">

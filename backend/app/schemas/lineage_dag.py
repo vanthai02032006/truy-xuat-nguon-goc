@@ -87,3 +87,13 @@ class DagGraphResponse(BaseModel):
     descendants: list[DescendantItem]
     nodes: list[DagGraphNode]
     edges: list[DagGraphEdge]
+
+
+class SeedLineageDagResponse(BaseModel):
+    message: str
+    total_batches: int
+    total_organizations: int
+    total_relations: int
+    sample_batches: list[dict]
+    answer_key: dict
+

@@ -29,6 +29,7 @@ from app.schemas.lineage_dag import (
     DagGraphResponse,
     DescendantsResponse,
     RootOriginsResponse,
+    SeedLineageDagResponse,
 )
 from app.schemas.material import (
     BatchMaterialLogCreate,
@@ -999,3 +1000,22 @@ def get_batch_dag_graph(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+
+@router.post(
+    "/seed-lineage-dag",
+    response_model=SeedLineageDagResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def seed_lineage_dag(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    User Story S-22 / S-39 / E-05 / E-06:
+    Nạp bộ dữ liệu mẫu phả hệ 3-4 tầng với ít nhất 12 lô qua 3+ tổ chức,
+    có đầy đủ Tách lô và Gộp lô, đi kèm đáp án đếm tay để đối chiếu.
+    """
+    data = LineageDagService.seed_lineage_dataset(db)
+    return SeedLineageDagResponse(**data)
+

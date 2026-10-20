@@ -336,3 +336,49 @@ def get_lockout_status(
 def get_me(current_user: Annotated[User, Depends(get_current_user)]):
     """Xem thông tin tài khoản hiện tại."""
     return current_user
+
+
+@router.post("/quick-role-token", response_model=Token)
+def get_quick_role_token(
+    role: str = Query(..., description="Vai trò cần chuyển đổi trong 7 vai trò"),
+    db: Annotated[Session, Depends(get_db)] = None,
+):
+    """
+    Tiện ích chuyển đổi nhanh phiên làm việc giữa 7 vai trò chuỗi cung ứng cho UI:
+    Tự động cấp JWT access_token hợp lệ của tài khoản mẫu tương ứng.
+    """
+    ensure_supply_chain_demo_users(db)
+    target_config = None
+    role_normalized = role.lower().strip()
+    for cfg in DEMO_USERS_CONFIG:
+        if cfg["role"] == role_normalized or (
+            role_normalized in ["admin", "system_admin"]
+            and cfg["role"] == UserRole.SYSTEM_ADMIN.value
+        ):
+            target_config = cfg
+            break
+
+    if not target_config:
+        target_config = DEMO_USERS_CONFIG[0]
+
+    user = UserRepository.get_by_email(db, target_config["email"])
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Không tìm thấy tài khoản demo cho vai trò {role}.",
+        )
+
+    access_token = create_access_token(
+        subject=user.email,
+        role=user.role,
+        organization_id=user.organization_id,
+    )
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        role=user.role,
+        organization_id=user.organization_id,
+        user_email=user.email,
+        full_name=user.full_name,
+    )
+
