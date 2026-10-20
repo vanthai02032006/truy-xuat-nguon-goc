@@ -23,6 +23,7 @@ class BatchResponse(BatchBase):
     id: int
     batch_code: str
     organization_id: int
+    status: str = "active"
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
