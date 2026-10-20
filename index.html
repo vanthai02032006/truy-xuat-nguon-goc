@@ -113,133 +113,157 @@
           </div>
         </div>
 
-        <!-- Supply Chain Persona & Organization Switcher (Epic E-02) -->
-        <div class="relative">
-          <button 
-            id="roleDropdownBtn" 
-            onclick="toggleRoleDropdown()" 
-            class="bg-slate-100 hover:bg-slate-200/80 p-1.5 px-3 rounded-2xl flex items-center gap-2.5 border border-slate-200 shadow-sm transition-all text-xs text-left cursor-pointer select-none">
-            <div id="currentRoleIconBox" class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs font-black shadow-sm">
-              <i class="fa-solid fa-seedling" id="currentRoleIcon"></i>
-            </div>
-            <div class="leading-tight pr-1">
-              <div class="flex items-center gap-1.5">
-                <span class="font-bold text-slate-800" id="currentRoleTitle">Vùng Trồng (Farm)</span>
-                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200" id="currentRoleBadge">Org #1</span>
-              </div>
-              <p class="text-[10px] text-slate-500 font-medium" id="currentOrgName">HTX Nông Nghiệp Thắng Lợi</p>
-            </div>
-            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-1"></i>
-          </button>
+        <!-- RIGHT ACTIONS: Role Switcher (E-02 Demo) & Real Auth S-04 (T-08, T-09, T-10) -->
+        <div class="flex items-center gap-2.5">
 
-          <!-- 7 Supply Chain Roles Dropdown Menu (Epic E-02) -->
-          <div id="roleDropdownMenu" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-200/90 py-2.5 z-50 animate-fadeIn">
-            <div class="px-3.5 pb-2 border-b border-slate-100 flex items-center justify-between">
-              <span class="text-[11px] font-black uppercase text-slate-400 tracking-wider">Chuỗi Cung Ứng Đa Tổ Chức (E-02)</span>
-              <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">7 Vai Trò</span>
-            </div>
-            <div class="max-h-[380px] overflow-y-auto p-1.5 space-y-1">
-              
-              <!-- 1. Farm -->
-              <div onclick="selectSupplyChainRole('farm')" class="p-2.5 rounded-2xl hover:bg-emerald-50 cursor-pointer transition-colors flex items-start gap-3">
-                <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
-                  <i class="fa-solid fa-seedling"></i>
+          <!-- Supply Chain Persona & Organization Switcher (Epic E-02: Giữ nguyên để tiện demo) -->
+          <div class="relative">
+            <button 
+              id="roleDropdownBtn" 
+              onclick="toggleRoleDropdown()" 
+              class="bg-slate-100 hover:bg-slate-200/80 p-1.5 px-3 rounded-2xl flex items-center gap-2.5 border border-slate-200 shadow-sm transition-all text-xs text-left cursor-pointer select-none">
+              <div id="currentRoleIconBox" class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs font-black shadow-sm">
+                <i class="fa-solid fa-seedling" id="currentRoleIcon"></i>
+              </div>
+              <div class="leading-tight pr-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-bold text-slate-800" id="currentRoleTitle">Vùng Trồng (Farm)</span>
+                  <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200" id="currentRoleBadge">Org #1</span>
                 </div>
-                <div class="flex-1 text-xs">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-slate-800">1. Vùng Trồng (Farm)</span>
-                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-emerald-100 text-emerald-800">Org #1</span>
+                <p class="text-[10px] text-slate-500 font-medium" id="currentOrgName">HTX Nông Nghiệp Thắng Lợi</p>
+              </div>
+              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-1"></i>
+            </button>
+
+            <!-- 7 Supply Chain Roles Dropdown Menu (Epic E-02) -->
+            <div id="roleDropdownMenu" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-200/90 py-2.5 z-50 animate-fadeIn">
+              <div class="px-3.5 pb-2 border-b border-slate-100 flex items-center justify-between">
+                <span class="text-[11px] font-black uppercase text-slate-400 tracking-wider">Chuỗi Cung Ứng Đa Tổ Chức (E-02)</span>
+                <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">7 Vai Trò</span>
+              </div>
+              <div class="max-h-[380px] overflow-y-auto p-1.5 space-y-1">
+                
+                <!-- 1. Farm -->
+                <div onclick="selectSupplyChainRole('farm')" class="p-2.5 rounded-2xl hover:bg-emerald-50 cursor-pointer transition-colors flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                    <i class="fa-solid fa-seedling"></i>
                   </div>
-                  <p class="text-[11px] text-slate-500 font-medium">HTX Thắng Lợi - Quản lý thửa & thu hoạch</p>
-                </div>
-              </div>
-
-              <!-- 2. Processing Co-op -->
-              <div onclick="selectSupplyChainRole('processing')" class="p-2.5 rounded-2xl hover:bg-blue-50 cursor-pointer transition-colors flex items-start gap-3">
-                <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
-                  <i class="fa-solid fa-industry"></i>
-                </div>
-                <div class="flex-1 text-xs">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-slate-800">2. HTX Sơ Chế (Processing Co-op)</span>
-                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-blue-100 text-blue-800">Org #2</span>
+                  <div class="flex-1 text-xs">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-slate-800">1. Vùng Trồng (Farm)</span>
+                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-emerald-100 text-emerald-800">Org #1</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium">HTX Thắng Lợi - Quản lý thửa & thu hoạch</p>
                   </div>
-                  <p class="text-[11px] text-slate-500 font-medium">HTX Sơ Chế Đà Lạt Lành - Sơ chế, đóng gói</p>
                 </div>
-              </div>
 
-              <!-- 3. Logistics -->
-              <div onclick="selectSupplyChainRole('logistics')" class="p-2.5 rounded-2xl hover:bg-cyan-50 cursor-pointer transition-colors flex items-start gap-3">
-                <div class="w-8 h-8 rounded-xl bg-cyan-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
-                  <i class="fa-solid fa-truck-fast"></i>
-                </div>
-                <div class="flex-1 text-xs">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-slate-800">3. Vận Chuyển Lạnh (Logistics)</span>
-                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-cyan-100 text-cyan-800">Org #3</span>
+                <!-- 2. Processing Co-op -->
+                <div onclick="selectSupplyChainRole('processing')" class="p-2.5 rounded-2xl hover:bg-blue-50 cursor-pointer transition-colors flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                    <i class="fa-solid fa-industry"></i>
                   </div>
-                  <p class="text-[11px] text-slate-500 font-medium">Đội Xe Lạnh Việt Nhật - Giám sát IoT 2°C - 6°C</p>
-                </div>
-              </div>
-
-              <!-- 4. Retailer -->
-              <div onclick="selectSupplyChainRole('retailer')" class="p-2.5 rounded-2xl hover:bg-amber-50 cursor-pointer transition-colors flex items-start gap-3">
-                <div class="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
-                  <i class="fa-solid fa-shop"></i>
-                </div>
-                <div class="flex-1 text-xs">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-slate-800">4. Nhà Phân Phối / Bán Lẻ</span>
-                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-amber-100 text-amber-800">Org #4</span>
+                  <div class="flex-1 text-xs">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-slate-800">2. HTX Sơ Chế (Processing Co-op)</span>
+                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-blue-100 text-blue-800">Org #2</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium">HTX Sơ Chế Đà Lạt Lành - Sơ chế, đóng gói</p>
                   </div>
-                  <p class="text-[11px] text-slate-500 font-medium">Chuỗi Siêu Thị BioMart - Điểm bán & quầy kệ</p>
                 </div>
-              </div>
 
-              <!-- 5. Inspector -->
-              <div onclick="selectSupplyChainRole('inspector')" class="p-2.5 rounded-2xl hover:bg-purple-50 cursor-pointer transition-colors flex items-start gap-3 border-t border-slate-100">
-                <div class="w-8 h-8 rounded-xl bg-purple-700 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
-                  <i class="fa-solid fa-clipboard-check"></i>
-                </div>
-                <div class="flex-1 text-xs">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-purple-900">5. Cán Bộ Kiểm Tra (Inspector)</span>
-                    <span class="text-[9px] font-black px-1.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">CHỈ ĐỌC</span>
+                <!-- 3. Logistics -->
+                <div onclick="selectSupplyChainRole('logistics')" class="p-2.5 rounded-2xl hover:bg-cyan-50 cursor-pointer transition-colors flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-cyan-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                    <i class="fa-solid fa-truck-fast"></i>
                   </div>
-                  <p class="text-[11px] text-purple-700 font-medium">Chi Cục Quản Lý Chất Lượng - Read-only toàn chuỗi</p>
-                </div>
-              </div>
-
-              <!-- 6. System Admin -->
-              <div onclick="selectSupplyChainRole('system_admin')" class="p-2.5 rounded-2xl hover:bg-slate-100 cursor-pointer transition-colors flex items-start gap-3">
-                <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
-                  <i class="fa-solid fa-user-shield"></i>
-                </div>
-                <div class="flex-1 text-xs">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-slate-900">6. Quản Trị Hệ Thống (Admin)</span>
-                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-slate-200 text-slate-800">Toàn Quyền</span>
+                  <div class="flex-1 text-xs">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-slate-800">3. Vận Chuyển Lạnh (Logistics)</span>
+                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-cyan-100 text-cyan-800">Org #3</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium">Đội Xe Lạnh Việt Nhật - Giám sát IoT 2°C - 6°C</p>
                   </div>
-                  <p class="text-[11px] text-slate-500 font-medium">Ban Quản Trị Nền Tảng - An ninh & SecurityLog</p>
                 </div>
-              </div>
 
-              <!-- 7. Consumer -->
-              <div onclick="selectSupplyChainRole('consumer')" class="p-2.5 rounded-2xl hover:bg-emerald-50 cursor-pointer transition-colors flex items-start gap-3 border-t border-slate-100">
-                <div class="w-8 h-8 rounded-xl bg-emerald-800 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
-                  <i class="fa-solid fa-qrcode"></i>
-                </div>
-                <div class="flex-1 text-xs">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-slate-800">7. Người Tiêu Dùng (Consumer)</span>
-                    <span class="text-[9px] font-bold px-1.5 rounded-full bg-slate-100 text-slate-600">Không Login</span>
+                <!-- 4. Retailer -->
+                <div onclick="selectSupplyChainRole('retailer')" class="p-2.5 rounded-2xl hover:bg-amber-50 cursor-pointer transition-colors flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                    <i class="fa-solid fa-shop"></i>
                   </div>
-                  <p class="text-[11px] text-slate-500 font-medium">Khách quét QR tra cứu công khai (S-48)</p>
+                  <div class="flex-1 text-xs">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-slate-800">4. Nhà Phân Phối / Bán Lẻ</span>
+                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-amber-100 text-amber-800">Org #4</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium">Chuỗi Siêu Thị BioMart - Điểm bán & quầy kệ</p>
+                  </div>
                 </div>
-              </div>
 
+                <!-- 5. Inspector -->
+                <div onclick="selectSupplyChainRole('inspector')" class="p-2.5 rounded-2xl hover:bg-purple-50 cursor-pointer transition-colors flex items-start gap-3 border-t border-slate-100">
+                  <div class="w-8 h-8 rounded-xl bg-purple-700 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                  </div>
+                  <div class="flex-1 text-xs">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-purple-900">5. Cán Bộ Kiểm Tra (Inspector)</span>
+                      <span class="text-[9px] font-black px-1.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">CHỈ ĐỌC</span>
+                    </div>
+                    <p class="text-[11px] text-purple-700 font-medium">Chi Cục Quản Lý Chất Lượng - Read-only toàn chuỗi</p>
+                  </div>
+                </div>
+
+                <!-- 6. System Admin -->
+                <div onclick="selectSupplyChainRole('system_admin')" class="p-2.5 rounded-2xl hover:bg-slate-100 cursor-pointer transition-colors flex items-start gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                    <i class="fa-solid fa-user-shield"></i>
+                  </div>
+                  <div class="flex-1 text-xs">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-slate-900">6. Quản Trị Hệ Thống (Admin)</span>
+                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-slate-200 text-slate-800">Toàn Quyền</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium">Ban Quản Trị Nền Tảng - An ninh & SecurityLog</p>
+                  </div>
+                </div>
+
+                <!-- 7. Consumer -->
+                <div onclick="selectSupplyChainRole('consumer')" class="p-2.5 rounded-2xl hover:bg-emerald-50 cursor-pointer transition-colors flex items-start gap-3 border-t border-slate-100">
+                  <div class="w-8 h-8 rounded-xl bg-emerald-800 text-white flex items-center justify-center text-xs mt-0.5 shrink-0">
+                    <i class="fa-solid fa-qrcode"></i>
+                  </div>
+                  <div class="flex-1 text-xs">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-slate-800">7. Người Tiêu Dùng (Consumer)</span>
+                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-slate-100 text-slate-600">Không Login</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium">Khách quét QR tra cứu công khai (S-48)</p>
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
+
+          <!-- Nút Đăng Nhập / Đổi Tài Khoản S-04 (T-08, T-09, T-10) -->
+          <div class="flex items-center gap-1.5">
+            <button 
+              id="authLoginBtn" 
+              onclick="openLoginModal()" 
+              class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white px-3.5 py-2 rounded-2xl flex items-center gap-2 shadow-sm hover:shadow text-xs font-bold transition-all transform active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-right-to-bracket text-xs" id="authBtnIcon"></i>
+              <span id="authBtnLabel">Đăng Nhập / Đổi TK</span>
+              <span id="authActiveDot" class="w-2 h-2 rounded-full bg-emerald-300 hidden"></span>
+            </button>
+            <button 
+              id="authLogoutBtn" 
+              onclick="handleLogout()" 
+              title="Đăng xuất khỏi phiên"
+              class="hidden px-2.5 py-2 bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-2xl border border-slate-200 text-xs font-bold transition-colors">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
+          </div>
+
         </div>
 
       </div>
@@ -1292,6 +1316,160 @@
   </div>
 
   <!-- ======================================================== -->
+  <!-- MODAL: ĐĂNG NHẬP THẬT BẰNG EMAIL & MẬT KHẨU (S-04 / T-09) -->
+  <!-- ======================================================== -->
+  <div id="loginModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-fadeIn">
+      
+      <!-- Header Modal -->
+      <div class="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 p-6 text-white relative">
+        <button onclick="closeModal('loginModal')" class="absolute top-5 right-5 text-white/70 hover:text-white transition-colors cursor-pointer">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-xl shadow-inner">
+            <i class="fa-solid fa-shield-halved text-emerald-300"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-lg font-black tracking-tight">Đăng Nhập Chuỗi Cung Ứng</h3>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-400/30">User Story S-04</span>
+            </div>
+            <p class="text-xs text-emerald-100 font-medium">Bảo mật argon2id • Khóa tạm 15 phút sau 5 lần sai • Cookie HttpOnly & Secure</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nội dung Body Modal -->
+      <div class="p-6 space-y-4 max-h-[82vh] overflow-y-auto text-xs">
+
+        <!-- Thông báo Trạng thái Lỗi / Khóa Tài Khoản (S-04) -->
+        <div id="loginAlertBox" class="hidden p-4 rounded-2xl border text-xs space-y-1 transition-all">
+          <div class="flex items-center gap-2 font-bold" id="loginAlertTitle">
+            <i class="fa-solid fa-circle-exclamation" id="loginAlertIcon"></i>
+            <span id="loginAlertHeading">Thông Báo</span>
+          </div>
+          <p id="loginAlertMessage" class="text-[11px] leading-relaxed"></p>
+          <div id="loginAlertCounter" class="text-[11px] font-bold mt-1"></div>
+        </div>
+
+        <!-- Form Đăng Nhập -->
+        <form onsubmit="handleRealLoginSubmit(event)" class="space-y-3.5" id="realLoginForm">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Email Đăng Nhập</span>
+              <span class="text-[10px] text-slate-400 font-normal">Tài khoản thuộc tổ chức chuỗi cung ứng</span>
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-envelope text-xs"></i>
+              </span>
+              <input 
+                type="email" 
+                id="loginEmailInput" 
+                required 
+                placeholder="VD: manager@nongtraixanh.vn" 
+                oninput="onLoginEmailChanged(this.value)"
+                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Mật Khẩu</span>
+              <span class="text-[10px] text-slate-400 font-normal">Băm mật khẩu argon2id (NFR S-04)</span>
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-lock text-xs"></i>
+              </span>
+              <input 
+                type="password" 
+                id="loginPasswordInput" 
+                required 
+                placeholder="Nhập mật khẩu..." 
+                class="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800"
+              />
+              <button 
+                type="button" 
+                onclick="togglePasswordVisibility('loginPasswordInput', 'pwdToggleIcon')" 
+                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+                <i class="fa-solid fa-eye text-xs" id="pwdToggleIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Nút Đăng Nhập & Nút Đóng -->
+          <div class="flex items-center gap-3 pt-2">
+            <button 
+              type="submit" 
+              id="loginSubmitBtn"
+              class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <i class="fa-solid fa-right-to-bracket"></i>
+              <span>Xác Thực & Đăng Nhập</span>
+            </button>
+            <button 
+              type="button" 
+              onclick="closeModal('loginModal')"
+              class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors cursor-pointer">
+              Đóng
+            </button>
+          </div>
+        </form>
+
+        <!-- Tool dành cho Giảng viên / Tester kiểm tra tiêu chuẩn S-04 & T-10 -->
+        <div class="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-amber-900 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+              <i class="fa-solid fa-vial text-amber-600"></i> Công Cụ Kiểm Tra Tiêu Chuẩn S-04 (Task T-10):
+            </span>
+            <span class="text-[10px] text-amber-700 font-bold bg-amber-100 px-2 py-0.5 rounded-full">Khóa Tạm 15 Phút</span>
+          </div>
+          <p class="text-[11px] text-amber-800 leading-normal">
+            Bấm nút dưới để giả lập nhập sai mật khẩu 5 lần liên tiếp. Hệ thống sẽ khóa tài khoản trong 15 phút. Ở lần thứ 6, <strong>kể cả khi nhập đúng mật khẩu</strong>, hệ thống vẫn từ chối và thông báo tài khoản đang bị khóa kèm số phút còn lại.
+          </p>
+          <div class="flex flex-wrap items-center gap-2 pt-1">
+            <button 
+              type="button" 
+              onclick="simulateLockoutCurrentEmail()"
+              class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl text-[11px] flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+              <i class="fa-solid fa-lock"></i> Giả lập sai 5 lần (Test S-04)
+            </button>
+            <button 
+              type="button" 
+              onclick="resetLockoutCurrentEmail()"
+              class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-bold rounded-xl text-[11px] flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+              <i class="fa-solid fa-lock-open"></i> Mở khóa nhanh (Reset)
+            </button>
+            <button 
+              type="button" 
+              onclick="checkLockoutStatusCurrentEmail()"
+              class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 active:bg-slate-950 text-white font-bold rounded-xl text-[11px] flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+              <i class="fa-solid fa-arrows-rotate"></i> Kiểm tra số lần sai
+            </button>
+          </div>
+        </div>
+
+        <!-- Danh sách tài khoản mẫu của 7 vai trò (Click-to-Fill 1 chạm) -->
+        <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
+              <i class="fa-solid fa-users text-emerald-600"></i> Bấm Điền Nhanh Tài Khoản Mẫu (7 Vai Trò):
+            </p>
+            <span class="text-[10px] text-slate-500 font-medium">Mật khẩu: <strong class="text-slate-800">pass123</strong></span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="demoAccountsGrid">
+            <!-- Dynamic 7 roles fill buttons -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
   <!-- MODALS PHỤC VỤ CHUỖI CUNG ỨNG                            -->
   <!-- ======================================================== -->
 
@@ -2115,10 +2293,12 @@
      */
     const APP_STORAGE_KEY = "nsl_supplychain_state_v6";
 
-    // 7 Chuỗi Cung Ứng Roles Configuration (Epic E-02)
+    // 7 Chuỗi Cung Ứng Roles Configuration (Epic E-02 & User Story S-04)
     const SUPPLY_CHAIN_ROLES = {
       farm: {
         name: "1. Vùng Trồng (Farm)",
+        email: "manager@nongtraixanh.vn",
+        samplePassword: "pass123",
         orgId: 1,
         orgName: "HTX Nông Nghiệp Thắng Lợi",
         badge: "Org #1",
@@ -2129,6 +2309,8 @@
       },
       processing: {
         name: "2. HTX Sơ Chế (Processing Co-op)",
+        email: "operator@sochebaoloc.vn",
+        samplePassword: "pass123",
         orgId: 2,
         orgName: "HTX Sơ Chế Đà Lạt Lành",
         badge: "Org #2",
@@ -2139,6 +2321,8 @@
       },
       logistics: {
         name: "3. Vận Chuyển Lạnh (Logistics)",
+        email: "driver@coldexpress.vn",
+        samplePassword: "pass123",
         orgId: 3,
         orgName: "Đội Vận Chuyển Lạnh Việt Nhật",
         badge: "Org #3",
@@ -2149,6 +2333,8 @@
       },
       retailer: {
         name: "4. Nhà Phân Phối / Bán Lẻ",
+        email: "store@biomart.vn",
+        samplePassword: "pass123",
         orgId: 4,
         orgName: "Chuỗi Siêu Thị BioMart",
         badge: "Org #4",
@@ -2159,6 +2345,8 @@
       },
       inspector: {
         name: "5. Cán Bộ Kiểm Tra (Inspector)",
+        email: "inspector.safe@kiemdinh.gov.vn",
+        samplePassword: "pass123",
         orgId: 99,
         orgName: "Chi Cục Quản Lý Chất Lượng NLTS",
         badge: "CHỈ ĐỌC",
@@ -2169,6 +2357,8 @@
       },
       system_admin: {
         name: "6. Quản Trị Hệ Thống (Admin)",
+        email: "sysadmin@nongsanlanh.gov.vn",
+        samplePassword: "pass123",
         orgId: 0,
         orgName: "Ban Quản Trị Nền Tảng Chuỗi Cung Ứng",
         badge: "Toàn Quyền",
@@ -2179,6 +2369,8 @@
       },
       consumer: {
         name: "7. Người Tiêu Dùng (Consumer)",
+        email: "",
+        samplePassword: "",
         orgId: null,
         orgName: "Khách Quét QR (Không Login)",
         badge: "Công Khai",
@@ -2388,6 +2580,9 @@
       }
       if (orgName) orgName.innerText = cfg.orgName;
 
+      // Cập nhật trạng thái nút Đăng Nhập S-04 trên Header
+      updateAuthHeaderUI();
+
       // Hiển thị hoặc ẩn banner Cán Bộ Kiểm Tra (Epic E-02: Inspector Read-Only)
       if (inspectorBanner) {
         if (roleKey === "inspector") {
@@ -2395,6 +2590,28 @@
         } else {
           inspectorBanner.classList.add("hidden");
         }
+      }
+    }
+
+    function updateAuthHeaderUI() {
+      const authBtnIcon = document.getElementById("authBtnIcon");
+      const authBtnLabel = document.getElementById("authBtnLabel");
+      const authActiveDot = document.getElementById("authActiveDot");
+      const authLogoutBtn = document.getElementById("authLogoutBtn");
+
+      if (state.currentUser && state.currentUser.email) {
+        if (authBtnIcon) authBtnIcon.className = "fa-solid fa-user-check text-xs text-emerald-300";
+        if (authBtnLabel) {
+          const displayName = state.currentUser.full_name ? state.currentUser.full_name.split(' (')[0] : state.currentUser.email.split('@')[0];
+          authBtnLabel.innerText = `${displayName} (${state.currentUser.email})`;
+        }
+        if (authActiveDot) authActiveDot.classList.remove("hidden");
+        if (authLogoutBtn) authLogoutBtn.classList.remove("hidden");
+      } else {
+        if (authBtnIcon) authBtnIcon.className = "fa-solid fa-right-to-bracket text-xs";
+        if (authBtnLabel) authBtnLabel.innerText = "Đăng Nhập / Đổi TK";
+        if (authActiveDot) authActiveDot.classList.add("hidden");
+        if (authLogoutBtn) authLogoutBtn.classList.add("hidden");
       }
     }
 
@@ -2413,8 +2630,323 @@
         showToast("Đã chuyển sang vai trò Người Tiêu Dùng (Tra cứu công khai không cần đăng nhập)", "info");
       } else {
         switchNavTab(state.activeTab || "overview");
-        showToast(`Đã chuyển vai trò: ${SUPPLY_CHAIN_ROLES[roleKey].name}`, "success");
+        showToast(`Đã chuyển vai trò demo: ${SUPPLY_CHAIN_ROLES[roleKey].name}`, "success");
       }
+    }
+
+    /**
+     * USER STORY S-04, TASK T-08, T-09, T-10:
+     * ĐĂNG NHẬP THẬT BẰNG EMAIL & MẬT KHẨU, BẢO MẬT ARGON2ID VÀ KHÓA TẠM 15 PHÚT
+     */
+
+    function openLoginModal(returnTab = null) {
+      if (returnTab) {
+        state.returnTab = returnTab;
+        saveAppState(state);
+      }
+      renderDemoAccountsButtons();
+
+      // Reset alert box
+      const alertBox = document.getElementById("loginAlertBox");
+      if (alertBox) alertBox.classList.add("hidden");
+
+      // Điền sẵn email theo vai trò hiện tại nếu có
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey];
+      const emailInput = document.getElementById("loginEmailInput");
+      const passInput = document.getElementById("loginPasswordInput");
+
+      if (state.currentUser && state.currentUser.email) {
+        if (emailInput) emailInput.value = state.currentUser.email;
+      } else if (cfg && cfg.email) {
+        if (emailInput) emailInput.value = cfg.email;
+        if (passInput && !passInput.value) passInput.value = cfg.samplePassword || "pass123";
+      }
+
+      openModal("loginModal");
+
+      if (emailInput && emailInput.value) {
+        checkLockoutStatus(emailInput.value);
+      }
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!input || !icon) return;
+      if (input.type === "password") {
+        input.type = "text";
+        icon.className = "fa-solid fa-eye-slash text-xs text-emerald-600";
+      } else {
+        input.type = "password";
+        icon.className = "fa-solid fa-eye text-xs text-slate-400";
+      }
+    }
+
+    function renderDemoAccountsButtons() {
+      const container = document.getElementById("demoAccountsGrid");
+      if (!container) return;
+
+      container.innerHTML = Object.entries(SUPPLY_CHAIN_ROLES).map(([key, r]) => {
+        if (key === 'consumer') {
+          return `
+            <button 
+              type="button" 
+              onclick="selectDemoAccountRole('${key}')"
+              class="p-2 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-left transition-all flex items-center justify-between group cursor-pointer">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-lg ${r.iconBg} text-white flex items-center justify-center text-[10px]">
+                  <i class="fa-solid ${r.icon}"></i>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800 text-[11px] group-hover:text-emerald-700">${r.name.split('. ')[1] || r.name}</p>
+                  <p class="text-[9px] text-slate-400 font-mono">Chế độ công khai (Không cần login)</p>
+                </div>
+              </div>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">Public</span>
+            </button>
+          `;
+        }
+        return `
+          <button 
+            type="button" 
+            onclick="selectDemoAccountRole('${key}')"
+            class="p-2 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-left transition-all flex items-center justify-between group cursor-pointer">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-lg ${r.iconBg} text-white flex items-center justify-center text-[10px]">
+                <i class="fa-solid ${r.icon}"></i>
+              </div>
+              <div>
+                <p class="font-bold text-slate-800 text-[11px] group-hover:text-emerald-700">${r.name.split('. ')[1] || r.name}</p>
+                <p class="text-[9px] text-slate-500 font-mono truncate max-w-[140px]">${r.email}</p>
+              </div>
+            </div>
+            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">Điền</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectDemoAccountRole(roleKey) {
+      const r = SUPPLY_CHAIN_ROLES[roleKey];
+      if (!r) return;
+      if (roleKey === 'consumer') {
+        closeModal('loginModal');
+        selectSupplyChainRole('consumer');
+        return;
+      }
+      const emailInput = document.getElementById("loginEmailInput");
+      const passInput = document.getElementById("loginPasswordInput");
+      if (emailInput) emailInput.value = r.email;
+      if (passInput) passInput.value = r.samplePassword || "pass123";
+      checkLockoutStatus(r.email);
+    }
+
+    function onLoginEmailChanged(val) {
+      if (val && val.includes("@")) {
+        checkLockoutStatus(val.trim());
+      }
+    }
+
+    async function checkLockoutStatus(email) {
+      if (!email) return;
+      try {
+        const res = await fetch(`/api/v1/auth/lockout-status?email=${encodeURIComponent(email)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        renderLockoutAlertState(data);
+      } catch (e) {
+        console.warn("Không thể kiểm tra trạng thái khóa:", e);
+      }
+    }
+
+    function renderLockoutAlertState(statusData) {
+      const alertBox = document.getElementById("loginAlertBox");
+      const alertTitle = document.getElementById("loginAlertHeading");
+      const alertIcon = document.getElementById("loginAlertIcon");
+      const alertMsg = document.getElementById("loginAlertMessage");
+      const alertCounter = document.getElementById("loginAlertCounter");
+      if (!alertBox) return;
+
+      if (statusData.is_locked) {
+        alertBox.className = "p-4 rounded-2xl border bg-rose-50 border-rose-300 text-rose-900 text-xs space-y-1 block animate-pulse";
+        alertTitle.innerText = "Tài Khoản Đang Bị Khóa Tạm Thời (S-04)";
+        alertIcon.className = "fa-solid fa-lock text-rose-600";
+        alertMsg.innerText = `Tài khoản đã nhập sai mật khẩu quá 5 lần liên tiếp. Hệ thống từ chối đăng nhập trong ${statusData.remaining_minutes || 15} phút (KỂ CẢ KHI NHẬP ĐÚNG MẬT KHẨU).`;
+        alertCounter.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 font-bold text-[10px]"><i class="fa-solid fa-clock"></i> Thời gian còn lại: ~${statusData.remaining_minutes || 15} phút</span>`;
+        alertCounter.classList.remove("hidden");
+      } else if (statusData.failed_attempts > 0) {
+        alertBox.className = "p-4 rounded-2xl border bg-amber-50 border-amber-300 text-amber-900 text-xs space-y-1 block";
+        alertTitle.innerText = "Cảnh Báo Số Lần Nhập Sai (Task T-10)";
+        alertIcon.className = "fa-solid fa-triangle-exclamation text-amber-600";
+        alertMsg.innerText = "Lưu ý: Nếu nhập sai 5 lần liên tiếp, tài khoản sẽ tự động bị khóa trong 15 phút.";
+        alertCounter.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px]"><i class="fa-solid fa-shield-cat"></i> Đã nhập sai: ${statusData.failed_attempts}/5 lần</span>`;
+        alertCounter.classList.remove("hidden");
+      } else {
+        alertBox.classList.add("hidden");
+      }
+    }
+
+    async function handleRealLoginSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById("loginEmailInput").value.trim();
+      const password = document.getElementById("loginPasswordInput").value;
+      const submitBtn = document.getElementById("loginSubmitBtn");
+
+      if (!email || !password) {
+        showToast("Vui lòng nhập đầy đủ Email và Mật khẩu!", "error");
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang xác thực argon2id...</span>';
+      }
+
+      try {
+        const res = await fetch("/api/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          // Đăng nhập thành công (S-04)
+          state.currentUser = {
+            email: data.user_email,
+            role: data.role,
+            organization_id: data.organization_id,
+            full_name: data.full_name,
+            token: data.access_token
+          };
+          state.currentRole = data.role;
+
+          // Chuyển hướng quay lại đúng trang cũ trước đó (returnUrl / returnTab)
+          const targetTab = state.returnTab || 'overview';
+          state.returnTab = null;
+          saveAppState(state);
+
+          closeModal("loginModal");
+          updateRoleUI();
+          switchNavTab(targetTab);
+          showToast(`Đăng nhập thành công! Chào mừng ${data.full_name || data.user_email}`, "success");
+        } else {
+          // Lỗi xác thực
+          const status = res.status;
+          const failedHeader = res.headers.get("X-Failed-Attempts");
+          const remainingHeader = res.headers.get("X-Remaining-Minutes");
+
+          const alertBox = document.getElementById("loginAlertBox");
+          const alertTitle = document.getElementById("loginAlertHeading");
+          const alertIcon = document.getElementById("loginAlertIcon");
+          const alertMsg = document.getElementById("loginAlertMessage");
+          const alertCounter = document.getElementById("loginAlertCounter");
+
+          if (alertBox) {
+            alertBox.classList.remove("hidden");
+            if (status === 423) {
+              // Bị khóa tạm 15 phút (S-04, T-10)
+              alertBox.className = "p-4 rounded-2xl border bg-rose-50 border-rose-300 text-rose-900 text-xs space-y-1 block animate-pulse";
+              alertTitle.innerText = "Tài Khoản Đang Bị Khóa Tạm Thời (S-04)";
+              alertIcon.className = "fa-solid fa-lock text-rose-600";
+              alertMsg.innerText = data.detail || "Tài khoản đang bị khóa tạm thời do nhập sai mật khẩu quá nhiều lần.";
+              alertCounter.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 font-bold text-[10px]"><i class="fa-solid fa-clock"></i> Thời gian còn lại: ~${remainingHeader || 15} phút</span>`;
+              alertCounter.classList.remove("hidden");
+            } else {
+              // Sai email hoặc sai mật khẩu: CÙNG MỘT câu thông báo lỗi duy nhất
+              alertBox.className = "p-4 rounded-2xl border bg-rose-50 border-rose-200 text-rose-900 text-xs space-y-1 block";
+              alertTitle.innerText = "Lỗi Đăng Nhập";
+              alertIcon.className = "fa-solid fa-circle-exclamation text-rose-600";
+              alertMsg.innerText = "Email hoặc mật khẩu không chính xác.";
+              if (failedHeader) {
+                alertCounter.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px] border border-amber-300"><i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Đã nhập sai: ${failedHeader}/5 lần (Khóa sau 5 lần)</span>`;
+                alertCounter.classList.remove("hidden");
+              } else {
+                alertCounter.classList.add("hidden");
+              }
+            }
+          }
+
+          showToast(data.detail || "Email hoặc mật khẩu không chính xác.", "error");
+        }
+      } catch (err) {
+        console.error("Lỗi mạng:", err);
+        showToast("Lỗi kết nối tới máy chủ xác thực!", "error");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> <span>Xác Thực & Đăng Nhập</span>';
+        }
+      }
+    }
+
+    async function simulateLockoutCurrentEmail() {
+      const email = document.getElementById("loginEmailInput").value.trim();
+      if (!email) {
+        showToast("Vui lòng chọn hoặc nhập một email để giả lập sai 5 lần!", "error");
+        return;
+      }
+      try {
+        const res = await fetch("/api/v1/auth/simulate-lockout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Đã giả lập khóa tài khoản ${email} trong 15 phút (Test S-04 / T-10)!`, "error");
+          checkLockoutStatus(email);
+        } else {
+          showToast(data.detail || "Không thể giả lập khóa tài khoản!", "error");
+        }
+      } catch (e) {
+        showToast("Lỗi mạng khi gọi simulate lockout", "error");
+      }
+    }
+
+    async function resetLockoutCurrentEmail() {
+      const email = document.getElementById("loginEmailInput").value.trim();
+      if (!email) {
+        showToast("Vui lòng chọn hoặc nhập một email để mở khóa!", "error");
+        return;
+      }
+      try {
+        const res = await fetch("/api/v1/auth/reset-lockout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Đã mở khóa và xóa bộ đếm số lần sai cho ${email}!`, "success");
+          checkLockoutStatus(email);
+        } else {
+          showToast(data.detail || "Không thể mở khóa tài khoản!", "error");
+        }
+      } catch (e) {
+        showToast("Lỗi mạng khi gọi reset lockout", "error");
+      }
+    }
+
+    async function checkLockoutStatusCurrentEmail() {
+      const email = document.getElementById("loginEmailInput").value.trim();
+      if (!email) {
+        showToast("Vui lòng nhập email cần kiểm tra!", "error");
+        return;
+      }
+      await checkLockoutStatus(email);
+      showToast(`Đã cập nhật trạng thái khóa của ${email}`, "info");
+    }
+
+    function handleLogout() {
+      state.currentUser = null;
+      state.currentRole = "consumer";
+      saveAppState(state);
+      updateRoleUI();
+      switchNavTab("public");
+      showToast("Đã đăng xuất. Bạn đang ở chế độ Người Tiêu Dùng (Công Khai).", "info");
     }
 
     /**
@@ -2454,6 +2986,17 @@
      * NAVIGATION TAB SWITCHER
      */
     function switchNavTab(tabId) {
+      // Guard S-04 & T-09: Giả sử chưa đăng nhập mà mở trang nội bộ, đưa về form đăng nhập
+      const internalTabs = ['batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain'];
+      const isConsumer = !state.currentUser && (!state.currentRole || state.currentRole === 'consumer');
+      if (isConsumer && internalTabs.includes(tabId)) {
+        state.returnTab = tabId;
+        saveAppState(state);
+        openLoginModal(tabId);
+        showToast("Trang nội bộ yêu cầu đăng nhập. Vui lòng đăng nhập tài khoản đơn vị để tiếp tục (S-04).", "info");
+        return;
+      }
+
       state.activeTab = tabId;
       saveAppState(state);
 

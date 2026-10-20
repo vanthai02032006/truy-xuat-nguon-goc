@@ -33,6 +33,10 @@ class Settings:
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
 
+    # Chính sách khóa tài khoản khi đăng nhập sai nhiều lần (User Story S-04 / T-10)
+    MAX_FAILED_LOGIN_ATTEMPTS: int = int(os.getenv("MAX_FAILED_LOGIN_ATTEMPTS", "5"))
+    ACCOUNT_LOCKOUT_MINUTES: int = int(os.getenv("ACCOUNT_LOCKOUT_MINUTES", "15"))
+
     # Tên miền DuckDNS & Mạng
     ALLOWED_HOSTS: list[str] = field(
         default_factory=lambda: _parse_comma_list(
