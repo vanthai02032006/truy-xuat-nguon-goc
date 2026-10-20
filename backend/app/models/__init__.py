@@ -9,6 +9,13 @@ from app.models.hr import DailyTask, Timesheet, Worker
 from app.models.land_plot import LandPlot
 from app.models.material import BatchMaterialLog, Material, MaterialRequest
 from app.models.organization import Organization
+from app.models.recall import (
+    Recall,
+    RecallAffectedBatch,
+    RecallOrganizationAction,
+    RecallSeverity,
+    RecallStatus,
+)
 from app.models.security_log import SecurityLog
 from app.models.user import SUPPLY_CHAIN_ROLES, User, UserRole
 
@@ -30,6 +37,11 @@ __all__ = [
     "Material",
     "MaterialRequest",
     "Organization",
+    "Recall",
+    "RecallAffectedBatch",
+    "RecallOrganizationAction",
+    "RecallSeverity",
+    "RecallStatus",
     "SecurityLog",
     "Timesheet",
     "User",
