@@ -83,6 +83,15 @@ jobs:
             # Dong bo file docker-compose.staging.yml moi nhat tu repo ve VPS
             curl -fsSL https://raw.githubusercontent.com/vanthai02032006/truy-xuat-nguon-goc/main/docker-compose.staging.yml -o "$COMPOSE"
 
+            # Dam bao file .env tren VPS ton tai va co cac bien bat buoc (SECRET_KEY, POSTGRES_PASSWORD)
+            touch .env
+            if ! grep -q "^SECRET_KEY=" .env 2>/dev/null; then
+              echo "SECRET_KEY=$(openssl rand -hex 32)" >> .env
+            fi
+            if ! grep -q "^POSTGRES_PASSWORD=" .env 2>/dev/null; then
+              echo "POSTGRES_PASSWORD=replace_with_a_local_secret" >> .env
+            fi
+
             # Mo firewall port 80 tren VPS neu co ufw
             sudo ufw allow 80/tcp || true
 
