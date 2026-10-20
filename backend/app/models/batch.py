@@ -66,7 +66,7 @@ class Batch(Base):
         "Handover", back_populates="batch", cascade="all, delete-orphan"
     )
     chain_events = relationship(
-        "ChainEvent", back_populates="batch", cascade="all, delete-orphan"
+        "ChainEvent", back_populates="batch"
     )
     child_relations = relationship(
         "BatchRelation",

@@ -268,29 +268,35 @@ def create_batch(
         remaining_quantity=batch_in.remaining_quantity,
         unit=batch_in.unit,
     )
-    created = BatchRepository.create(db, new_batch)
+    try:
+        db.add(new_batch)
+        db.flush()
 
-    # Ghi nhận sự kiện khởi tạo lô hàng vào chuỗi Hash SHA-256 (chỉ chứa farmer_ref_id, không chứa PII - S-56)
-    event_data = {
-        "action": "BATCH_INITIALIZED",
-        "batch_code": created.batch_code,
-        "product_name": created.product_name,
-        "quantity": created.initial_quantity,
-        "unit": created.unit,
-    }
-    if farmer_ref:
-        event_data["farmer_ref_id"] = farmer_ref
+        # Ghi nhận sự kiện khởi tạo lô hàng vào chuỗi Hash SHA-256 trong CÙNG TRANSACTION (S-10, S-11)
+        # Chỉ chứa farmer_ref_id, không chứa PII (S-56)
+        event_data = {
+            "action": "BATCH_INITIALIZED",
+            "batch_code": new_batch.batch_code,
+            "product_name": new_batch.product_name,
+            "quantity": new_batch.initial_quantity,
+            "unit": new_batch.unit,
+        }
+        if farmer_ref:
+            event_data["farmer_ref_id"] = farmer_ref
 
-    record_chain_event(
-        db=db,
-        batch_id=created.id,
-        event_type="BATCH_INITIALIZED",
-        event_data=event_data,
-        organization_id=target_org_id,
-    )
-    db.commit()
-    db.refresh(created)
-    return created
+        record_chain_event(
+            db=db,
+            batch_id=new_batch.id,
+            event_type="BATCH_INITIALIZED",
+            event_data=event_data,
+            organization_id=target_org_id,
+        )
+        db.commit()
+        db.refresh(new_batch)
+        return new_batch
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.delete("/{batch_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -302,11 +308,20 @@ def delete_batch(
     """
     Xóa lô hàng thuộc tổ chức của mình.
     AC 4: Cán bộ kiểm tra không được xóa (chế độ chỉ đọc).
+    S-11 / An toàn dữ liệu: Ngăn chặn xóa lô kéo theo cascade xóa các sự kiện đã ghi trong chuỗi hash.
     """
     if current_user.role == UserRole.INSPECTOR.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc).",
+        )
+
+    from app.models.chain_event import ChainEvent
+    has_events = db.query(ChainEvent).filter(ChainEvent.batch_id == batch.id).first()
+    if has_events:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Lô hàng '{batch.batch_code}' đã ghi nhận sự kiện trong chuỗi hash bất biến (S-11). Nghiêm cấm xóa lô hàng để ngăn chặn cascade làm mất hoặc đứt gãy lịch sử truy xuất nguồn gốc.",
         )
 
     BatchRepository.delete(db, batch)

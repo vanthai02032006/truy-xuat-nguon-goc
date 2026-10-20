@@ -34,10 +34,13 @@ class BatchRepository:
 
 
     @staticmethod
-    def create(db: Session, batch: Batch) -> Batch:
+    def create(db: Session, batch: Batch, auto_commit: bool = True) -> Batch:
         db.add(batch)
-        db.commit()
-        db.refresh(batch)
+        if auto_commit:
+            db.commit()
+            db.refresh(batch)
+        else:
+            db.flush()
         return batch
 
     @staticmethod

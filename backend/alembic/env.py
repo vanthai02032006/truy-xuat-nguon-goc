@@ -3,13 +3,19 @@ import os
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from app.core.config import settings
 from app.core.database import Base
 
 config = context.config
 
-database_url = os.environ.get("DATABASE_URL")
+database_url = (
+    os.environ.get("MIGRATION_DATABASE_URL")
+    or getattr(settings, "MIGRATION_DATABASE_URL", None)
+    or os.environ.get("DATABASE_URL")
+    or getattr(settings, "DATABASE_URL", None)
+)
 if not database_url:
-    raise RuntimeError("Thieu bien moi truong DATABASE_URL")
+    raise RuntimeError("Thieu bien moi truong MIGRATION_DATABASE_URL hoac DATABASE_URL")
 
 config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
