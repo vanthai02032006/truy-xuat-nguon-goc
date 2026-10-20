@@ -39,6 +39,12 @@ class BatchResponse(BatchBase):
 # ============================================================================
 
 
+class FarmOriginInfo(BaseModel):
+    farm_name: str
+    province: str
+    land_plot_name: str | None = None
+
+
 class JourneyMilestone(BaseModel):
     stage: str
     description: str
@@ -52,9 +58,10 @@ class PublicBatchTraceResponse(BaseModel):
     farm_name: str
     province: str
     harvest_date: str
-    certification: str = "VietGAP"
+    certification: str = "Chưa có thông tin chứng nhận"
     journey_milestones: list[JourneyMilestone] = []
     is_safe_phi: bool = True
-    phi_message: str = "Đạt chuẩn an toàn thời gian cách ly thuốc BVTV (VietGAP)"
+    phi_message: str = "Chưa ghi nhận nhật ký sử dụng vật tư nông nghiệp"
+    origins: list[FarmOriginInfo] = []
 
     model_config = ConfigDict(from_attributes=True)

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, get_password_hash
 from app.models.batch import Batch
+from app.models.chain_event import ChainEvent
 from app.models.organization import Organization
 from app.models.security_log import SecurityLog
 from app.models.user import SUPPLY_CHAIN_ROLES, User, UserRole
@@ -156,6 +157,17 @@ class TestEpicE02SupplyChainRBAC:
                 batch_retailer_1,
             ]
         )
+        db_session.commit()
+
+        ce_farm_1 = ChainEvent(
+            batch_id=batch_farm_1.id,
+            event_type="BATCH_INITIALIZED",
+            event_data='{"action": "BATCH_INITIALIZED"}',
+            previous_hash="GENESIS",
+            current_hash="seed-hash-farm-1",
+            organization_id=org_farm.id,
+        )
+        db_session.add(ce_farm_1)
         db_session.commit()
 
         return {
