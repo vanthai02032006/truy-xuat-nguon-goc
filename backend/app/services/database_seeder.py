@@ -23,7 +23,7 @@ from app.models.farmer import FarmerIdentity
 from app.models.handover import Handover, HandoverStatus
 from app.models.land_plot import LandPlot
 from app.models.material import BatchMaterialLog
-from app.models.organization import Organization
+from app.models.organization import Organization, OrganizationLocation
 from app.models.product import Product
 from app.models.recall import (
     Recall,
@@ -481,6 +481,27 @@ def run_full_database_seed(db: Session, force_reset: bool = False) -> dict[str, 
         },
         organization_id=org_farm.id,
     )
+
+    # 10. Địa điểm / Cửa hàng trực thuộc tổ chức (S-30)
+    loc1 = OrganizationLocation(
+        organization_id=org_ret.id,
+        name="BioMart Quận 1 - Flagship Store",
+        address="123 Hai Bà Trưng, Phường Bến Nghé, Quận 1, TP.HCM",
+        location_type="STORE",
+    )
+    loc2 = OrganizationLocation(
+        organization_id=org_ret.id,
+        name="BioMart Cầu Giấy - Outlet 02",
+        address="45 Trần Thái Tông, Dịch Vọng Hậu, Cầu Giấy, Hà Nội",
+        location_type="STORE",
+    )
+    loc3 = OrganizationLocation(
+        organization_id=org_coop.id,
+        name="Kho Lạnh Tổng - HTX Bảo Lộc",
+        address="Kho B2, Đường Phan Đình Phùng, TP. Bảo Lộc, Lâm Đồng",
+        location_type="WAREHOUSE",
+    )
+    db.add_all([loc1, loc2, loc3])
 
     db.commit()
 

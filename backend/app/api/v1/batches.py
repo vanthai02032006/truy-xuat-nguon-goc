@@ -4,7 +4,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db, verify_batch_access
+from app.api.deps import (
+    ADMIN_ROLES,
+    INSPECTOR_ROLES,
+    get_current_user,
+    get_db,
+    verify_batch_access,
+)
 from app.models.batch import Batch
 from app.models.batch_relation import BatchRelation, BatchRelationType
 from app.models.land_plot import LandPlot
@@ -903,9 +909,18 @@ def check_batch_phi_compliance(
 # ============================================================================
 
 
+def _resolve_batch_by_id_or_code(db: Session, identifier: str | int) -> Batch | None:
+    raw = str(identifier).strip()
+    if raw.isdigit():
+        b = db.query(Batch).filter(Batch.id == int(raw)).first()
+        if b:
+            return b
+    return db.query(Batch).filter(Batch.batch_code == raw).first()
+
+
 @router.get("/{batch_id}/origins", response_model=RootOriginsResponse)
 def get_batch_root_origins(
-    batch_id: int,
+    batch_id: str,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
@@ -915,11 +930,11 @@ def get_batch_root_origins(
     - Chống vòng lặp vô hạn bằng visited_set và kiểm tra chu trình.
     - Trả về danh sách toàn bộ các lô thu hoạch gốc ban đầu cùng tên vùng trồng và thửa đất tương ứng.
     """
-    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    batch = _resolve_batch_by_id_or_code(db, batch_id)
     if not batch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Lô hàng #{batch_id} không tồn tại.",
+            detail=f"Lô hàng '{batch_id}' không tồn tại.",
         )
 
     is_admin_or_inspector = current_user.role in [
@@ -937,7 +952,7 @@ def get_batch_root_origins(
         )
 
     try:
-        data = LineageDagService.trace_upstream_roots(db, batch_id)
+        data = LineageDagService.trace_upstream_roots(db, batch.id)
         return RootOriginsResponse(
             target_batch_id=data["target_batch_id"],
             target_batch_code=data["target_batch_code"],
@@ -953,7 +968,7 @@ def get_batch_root_origins(
 
 @router.get("/{batch_id}/descendants", response_model=DescendantsResponse)
 def get_batch_descendants(
-    batch_id: int,
+    batch_id: str,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
@@ -962,11 +977,11 @@ def get_batch_descendants(
     - Duyệt theo chiều cha -> con từ bảng batch_relations để liệt kê mọi lô con, cháu, lô gộp.
     - Trả về: Tổ chức hiện đang giữ, Địa điểm/cửa hàng hiện tại, Khối lượng còn lại và Trạng thái (kho/hết).
     """
-    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    batch = _resolve_batch_by_id_or_code(db, batch_id)
     if not batch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Lô hàng #{batch_id} không tồn tại.",
+            detail=f"Lô hàng '{batch_id}' không tồn tại.",
         )
 
     is_admin_or_inspector = current_user.role in [
@@ -984,7 +999,7 @@ def get_batch_descendants(
         )
 
     try:
-        data = LineageDagService.trace_downstream_descendants(db, batch_id)
+        data = LineageDagService.trace_downstream_descendants(db, batch.id)
         return DescendantsResponse(
             source_batch_id=data["source_batch_id"],
             source_batch_code=data["source_batch_code"],
@@ -1000,7 +1015,7 @@ def get_batch_descendants(
 
 @router.get("/{batch_id}/dag-graph", response_model=DagGraphResponse)
 def get_batch_dag_graph(
-    batch_id: int,
+    batch_id: str,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
@@ -1010,11 +1025,11 @@ def get_batch_dag_graph(
     - Lô hiện tại ở giữa.
     - Toàn bộ hậu duệ bên phải.
     """
-    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    batch = _resolve_batch_by_id_or_code(db, batch_id)
     if not batch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Lô hàng #{batch_id} không tồn tại.",
+            detail=f"Lô hàng '{batch_id}' không tồn tại.",
         )
 
     is_admin_or_inspector = current_user.role in [
@@ -1032,7 +1047,7 @@ def get_batch_dag_graph(
         )
 
     try:
-        data = LineageDagService.get_dag_graph_structure(db, batch_id)
+        data = LineageDagService.get_dag_graph_structure(db, batch.id)
         return DagGraphResponse(
             focus_batch=data["focus_batch"],
             roots=data["roots"],
@@ -1124,5 +1139,67 @@ def get_batch_inspection_dossier(
         batch_id=batch_id,
         inspector_user=current_user,
     )
+
+
+@router.post("/{batch_id}/consume", response_model=BatchResponse)
+def mark_batch_consumed(
+    batch_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    User Story S-29: Đánh dấu lô đã bán hết cho người tiêu dùng.
+    - Dành cho Nhà phân phối / Chuỗi bán lẻ hoặc Quản trị hệ thống.
+    - Chuyển remaining_quantity về 0.0 và status = 'CONSUMED'.
+    - Ghi nhận sự kiện vào chuỗi Hash Chain bất biến.
+    """
+    batch = _resolve_batch_by_id_or_code(db, batch_id)
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lô hàng '{batch_id}' không tồn tại.",
+        )
+
+    if current_user.role in INSPECTOR_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cán bộ kiểm tra chỉ có quyền đọc (Read-only), không được phép cập nhật trạng thái lô hàng.",
+        )
+
+    is_admin = current_user.role in ADMIN_ROLES
+    if not is_admin and batch.organization_id != current_user.organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền thao tác trên lô hàng thuộc tổ chức khác.",
+        )
+
+    if RecallService.is_batch_in_active_recall(db, batch.id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Lô hàng đang nằm trong lệnh thu hồi khẩn cấp, không thể bán ra thị trường!",
+        )
+
+    sold_qty = batch.remaining_quantity
+    batch.remaining_quantity = 0.0
+    batch.status = "CONSUMED"
+    db.flush()
+
+    record_chain_event(
+        db=db,
+        batch_id=batch.id,
+        event_type="BATCH_CONSUMED",
+        event_data={
+            "action": "CONSUMED_ALL",
+            "sold_quantity": sold_qty,
+            "unit": batch.unit,
+            "status": "CONSUMED",
+            "message": f"Lô {batch.batch_code} ({batch.product_name}) đã bán hết cho người tiêu dùng tại điểm bán lẻ.",
+        },
+        organization_id=batch.organization_id,
+    )
+    db.commit()
+    db.refresh(batch)
+    return batch
+
 
 

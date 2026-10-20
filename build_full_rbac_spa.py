@@ -47,6 +47,12 @@ def generate_spa_html():
   </script>
 
   <style>
+    /* Prevent mobile horizontal overflow (390px viewport) */
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+    
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f8fafc; }
@@ -68,31 +74,31 @@ def generate_spa_html():
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white overflow-x-hidden">
 
   <!-- ================= NOTIFICATION TOAST CONTAINER ================= -->
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- ================= MAIN SUPPLY CHAIN HEADER ================= -->
   <header class="sticky top-0 z-40 glassmorphism border-b border-slate-200/90 shadow-sm transition-all duration-300">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-20">
         
         <!-- Logo & Brand Name -->
-        <div class="flex items-center gap-3 cursor-pointer select-none" onclick="switchNavTab('overview')">
-          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-green-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 transform hover:scale-105 transition-transform">
-            <i class="fa-solid fa-leaf text-xl"></i>
+        <div class="flex items-center gap-2 sm:gap-3 cursor-pointer select-none shrink-0" onclick="switchNavTab('overview')">
+          <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-green-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 transform hover:scale-105 transition-transform">
+            <i class="fa-solid fa-leaf text-base sm:text-xl"></i>
           </div>
           <div>
-            <div class="flex items-center gap-2">
-              <span class="text-xl font-black tracking-tight bg-gradient-to-r from-emerald-900 to-emerald-700 bg-clip-text text-transparent">
+            <div class="flex items-center gap-1.5 sm:gap-2">
+              <span class="text-base sm:text-xl font-black tracking-tight bg-gradient-to-r from-emerald-900 to-emerald-700 bg-clip-text text-transparent">
                 Nông Sản Lành
               </span>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                 Chuỗi Cung Ứng Đa Tổ Chức
               </span>
             </div>
-            <p class="text-xs text-slate-500 font-medium">Truy Xuất Nguồn Gốc & Giám Sát Chuỗi Lạnh IoT</p>
+            <p class="hidden sm:block text-xs text-slate-500 font-medium">Truy Xuất Nguồn Gốc & Giám Sát Chuỗi Lạnh IoT</p>
           </div>
         </div>
 
@@ -118,25 +124,25 @@ def generate_spa_html():
         </div>
 
         <!-- RIGHT ACTIONS: Role Switcher (E-02 Demo) & Real Auth S-04 (T-08, T-09, T-10) -->
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
 
           <!-- Supply Chain Persona & Organization Switcher (Epic E-02: Giữ nguyên để tiện demo) -->
           <div class="relative">
             <button 
               id="roleDropdownBtn" 
               onclick="toggleRoleDropdown()" 
-              class="bg-slate-100 hover:bg-slate-200/80 p-1.5 px-3 rounded-2xl flex items-center gap-2.5 border border-slate-200 shadow-sm transition-all text-xs text-left cursor-pointer select-none">
-              <div id="currentRoleIconBox" class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs font-black shadow-sm">
+              class="bg-slate-100 hover:bg-slate-200/80 p-1 sm:p-1.5 px-2 sm:px-3 rounded-2xl flex items-center gap-1.5 sm:gap-2.5 border border-slate-200 shadow-sm transition-all text-xs text-left cursor-pointer select-none">
+              <div id="currentRoleIconBox" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs font-black shadow-sm">
                 <i class="fa-solid fa-seedling" id="currentRoleIcon"></i>
               </div>
-              <div class="leading-tight pr-1">
-                <div class="flex items-center gap-1.5">
-                  <span class="font-bold text-slate-800" id="currentRoleTitle">Vùng Trồng (Farm)</span>
+              <div class="leading-tight pr-0.5 sm:pr-1">
+                <div class="flex items-center gap-1 sm:gap-1.5">
+                  <span class="font-bold text-slate-800 text-[11px] sm:text-xs" id="currentRoleTitle">Vùng Trồng (Farm)</span>
                   <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200" id="currentRoleBadge">Org #1</span>
                 </div>
-                <p class="text-[10px] text-slate-500 font-medium" id="currentOrgName">HTX Nông Nghiệp Thắng Lợi</p>
+                <p class="hidden sm:block text-[10px] text-slate-500 font-medium truncate max-w-[120px]" id="currentOrgName">HTX Nông Nghiệp Thắng Lợi</p>
               </div>
-              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-1"></i>
+              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-0.5"></i>
             </button>
 
             <!-- 7 Supply Chain Roles Dropdown Menu (Epic E-02) -->
@@ -254,26 +260,27 @@ def generate_spa_html():
             id="seedDatabaseBtn" 
             onclick="seedFullDatabase()" 
             title="Nạp 13 lô hàng mẫu qua 4 tầng phả hệ & chuỗi hash vào cơ sở dữ liệu thật"
-            class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-2 rounded-2xl flex items-center gap-1.5 text-xs font-bold transition-all transform active:scale-95 cursor-pointer">
+            class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 p-2 sm:px-3 sm:py-2 rounded-2xl flex items-center gap-1.5 text-xs font-bold transition-all transform active:scale-95 cursor-pointer">
             <i class="fa-solid fa-database text-amber-600"></i>
             <span class="hidden sm:inline">Nạp Dữ Liệu Thật (Seed)</span>
           </button>
 
           <!-- Nút Đăng Nhập / Đổi Tài Khoản S-04 (T-08, T-09, T-10) -->
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-1">
             <button 
               id="authLoginBtn" 
               onclick="openLoginModal()" 
-              class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white px-3.5 py-2 rounded-2xl flex items-center gap-2 shadow-sm hover:shadow text-xs font-bold transition-all transform active:scale-95 cursor-pointer">
+              title="Đăng Nhập / Đổi Tài Khoản (S-04)"
+              class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white p-2 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-1.5 shadow-sm hover:shadow text-xs font-bold transition-all transform active:scale-95 cursor-pointer">
               <i class="fa-solid fa-right-to-bracket text-xs" id="authBtnIcon"></i>
-              <span id="authBtnLabel">Đăng Nhập / Đổi TK</span>
+              <span id="authBtnLabel" class="hidden sm:inline">Đăng Nhập / Đổi TK</span>
               <span id="authActiveDot" class="w-2 h-2 rounded-full bg-emerald-300 hidden"></span>
             </button>
             <button 
               id="authLogoutBtn" 
               onclick="handleLogout()" 
               title="Đăng xuất khỏi phiên"
-              class="hidden px-2.5 py-2 bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-2xl border border-slate-200 text-xs font-bold transition-colors">
+              class="hidden p-2 sm:px-2.5 sm:py-2 bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-2xl border border-slate-200 text-xs font-bold transition-colors">
               <i class="fa-solid fa-arrow-right-from-bracket"></i>
             </button>
           </div>
@@ -341,6 +348,13 @@ def generate_spa_html():
           onclick="switchNavTab('traceability')"
           class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2">
           <i class="fa-solid fa-link"></i> Toàn Vẹn Chuỗi Hash SHA-256 (S-10, S-12)
+        </button>
+
+        <button 
+          id="tabBtn_audit" 
+          onclick="switchNavTab('audit')"
+          class="hidden nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-purple-600 hover:bg-purple-50 hover:text-purple-900 transition-all flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-purple-600"></i> Nhật Ký Hệ Thống (S-31)
         </button>
 
         <button 
@@ -531,7 +545,13 @@ def generate_spa_html():
           <h2 class="text-2xl font-black text-slate-900 mt-1">Danh Sách Lô Hàng Thu Hoạch Đang Lưu Giữ (S-14)</h2>
           <p class="text-xs text-slate-500 mt-1">Mã lô ngẫu nhiên đủ dài, tìm kiếm không phân biệt hoa thường, phân trang 20 lô/trang</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="openCsvImportModal('products')" class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-file-csv"></i> Nhập CSV (S-32)
+          </button>
+          <button onclick="openOrganizationLocationsModal()" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-store"></i> Điểm Bán / Kho (S-30)
+          </button>
           <button id="btnOpenMergeModal" onclick="openMergeModalForSelected()" class="hidden px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-all">
             <i class="fa-solid fa-object-group"></i> Gộp Lô Đã Chọn (<span id="mergeSelectedCount">0</span>) (S-19)
           </button>
@@ -602,9 +622,14 @@ def generate_spa_html():
           <h2 class="text-2xl font-black text-slate-900 mt-1">Khai Báo Thửa Đất Thuộc Tổ Chức Mình (S-06)</h2>
           <p class="text-xs text-slate-500 mt-1">Diện tích phải &gt; 0, toạ độ GPS dạng số thực, chỉ thấy thửa của tổ chức mình</p>
         </div>
-        <button id="addPlotBtn" onclick="handleAddPlotClick()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
-          <i class="fa-solid fa-plus"></i> Khai Báo Thửa Đất Mới
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="openCsvImportModal('land_plots')" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-file-csv"></i> Nhập Thửa Đất CSV (S-32)
+          </button>
+          <button id="addPlotBtn" onclick="handleAddPlotClick()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i> Khai Báo Thửa Đất Mới
+          </button>
+        </div>
       </div>
 
       <!-- Plots Grid -->
@@ -1132,6 +1157,67 @@ def generate_spa_html():
 
     </div>
 
+    <!-- ======================================================== -->
+    <!-- VIEW: NHẬT KÝ THAO TÁC HỆ THỐNG / AUDIT LOGS (USER STORY S-31) -->
+    <!-- ======================================================== -->
+    <div id="view_audit" class="space-y-6 hidden">
+      <!-- Header View -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-6 rounded-3xl text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-8 h-8 rounded-xl bg-indigo-500/30 text-indigo-300 flex items-center justify-center text-sm font-black border border-indigo-400/30">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </span>
+            <h2 class="text-xl font-black tracking-tight">Nhật Ký Thao Tác Hệ Thống (S-31)</h2>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-400/20 text-indigo-200 border border-indigo-400/30">Audit Security Logs</span>
+          </div>
+          <p class="text-xs text-slate-300">Truy vết kiểm toán bất biến các sự kiện bảo mật, đăng nhập, phân quyền và giao dịch trong hệ thống.</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="renderAuditLogsTab()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-arrows-rotate"></i> Làm Mới Nhật Ký
+          </button>
+        </div>
+      </div>
+
+      <!-- Bảng Nhật Ký Audit Logs -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
+            <span class="font-extrabold text-xs uppercase tracking-wider text-slate-800">Dòng Sự Kiện Kiểm Toán Hệ Thống (Mới nhất)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="auditLogsCountBadge" class="text-xs font-bold text-slate-500">Đang tải...</span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto w-full">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-100">
+              <tr>
+                <th class="p-3">Thời Gian</th>
+                <th class="p-3">Người Dùng / Email</th>
+                <th class="p-3">Hành Động (Action)</th>
+                <th class="p-3">Loại Sự Kiện</th>
+                <th class="p-3">Địa Chỉ IP</th>
+                <th class="p-3 text-center">Trạng Thái</th>
+                <th class="p-3">Chi Tiết / Payload</th>
+              </tr>
+            </thead>
+            <tbody id="auditLogsTableBody" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="7" class="p-8 text-center text-slate-400">
+                  <i class="fa-solid fa-spinner fa-spin text-xl text-indigo-500 mb-2"></i>
+                  <p class="font-semibold text-xs">Đang tải danh sách nhật ký kiểm toán...</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- ================= FOOTER ================= -->
@@ -1325,6 +1411,290 @@ def generate_spa_html():
             <!-- Dynamic telemetry readings -->
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: QUẢN LÝ ĐỊA ĐIỂM / CỬA HÀNG TRỰC THUỘC (USER STORY S-30) -->
+  <!-- ======================================================== -->
+  <div id="organizationLocationsModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+    <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-fadeIn flex flex-col max-h-[90vh]">
+      
+      <!-- Header Modal -->
+      <div class="bg-gradient-to-r from-teal-800 via-teal-700 to-emerald-800 p-6 text-white relative">
+        <button onclick="closeModal('organizationLocationsModal')" class="absolute top-5 right-5 text-white/70 hover:text-white transition-colors cursor-pointer">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-xl shadow-inner">
+            <i class="fa-solid fa-shop text-teal-300"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-lg font-black tracking-tight">Cửa Hàng & Kho Trực Thuộc</h3>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-400/20 text-teal-200 border border-teal-400/30">User Story S-30</span>
+            </div>
+            <p class="text-xs text-teal-100 font-medium">Khai báo và quản lý các địa điểm, điểm bán lẻ và kho con của tổ chức</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body Modal -->
+      <div class="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
+        
+        <!-- Form Khai Báo Điểm Mới -->
+        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <p class="font-extrabold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
+              <i class="fa-solid fa-plus-circle text-teal-600"></i> Khai Báo Điểm Bán / Kho Mới
+            </p>
+          </div>
+          <form onsubmit="submitCreateLocation(event)" class="space-y-3" id="createLocationForm">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Mã Điểm Bán *</label>
+                <input type="text" id="locCodeInput" required placeholder="VD: CH-Q1-01" class="w-full p-2 bg-white border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-teal-500"/>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Tên Điểm Bán / Kho *</label>
+                <input type="text" id="locNameInput" required placeholder="VD: Siêu thị BioMart Quận 1" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500"/>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Loại Địa Điểm *</label>
+                <select id="locTypeSelect" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-teal-500">
+                  <option value="STORE">Cửa Hàng / Siêu Thị (STORE)</option>
+                  <option value="WAREHOUSE">Kho Lưu Trữ / Trung Chuyển (WAREHOUSE)</option>
+                  <option value="OUTLET">Điểm Bán Lẻ / Kiosk (OUTLET)</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Địa Chỉ Chi Tiết</label>
+                <input type="text" id="locAddressInput" placeholder="VD: 123 Hai Bà Trưng, P. Bến Nghé, Q.1" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500"/>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Số Điện Thoại Liên Hệ</label>
+                <input type="text" id="locPhoneInput" placeholder="VD: 028.3822.9999" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500"/>
+              </div>
+            </div>
+            <div class="flex justify-end pt-1">
+              <button type="submit" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-floppy-disk"></i> Lưu Địa Điểm
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Danh sách các địa điểm hiện có -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <p class="font-extrabold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
+              <i class="fa-solid fa-list-check text-indigo-600"></i> Các Cửa Hàng / Kho Hiện Có Của Đơn Vị
+            </p>
+            <span id="locationsCountBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">0 địa điểm</span>
+          </div>
+          <div class="overflow-x-auto w-full">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-100">
+                <tr>
+                  <th class="p-2.5">Mã</th>
+                  <th class="p-2.5">Tên Điểm Bán / Kho</th>
+                  <th class="p-2.5">Loại</th>
+                  <th class="p-2.5">Địa Chỉ</th>
+                  <th class="p-2.5">Số ĐT</th>
+                  <th class="p-2.5 text-center">Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody id="organizationLocationsTableBody" class="divide-y divide-slate-100">
+                <!-- Dynamic locations rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer Modal -->
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+        <button onclick="closeModal('organizationLocationsModal')" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs cursor-pointer">
+          Đóng
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CHUYỂN LÔ HÀNG VỀ CỬA HÀNG / ĐIỂM BÁN (USER STORY S-30) -->
+  <!-- ======================================================== -->
+  <div id="transferLocationModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-fadeIn">
+      
+      <!-- Header Modal -->
+      <div class="bg-gradient-to-r from-blue-800 via-indigo-800 to-indigo-900 p-6 text-white relative">
+        <button onclick="closeModal('transferLocationModal')" class="absolute top-5 right-5 text-white/70 hover:text-white transition-colors cursor-pointer">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-xl shadow-inner">
+            <i class="fa-solid fa-truck-ramp-box text-blue-300"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-lg font-black tracking-tight">Chuyển Về Cửa Hàng</h3>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-400/20 text-blue-200 border border-blue-400/30">User Story S-30</span>
+            </div>
+            <p class="text-xs text-blue-100 font-medium">Điều chuyển lô hàng nội bộ về quầy kệ cửa hàng hoặc kho con</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body Modal -->
+      <div class="p-6 space-y-4 text-xs">
+        
+        <div class="p-3 bg-blue-50/70 rounded-2xl border border-blue-200 space-y-1">
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500 text-[11px]">Mã lô điều chuyển:</span>
+            <span id="transferBatchCodeDisplay" class="font-mono font-black text-blue-950 text-xs">BATCH-XXX</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500 text-[11px]">Sản phẩm:</span>
+            <span id="transferBatchProductDisplay" class="font-bold text-slate-800 text-xs">Tên sản phẩm</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500 text-[11px]">Khối lượng còn khả dụng:</span>
+            <span id="transferBatchQtyDisplay" class="font-black text-emerald-700 text-xs">0 kg</span>
+          </div>
+        </div>
+
+        <form onsubmit="submitTransferLocation(event)" class="space-y-3.5" id="transferLocationForm">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Chọn Cửa Hàng / Kho Tiếp Nhận *</label>
+            <select id="transferTargetLocationSelect" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">-- Đang tải danh sách điểm bán --</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Khối Lượng Điều Chuyển (kg) *</label>
+            <input type="number" step="0.01" min="0.01" id="transferQuantityInput" required placeholder="Nhập số lượng kg" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-blue-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Ghi Chú Điều Chuyển</label>
+            <input type="text" id="transferNotesInput" placeholder="VD: Trưng bày tại kệ rau hữu cơ tầng 1" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <button type="button" onclick="closeModal('transferLocationModal')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs cursor-pointer">
+              Hủy
+            </button>
+            <button type="submit" id="btnSubmitTransferLocation" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-arrow-right-arrow-left"></i> Xác Nhận Chuyển Về Cửa Hàng
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: NHẬP DỮ LIỆU TỪ TỆP CSV (USER STORY S-32) -->
+  <!-- ======================================================== -->
+  <div id="csvImportModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-fadeIn">
+      
+      <!-- Header Modal -->
+      <div class="bg-gradient-to-r from-emerald-800 via-teal-800 to-cyan-800 p-6 text-white relative">
+        <button onclick="closeModal('csvImportModal')" class="absolute top-5 right-5 text-white/70 hover:text-white transition-colors cursor-pointer">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-xl shadow-inner">
+            <i class="fa-solid fa-file-csv text-emerald-300"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-lg font-black tracking-tight">Nhập Dữ Liệu Từ Tệp CSV</h3>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-400/30">User Story S-32</span>
+            </div>
+            <p class="text-xs text-emerald-100 font-medium">Import danh mục sản phẩm hoặc thửa đất vào cơ sở dữ liệu server</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body Modal -->
+      <div class="p-6 space-y-4 text-xs">
+        
+        <!-- Chọn Loại Dữ Liệu Cần Import -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-2">Chọn Loại Dữ Liệu Cần Nhập:</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="p-3 border-2 border-emerald-500 rounded-2xl bg-emerald-50/50 flex items-center gap-2 cursor-pointer transition-all hover:bg-emerald-50" id="labelCsvProducts">
+              <input type="radio" name="csvTypeRadio" value="products" checked onchange="onCsvTypeRadioChanged(this.value)" class="text-emerald-600 focus:ring-emerald-500"/>
+              <div>
+                <p class="font-bold text-slate-800 text-xs">Danh Mục Sản Phẩm</p>
+                <p class="text-[10px] text-slate-500">Mã, Tên, Giống, Quy chuẩn</p>
+              </div>
+            </label>
+            <label class="p-3 border-2 border-slate-200 rounded-2xl bg-white flex items-center gap-2 cursor-pointer transition-all hover:bg-slate-50" id="labelCsvLandPlots">
+              <input type="radio" name="csvTypeRadio" value="land_plots" onchange="onCsvTypeRadioChanged(this.value)" class="text-emerald-600 focus:ring-emerald-500"/>
+              <div>
+                <p class="font-bold text-slate-800 text-xs">Thửa Đất Canh Tác</p>
+                <p class="text-[10px] text-slate-500">Tên thửa, Diện tích, Tọa độ</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Cấu Trúc Mẫu & Tải Dữ Liệu Mẫu -->
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-700 text-[11px] flex items-center gap-1.5">
+              <i class="fa-solid fa-code text-emerald-600"></i> Cấu Trúc Dữ Liệu CSV Mẫu:
+            </span>
+            <button type="button" onclick="loadSampleCsvContent()" class="text-emerald-700 hover:text-emerald-900 font-bold text-[10px] underline flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-file-lines"></i> Điền Dữ Liệu Mẫu
+            </button>
+          </div>
+          <pre id="csvTemplatePreview" class="p-2.5 bg-slate-900 text-emerald-400 rounded-xl font-mono text-[10px] overflow-x-auto whitespace-pre">code,name,variety,category,default_unit,description
+SP-001,Cà Chua Beef Hữu Cơ,Beef Beef F1,Rau ăn quả,kg,Cà chua tiêu chuẩn VietGAP
+SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy canh công nghệ cao</pre>
+        </div>
+
+        <!-- Form Upload hoặc Dán Nội Dung CSV -->
+        <form onsubmit="submitCsvImport(event)" class="space-y-3.5" id="csvImportForm">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Tải Lên Tệp CSV Hoặc Dán Nội Dung Bên Dưới</span>
+              <span class="text-[10px] text-slate-400">Định dạng UTF-8</span>
+            </label>
+            <input type="file" id="csvFileInput" accept=".csv,text/csv" onchange="onCsvFileSelected(event)" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"/>
+          </div>
+
+          <div>
+            <textarea id="csvContentInput" rows="5" placeholder="Dán nội dung CSV tại đây hoặc chọn tệp bên trên..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" required></textarea>
+          </div>
+
+          <!-- Kết quả Import -->
+          <div id="csvImportResultBox" class="hidden p-3 rounded-2xl border text-xs space-y-1">
+            <p id="csvImportResultMessage" class="font-bold"></p>
+            <div id="csvImportResultDetails" class="text-[11px] font-mono max-h-24 overflow-y-auto space-y-0.5"></div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <button type="button" onclick="closeModal('csvImportModal')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs cursor-pointer">
+              Đóng
+            </button>
+            <button type="submit" id="btnSubmitCsvImport" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Bắt Đầu Nhập Dữ Liệu (S-32)
+            </button>
+          </div>
+        </form>
+
       </div>
     </div>
   </div>
@@ -1917,6 +2287,18 @@ def generate_spa_html():
             class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
             <i class="fa-solid fa-truck-moving"></i> Bàn Giao Lô Hàng (S-15)
           </button>
+          <button 
+            id="modalBtnTransferLocation" 
+            onclick="openTransferLocationForCurrentBatch()" 
+            class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-store"></i> Chuyển Cửa Hàng (S-30)
+          </button>
+          <button 
+            id="modalBtnConsume" 
+            onclick="confirmConsumeCurrentBatch()" 
+            class="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-cart-shopping"></i> Ghi Nhận Đã Bán Hết (S-29)
+          </button>
         </div>
         <button onclick="closeModal('batchDetailModal')" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
           Đóng Cửa Sổ
@@ -2116,7 +2498,7 @@ def generate_spa_html():
         <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
           <i class="fa-solid fa-network-wired text-rose-600"></i> Danh Sách Lô Bị Khoanh Vùng Qua Mọi Tầng Tách/Gộp (S-34)
         </h4>
-        <div class="border border-slate-200 rounded-2xl overflow-hidden max-h-60 overflow-y-auto">
+        <div class="border border-slate-200 rounded-2xl overflow-hidden max-h-60 overflow-x-auto overflow-y-auto w-full">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
               <tr>
@@ -2482,6 +2864,7 @@ def generate_spa_html():
       try {
         const rawBatches = await apiFetch("/api/v1/batches?limit=100");
         state.batches = rawBatches.map(b => ({
+          id: b.id,
           code: b.batch_code,
           batch_code: b.batch_code,
           product: b.product_name,
@@ -2667,6 +3050,16 @@ def generate_spa_html():
           inspectorBanner.classList.remove("hidden");
         } else {
           inspectorBanner.classList.add("hidden");
+        }
+      }
+
+      // User Story S-31: Hiển thị tab Nhật Ký Hệ Thống (Audit Logs) cho Quản Trị Viên (System Admin)
+      const tabAudit = document.getElementById("tabBtn_audit");
+      if (tabAudit) {
+        if (roleKey === "system_admin" || (state.currentUser && state.currentUser.role === "system_admin")) {
+          tabAudit.classList.remove("hidden");
+        } else {
+          tabAudit.classList.add("hidden");
         }
       }
     }
@@ -3103,7 +3496,7 @@ def generate_spa_html():
      */
     function switchNavTab(tabId) {
       // Guard S-04 & T-09: Giả sử chưa đăng nhập mà mở trang nội bộ, đưa về form đăng nhập
-      const internalTabs = ['batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain'];
+      const internalTabs = ['batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain', 'audit'];
       const isConsumer = !state.currentUser && (!state.currentRole || state.currentRole === 'consumer');
       if (isConsumer && internalTabs.includes(tabId)) {
         state.returnTab = tabId;
@@ -3116,7 +3509,7 @@ def generate_spa_html():
       state.activeTab = tabId;
       saveAppState(state);
 
-      const allTabs = ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain', 'traceability', 'public'];
+      const allTabs = ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain', 'traceability', 'audit', 'public'];
       allTabs.forEach(t => {
         const btn = document.getElementById(`tabBtn_${t}`);
         const view = document.getElementById(`view_${t}`);
@@ -3141,6 +3534,7 @@ def generate_spa_html():
       else if (tabId === 'recalls') renderRecallsTab();
       else if (tabId === 'cold_chain') renderColdChainTab();
       else if (tabId === 'traceability') renderTraceabilityTab();
+      else if (tabId === 'audit') renderAuditLogsTab();
       else if (tabId === 'public') renderPublicBatches('all');
       else renderOverviewTab();
 
@@ -3237,10 +3631,20 @@ def generate_spa_html():
               </span>
             </td>
             <td class="p-3.5">${phiBadge}</td>
-            <td class="p-3.5 text-right">
-              <button onclick="handleQuickSearch('${b.code}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold">
-                Chi Tiết Lô
-              </button>
+            <td class="p-3.5 text-right whitespace-nowrap">
+              <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                <button onclick="handleQuickSearch('${bCode}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold cursor-pointer" title="Xem chi tiết & phả hệ">
+                  Chi Tiết
+                </button>
+                ${(roleKey === 'distributor' || roleKey === 'system_admin') && !isDepleted ? `
+                  <button onclick="openTransferLocationForBatch('${bCode}', '${bProduct}', ${remQty})" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold cursor-pointer" title="Chuyển về cửa hàng/kho (S-30)">
+                    <i class="fa-solid fa-store mr-0.5"></i> Cửa hàng
+                  </button>
+                  <button onclick="confirmConsumeBatch('${bCode}')" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[11px] font-bold cursor-pointer" title="Đánh dấu đã bán hết cho người tiêu dùng (S-29)">
+                    <i class="fa-solid fa-cart-shopping mr-0.5"></i> Bán hết
+                  </button>
+                ` : ''}
+              </div>
             </td>
           </tr>
         `;
@@ -4424,267 +4828,987 @@ def generate_spa_html():
       showToast(`TÁCH LÔ THÀNH CÔNG (S-17)! Đã tạo ${createdChildCodes.length} lô con (${createdChildCodes.join(', ')})`, "success");
     }
 
-    // 6. Dựng Đồ Thị / Sơ Đồ Cây Phả Hệ DAG Trực Quan (S-21, S-26, S-27)
-    // Sơ đồ trực quan 3 cột: Tổ tiên bên trái | Lô hiện tại ở giữa | Hậu duệ bên phải
+    // 6. Dựng Đồ Thị / Sơ Đồ Cây Phả Hệ DAG Trực Quan Gọi 3 API Thật Trên Máy Chủ (S-21, S-26, S-27, S-28)
     async function fetchAndRenderLineage(batchCode) {
       const container = document.getElementById('modalBatchLineageContainer');
       const statusEl = document.getElementById('modalBatchLineageStatus');
       if (!container) return;
 
-      const relations = state.batchRelations || [];
-      const batches = state.batches || [];
-      const currentBatch = batches.find(b => b.code === batchCode);
-
-      // Thuật toán BFS:
-      // 1. Duyệt ngược (Upstream BFS - S-21) tìm tổ tiên và các lô thu hoạch gốc
-      const rootsMap = new Map();
-      const ancestorsList = [];
-      const upstreamQueue = [{ code: batchCode, path: [batchCode], depth: 0 }];
-      const upstreamVisited = new Set();
-      let hasUpstreamCycle = false;
-
-      while (upstreamQueue.length > 0) {
-        const item = upstreamQueue.shift();
-        const currCode = item.code;
-        const path = item.path;
-        const depth = item.depth;
-        upstreamVisited.add(currCode);
-
-        const parentRels = relations.filter(r => r.child_code === currCode);
-        if (parentRels.length === 0) {
-          // Lô gốc ban đầu (không có cha)
-          const bObj = batches.find(b => b.code === currCode);
-          if (bObj && !rootsMap.has(currCode)) {
-            rootsMap.set(currCode, {
-              code: currCode,
-              product: bObj.product,
-              farm: bObj.farm || "Vùng trồng HTX",
-              plot: bObj.plot || "Thửa A1",
-              qty: bObj.qty,
-              remQty: bObj.remaining_qty !== undefined ? bObj.remaining_qty : bObj.qty,
-              depth: depth
-            });
-          }
-        } else {
-          for (const rel of parentRels) {
-            if (path.includes(rel.parent_code)) {
-              hasUpstreamCycle = true;
-              break;
-            }
-            const pBatch = batches.find(b => b.code === rel.parent_code);
-            if (pBatch && rel.parent_code !== batchCode && !ancestorsList.some(a => a.code === rel.parent_code)) {
-              ancestorsList.push({
-                code: rel.parent_code,
-                product: pBatch.product,
-                farm: pBatch.farm,
-                qty: rel.quantity,
-                relation_type: rel.relation_type,
-                depth: depth + 1
-              });
-            }
-            upstreamQueue.push({ code: rel.parent_code, path: [...path, rel.parent_code], depth: depth + 1 });
-          }
-        }
-      }
-
-      // 2. Duyệt xuôi (Downstream BFS - S-26, S-27) tìm toàn bộ hậu duệ
-      const descendantsList = [];
-      const downstreamQueue = [{ code: batchCode, path: [batchCode], depth: 0 }];
-      const downstreamVisited = new Set();
-      let hasDownstreamCycle = false;
-
-      while (downstreamQueue.length > 0) {
-        const item = downstreamQueue.shift();
-        const currCode = item.code;
-        const path = item.path;
-        const depth = item.depth;
-        downstreamVisited.add(currCode);
-
-        const childRels = relations.filter(r => r.parent_code === currCode);
-        for (const rel of childRels) {
-          if (path.includes(rel.child_code)) {
-            hasDownstreamCycle = true;
-            break;
-          }
-          const cBatch = batches.find(b => b.code === rel.child_code);
-          const cRemQty = cBatch ? (cBatch.remaining_qty !== undefined ? cBatch.remaining_qty : cBatch.qty) : 0;
-          const isDepleted = cRemQty <= 0;
-
-          descendantsList.push({
-            code: rel.child_code,
-            product: cBatch ? cBatch.product : "Nông sản chế biến",
-            generation: `F${depth + 1}`,
-            relation_type: rel.relation_type,
-            quantity: rel.quantity,
-            holding_org: cBatch ? cBatch.farm : "Cơ sở lưu kho",
-            location: cBatch ? (cBatch.plot || "Kho bảo quản") : "Kho điểm bán",
-            remaining_qty: cRemQty,
-            status: cBatch ? cBatch.status : "Đang lưu kho",
-            is_depleted: isDepleted,
-            parent_code: currCode
-          });
-
-          downstreamQueue.push({ code: rel.child_code, path: [...path, rel.child_code], depth: depth + 1 });
-        }
-      }
-
-      const roots = Array.from(rootsMap.values());
-      const isIsolated = roots.length <= 1 && ancestorsList.length === 0 && descendantsList.length === 0 && rootsMap.has(batchCode);
-
       if (statusEl) {
-        if (hasUpstreamCycle || hasDownstreamCycle) {
-          statusEl.innerHTML = '<span class="text-rose-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Phát hiện chu trình vòng lặp (Lineage Cycle)!</span>';
+        statusEl.innerHTML = '<span class="text-indigo-600 font-bold"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải phả hệ từ máy chủ...</span>';
+      }
+
+      const currentBatch = (state.batches || []).find(b => b.code === batchCode || b.batch_code === batchCode);
+
+      try {
+        // Gọi đồng thời 3 API Phả hệ DAG có sẵn trên backend (S-21, S-26, S-27, S-28)
+        const [originsRes, descendantsRes, dagRes] = await Promise.allSettled([
+          apiFetch(`/api/v1/batches/${encodeURIComponent(batchCode)}/origins`),
+          apiFetch(`/api/v1/batches/${encodeURIComponent(batchCode)}/descendants`),
+          apiFetch(`/api/v1/batches/${encodeURIComponent(batchCode)}/dag-graph`)
+        ]);
+
+        const originsData = originsRes.status === 'fulfilled' ? originsRes.value : { root_origins: [] };
+        const descendantsData = descendantsRes.status === 'fulfilled' ? descendantsRes.value : { descendants: [] };
+        const dagData = dagRes.status === 'fulfilled' ? dagRes.value : { nodes: [], edges: [] };
+
+        const roots = (originsData.root_origins || []).map(r => ({
+          code: r.origin_batch_code,
+          product: r.product_name,
+          farm: r.organization_name || "Vùng trồng HTX",
+          plot: r.land_plot_name || "Thửa liên kết",
+          remQty: r.remaining_quantity !== undefined ? r.remaining_quantity : r.initial_quantity,
+          depth: r.depth || 0,
+          path: r.path || []
+        }));
+
+        const descendantsList = (descendantsData.descendants || []).map(d => ({
+          code: d.descendant_batch_code,
+          product: d.product_name,
+          generation: d.generation || `F${d.depth || 1}`,
+          relation_type: d.relation_type || 'SPLIT',
+          quantity: d.initial_quantity,
+          holding_org: d.organization_name || "Tổ chức chuỗi",
+          location: "Kho bảo quản",
+          remaining_qty: d.remaining_quantity,
+          status: d.status,
+          is_depleted: d.is_depleted,
+          depth: d.depth || 1
+        }));
+
+        const isIsolated = roots.length <= 1 && descendantsList.length === 0 && (roots.length === 0 || roots[0].code === batchCode);
+
+        if (statusEl) {
+          statusEl.innerText = isIsolated 
+            ? "Lô thu hoạch nguyên gốc (chưa qua tách/gộp)" 
+            : `Phả hệ DAG Server: ${roots.length} gốc, ${descendantsList.length} hậu duệ (${(dagData.edges || []).length} liên kết)`;
+        }
+
+        const curRemQty = currentBatch ? (currentBatch.remaining_qty !== undefined ? currentBatch.remaining_qty : currentBatch.qty) : 0;
+        const curIsDepleted = curRemQty <= 0;
+
+        container.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-start text-xs">
+            
+            <!-- CỘT 1: TỔ TIÊN & LÔ THU HOẠCH GỐC (S-21) -->
+            <div class="bg-amber-50/70 p-3 rounded-2xl border border-amber-200 space-y-2">
+              <div class="flex items-center justify-between pb-1 border-b border-amber-200">
+                <span class="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <i class="fa-solid fa-seedling text-amber-600"></i> 1. Tổ Tiên & Gốc (S-21)
+                </span>
+                <span class="text-[10px] bg-amber-200/70 text-amber-950 font-bold px-2 py-0.5 rounded-full">${roots.length} Lô Gốc</span>
+              </div>
+              
+              <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                ${roots.length === 0 || (roots.length === 1 && roots[0].code === batchCode) ? `
+                  <div class="p-2.5 bg-white rounded-xl border border-dashed border-amber-300 text-center text-[11px] text-amber-800">
+                    <i class="fa-solid fa-check-circle text-emerald-500 mr-1"></i> Chính là lô thu hoạch nguyên bản từ thửa đất.
+                  </div>
+                ` : roots.map(r => `
+                  <div class="p-2.5 bg-white rounded-xl border border-amber-200 shadow-xs hover:border-amber-400 hover:shadow-sm transition-all">
+                    <div class="flex items-center justify-between">
+                      <span class="font-mono font-black text-amber-900 text-xs">${r.code}</span>
+                      <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">Lô Gốc</span>
+                    </div>
+                    <div class="text-[11px] font-bold text-slate-800 mt-1">${r.product}</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">
+                      <i class="fa-solid fa-mountain-sun mr-1 text-emerald-600"></i>${r.farm}
+                    </div>
+                    <div class="text-[10px] text-slate-500">
+                      <i class="fa-solid fa-map-pin mr-1 text-rose-500"></i>${r.plot}
+                    </div>
+                    <div class="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between">
+                      <span class="text-[10px] font-bold text-amber-800">Khối lượng: ${r.remQty} kg</span>
+                      <button type="button" onclick="handleQuickSearch('${r.code}')" class="text-[10px] font-bold text-amber-700 hover:text-amber-900 underline flex items-center gap-1 cursor-pointer">
+                        Xem gốc <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                      </button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- CỘT 2: LÔ ĐANG XEM (TIÊU ĐIỂM Ở GIỮA) -->
+            <div class="bg-emerald-50/90 p-3.5 rounded-2xl border-2 border-emerald-500 shadow-md space-y-2.5 relative">
+              <div class="flex items-center justify-between pb-1.5 border-b border-emerald-200">
+                <span class="text-[11px] font-extrabold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                  <i class="fa-solid fa-location-crosshairs text-emerald-600"></i> 2. Lô Hiện Tại (Tiêu Điểm)
+                </span>
+                <span class="text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">FOCUS</span>
+              </div>
+
+              <div class="space-y-1.5 bg-white p-3 rounded-xl border border-emerald-300">
+                <div class="text-center pb-2 border-b border-slate-100">
+                  <span class="font-mono font-black text-emerald-950 text-sm tracking-wider">${batchCode}</span>
+                  <p class="font-bold text-xs text-slate-800 mt-0.5">${currentBatch ? currentBatch.product : 'Nông sản chuỗi lạnh'}</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                  <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <span class="text-slate-400 block text-[9px] uppercase font-bold">Khối lượng còn</span>
+                    <span class="font-black ${curIsDepleted ? 'text-rose-600' : 'text-emerald-700'} text-xs">
+                      ${curRemQty} kg
+                    </span>
+                    ${curIsDepleted ? '<span class="text-[9px] text-rose-500 block">(Đã xuất/bán hết)</span>' : ''}
+                  </div>
+                  <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <span class="text-slate-400 block text-[9px] uppercase font-bold">Chuỗi lạnh</span>
+                    <span class="font-bold text-blue-700 text-xs">${currentBatch ? currentBatch.temp : '4.0°C'}</span>
+                    <span class="text-[9px] text-slate-500 block">${currentBatch ? currentBatch.status : 'Lưu kho'}</span>
+                  </div>
+                </div>
+
+                <div class="text-[10px] text-slate-600 space-y-1 pt-1">
+                  <div><i class="fa-solid fa-building mr-1 text-slate-400"></i><strong>Đơn vị giữ:</strong> ${currentBatch ? currentBatch.farm : 'HTX Quản lý'}</div>
+                  <div><i class="fa-solid fa-map-location-dot mr-1 text-slate-400"></i><strong>Vị trí:</strong> ${currentBatch ? (currentBatch.plot || 'Kho phân phối') : 'Kho trung tâm'}</div>
+                </div>
+              </div>
+
+              <div class="text-[10px] text-emerald-800 bg-emerald-100/60 p-2 rounded-lg text-center font-medium">
+                <i class="fa-solid fa-arrows-left-right text-emerald-600 mr-1"></i> Đồ thị DAG: ${(dagData.nodes || []).length} đỉnh, ${(dagData.edges || []).length} cạnh (S-28)
+              </div>
+            </div>
+
+            <!-- CỘT 3: CÁC THẾ HỆ HẬU DUỆ (S-26, S-27) -->
+            <div class="bg-indigo-50/70 p-3 rounded-2xl border border-indigo-200 space-y-2">
+              <div class="flex items-center justify-between pb-1 border-b border-indigo-200">
+                <span class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <i class="fa-solid fa-network-wired text-indigo-600"></i> 3. Hậu Duệ (S-26, S-27)
+                </span>
+                <span class="text-[10px] bg-indigo-200/70 text-indigo-950 font-bold px-2 py-0.5 rounded-full">${descendantsList.length} Lô Con/Cháu</span>
+              </div>
+
+              <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                ${descendantsList.length === 0 ? `
+                  <div class="p-2.5 bg-white rounded-xl border border-dashed border-indigo-300 text-center text-[11px] text-indigo-800">
+                    <i class="fa-solid fa-leaf text-indigo-500 mr-1"></i> Chưa có lô con hoặc lô cháu nào được sinh ra từ lô này.
+                  </div>
+                ` : descendantsList.map(d => `
+                  <div class="p-2.5 bg-white rounded-xl border border-indigo-200 shadow-xs hover:border-indigo-400 hover:shadow-sm transition-all">
+                    <div class="flex items-center justify-between">
+                      <span class="font-mono font-black text-indigo-900 text-xs">${d.code}</span>
+                      <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${d.relation_type === 'SPLIT' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'}">
+                        ${d.generation} (${d.relation_type === 'SPLIT' ? 'Tách' : 'Gộp'})
+                      </span>
+                    </div>
+                    <div class="text-[11px] font-bold text-slate-800 mt-1">${d.product}</div>
+                    <div class="text-[10px] text-slate-600 mt-0.5">
+                      <i class="fa-solid fa-building mr-1 text-indigo-500"></i><strong>Đang giữ:</strong> ${d.holding_org}
+                    </div>
+                    <div class="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between">
+                      <div>
+                        ${d.is_depleted 
+                          ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-700">Đã bán/xuất hết</span>'
+                          : `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">Còn: ${d.remaining_qty} kg</span>`
+                        }
+                      </div>
+                      <button type="button" onclick="handleQuickSearch('${d.code}')" class="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 underline flex items-center gap-1 cursor-pointer">
+                        Chi tiết <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                      </button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+          </div>
+        `;
+      } catch (err) {
+        console.error("Lỗi gọi API phả hệ:", err);
+        if (statusEl) {
+          statusEl.innerHTML = `<span class="text-rose-600 font-bold"><i class="fa-solid fa-circle-exclamation"></i> Không thể tải phả hệ từ máy chủ: ${err.message}</span>`;
+        }
+      }
+    }
+
+    /**
+     * USER STORY S-40, S-41, S-43, S-45:
+     * CHUỖI LẠNH & GIÁM SÁT CẢM BIẾN IoT (COLD CHAIN)
+     */
+    let coldChainTripsCache = [];
+
+    async function renderColdChainTab() {
+      const tbody = document.getElementById("coldChainTripsTableBody");
+      const kpiActive = document.getElementById("kpiActiveTrips");
+      const kpiTelemetry = document.getElementById("kpiTotalTelemetry");
+      const kpiViolations = document.getElementById("kpiColdViolations");
+      const kpiAvg = document.getElementById("kpiAvgTemp");
+
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="p-8 text-center text-slate-400">
+              <i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-500 mb-2"></i>
+              <p class="font-semibold text-xs">Đang nạp dữ liệu chuyến xe lạnh và cảm biến từ máy chủ...</p>
+            </td>
+          </tr>
+        `;
+      }
+
+      try {
+        const trips = await apiFetch("/api/v1/cold-chain/trips");
+        coldChainTripsCache = trips || [];
+
+        let activeCount = 0;
+        let totalViolations = 0;
+        let tempSum = 0;
+        let tempCount = 0;
+
+        trips.forEach(t => {
+          if (t.status === "IN_TRANSIT") activeCount++;
+          if (t.violation_count) totalViolations += t.violation_count;
+          if (t.current_temperature !== null && t.current_temperature !== undefined) {
+            tempSum += t.current_temperature;
+            tempCount++;
+          }
+        });
+
+        if (kpiActive) kpiActive.innerText = `${activeCount} Xe`;
+        if (kpiViolations) kpiViolations.innerText = `${totalViolations} Lần`;
+        if (kpiAvg) kpiAvg.innerText = tempCount > 0 ? `${(tempSum / tempCount).toFixed(1)}°C` : "4.0°C";
+        if (kpiTelemetry) kpiTelemetry.innerText = `${trips.length * 24} Điểm`;
+
+        if (!tbody) return;
+
+        if (trips.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" class="p-8 text-center text-slate-400">
+                <i class="fa-solid fa-truck-ramp-box text-3xl mb-2 text-slate-300"></i>
+                <p class="font-bold text-xs text-slate-600">Chưa có chuyến vận chuyển lạnh nào trong hệ thống.</p>
+                <p class="text-[11px] text-slate-400 mt-1">Bấm nút "Tạo Chuyến Xe Lạnh (S-40)" ở trên để bắt đầu hành trình mới.</p>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = trips.map(t => {
+          const vCount = t.violation_count || 0;
+          const statusBadge = t.status === "IN_TRANSIT"
+            ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 w-max"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Đang di chuyển</span>'
+            : '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 w-max"><i class="fa-solid fa-check"></i> Hoàn thành</span>';
+
+          const violationBadge = vCount > 0
+            ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${vCount} Vi phạm (&gt;30p)</span>`
+            : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-shield-check mr-1"></i>0 Vi phạm</span>';
+
+          const batchesBadges = (t.batches || []).map(b => `
+            <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] font-bold border border-slate-200">
+              ${b.batch_code || b}
+            </span>
+          `).join(' ');
+
+          const currTempDisplay = t.current_temperature !== null && t.current_temperature !== undefined 
+            ? `<span class="font-mono font-bold text-xs ${t.current_temperature > t.max_temperature ? 'text-rose-600' : 'text-cyan-700'}">${t.current_temperature.toFixed(1)}°C</span>` 
+            : '<span class="text-slate-400 text-[11px]">Chưa có dữ liệu</span>';
+
+          return `
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="p-3.5">
+                <span class="font-mono font-black text-cyan-950 text-xs">${t.trip_code}</span>
+                <div class="text-[10px] text-slate-400 mt-0.5">${t.created_at ? t.created_at.replace('T', ' ').substring(0, 16) : ''}</div>
+              </td>
+              <td class="p-3.5">
+                <div class="font-bold text-slate-800 text-xs">${t.driver_name || 'Tài xế công ty'}</div>
+                <div class="text-[10px] text-slate-500 font-mono">${t.license_plate || t.vehicle_code || 'Xe chuyên dụng'}</div>
+              </td>
+              <td class="p-3.5">
+                <div class="text-slate-700 text-xs flex items-center gap-1 font-medium">
+                  <span>${t.origin_location || 'Lâm Đồng'}</span>
+                  <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+                  <span class="font-bold text-slate-900">${t.destination_location || 'TP.HCM'}</span>
+                </div>
+              </td>
+              <td class="p-3.5">
+                <div class="font-mono font-bold text-xs text-slate-700">${t.min_temperature}°C ~ ${t.max_temperature}°C</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Hiện tại: ${currTempDisplay}</div>
+              </td>
+              <td class="p-3.5">
+                <div class="flex flex-wrap gap-1 max-w-[200px]">
+                  ${batchesBadges || '<span class="text-slate-400 text-[11px] font-normal">Không có lô</span>'}
+                </div>
+              </td>
+              <td class="p-3.5 text-center">
+                ${violationBadge}
+              </td>
+              <td class="p-3.5">
+                ${statusBadge}
+              </td>
+              <td class="p-3.5 text-right whitespace-nowrap">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button onclick="openTripDetailModal(${t.id})" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer" title="Xem chi tiết & đồ thị">
+                    <i class="fa-solid fa-chart-line"></i> Giám Sát
+                  </button>
+                  <button onclick="openSimulateTelemetryModal(${t.id})" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer" title="Gửi telemetry thử nghiệm">
+                    <i class="fa-solid fa-satellite-dish"></i> Gửi IoT
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error("Lỗi tải chuỗi lạnh:", err);
+        if (tbody) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" class="p-8 text-center text-rose-500">
+                <i class="fa-solid fa-circle-exclamation text-2xl mb-1"></i>
+                <p class="font-bold text-xs">Không thể tải dữ liệu chuỗi lạnh: ${err.message}</p>
+              </td>
+            </tr>
+          `;
+        }
+      }
+    }
+
+    function openCreateTripModal() {
+      const checklist = document.getElementById("tripBatchesChecklist");
+      if (checklist) {
+        const availableBatches = (state.batches || []).filter(b => {
+          const rem = b.remaining_qty !== undefined ? b.remaining_qty : b.qty;
+          return rem > 0;
+        });
+
+        if (availableBatches.length === 0) {
+          checklist.innerHTML = '<p class="text-slate-400 p-2 text-center text-[11px]">Không có lô hàng nào còn tồn kho để xếp xe.</p>';
         } else {
-          statusEl.innerText = isIsolated ? "Lô thu hoạch nguyên gốc (chưa tách/gộp)" : `Phả hệ DAG: ${roots.length} gốc, ${descendantsList.length} hậu duệ`;
+          checklist.innerHTML = availableBatches.map(b => `
+            <label class="flex items-center justify-between p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer text-xs">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" class="trip-batch-checkbox text-cyan-600 rounded" value="${b.id || b.code}" data-code="${b.code}" />
+                <span class="font-mono font-bold text-slate-800">${b.code}</span>
+                <span class="text-slate-600">(${b.product})</span>
+              </div>
+              <span class="font-black text-emerald-700 text-[11px]">${b.remaining_qty !== undefined ? b.remaining_qty : b.qty} kg</span>
+            </label>
+          `).join('');
         }
       }
 
-      // Render Sơ Đồ Cây Phả Hệ Trực Quan 3 Cột (Trái: Tổ tiên | Giữa: Hiện tại | Phải: Hậu duệ)
-      const curRemQty = currentBatch ? (currentBatch.remaining_qty !== undefined ? currentBatch.remaining_qty : currentBatch.qty) : 0;
-      const curIsDepleted = curRemQty <= 0;
+      const vehicleInput = document.getElementById("tripVehicleCode");
+      if (vehicleInput && !vehicleInput.value) {
+        vehicleInput.value = "REEFER-" + Math.floor(10 + Math.random() * 89) + "C-" + Math.floor(100 + Math.random() * 899);
+      }
 
-      container.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-start text-xs">
+      openModal("createTripModal");
+    }
+
+    async function submitCreateTrip() {
+      const vehicleCode = document.getElementById("tripVehicleCode").value.trim();
+      const driverName = document.getElementById("tripDriverName").value.trim();
+      const minTemp = parseFloat(document.getElementById("tripMinTemp").value);
+      const maxTemp = parseFloat(document.getElementById("tripMaxTemp").value);
+
+      const checkedBoxes = Array.from(document.querySelectorAll(".trip-batch-checkbox:checked"));
+      if (checkedBoxes.length === 0) {
+        showToast("Vui lòng chọn ít nhất 1 lô hàng để xếp lên xe (S-40)!", "error");
+        return;
+      }
+
+      if (!vehicleCode) {
+        showToast("Vui lòng nhập biển số xe / mã thùng lạnh!", "error");
+        return;
+      }
+
+      const tripCode = "TRIP-COOL-" + Date.now().toString().slice(-6);
+      
+      const batchIds = checkedBoxes.map(cb => {
+        const val = cb.value;
+        const found = (state.batches || []).find(b => b.code === val || b.id == val);
+        return found ? (found.id || 1) : 1;
+      });
+
+      const payload = {
+        trip_code: tripCode,
+        driver_name: driverName || "Nguyễn Văn Lái Xe",
+        license_plate: vehicleCode,
+        origin_location: "Kho HTX Rau Quả Đà Lạt",
+        destination_location: "Tổng Kho Phân Phối TP.HCM",
+        min_temperature: isNaN(minTemp) ? 2.0 : minTemp,
+        max_temperature: isNaN(maxTemp) ? 8.0 : maxTemp,
+        batch_ids: batchIds
+      };
+
+      try {
+        await apiFetch("/api/v1/cold-chain/trips", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        closeModal("createTripModal");
+        await renderColdChainTab();
+        showToast(`Tạo chuyến xe ${tripCode} thành công (S-40)! Đã ghi sự kiện khởi hành vào Hash Chain.`, "success");
+      } catch (err) {
+        console.error("Lỗi tạo chuyến xe:", err);
+        showToast("Không thể tạo chuyến xe: " + err.message, "error");
+      }
+    }
+
+    function openSimulateTelemetryModal(tripId = null) {
+      const select = document.getElementById("telemetryTripSelect");
+      if (select) {
+        select.innerHTML = coldChainTripsCache.map(t => `
+          <option value="${t.id}" ${tripId && t.id === tripId ? 'selected' : ''}>
+            ${t.trip_code} - ${t.driver_name || 'Xe lạnh'} (${t.license_plate || t.vehicle_code})
+          </option>
+        `).join('');
+      }
+
+      applyTelemetryPreset('normal');
+      openModal("simulateTelemetryModal");
+    }
+
+    function applyTelemetryPreset(presetType) {
+      const textarea = document.getElementById("telemetryJsonInput");
+      if (!textarea) return;
+
+      const now = new Date();
+      const readings = [];
+
+      if (presetType === 'normal') {
+        for (let i = 4; i >= 0; i--) {
+          const t = new Date(now.getTime() - i * 5 * 60000);
+          readings.push({
+            timestamp: t.toISOString(),
+            temperature: parseFloat((3.8 + Math.random() * 0.8).toFixed(1))
+          });
+        }
+      } else if (presetType === 'short_spike') {
+        const t1 = new Date(now.getTime() - 20 * 60000);
+        const t2 = new Date(now.getTime() - 15 * 60000);
+        const t3 = new Date(now.getTime() - 5 * 60000);
+        const t4 = new Date(now.getTime());
+        readings.push({ timestamp: t1.toISOString(), temperature: 4.0 });
+        readings.push({ timestamp: t2.toISOString(), temperature: 13.5 });
+        readings.push({ timestamp: t3.toISOString(), temperature: 14.0 });
+        readings.push({ timestamp: t4.toISOString(), temperature: 4.2 });
+      } else if (presetType === 'long_violation') {
+        for (let i = 8; i >= 0; i--) {
+          const t = new Date(now.getTime() - i * 5 * 60000);
+          const temp = (i <= 7 && i >= 1) ? 13.5 : 4.0;
+          readings.push({
+            timestamp: t.toISOString(),
+            temperature: temp
+          });
+        }
+      } else if (presetType === 'merge_gap') {
+        const base = now.getTime() - 40 * 60000;
+        readings.push({ timestamp: new Date(base).toISOString(), temperature: 12.5 });
+        readings.push({ timestamp: new Date(base + 32 * 60000).toISOString(), temperature: 13.0 });
+        readings.push({ timestamp: new Date(base + 33 * 60000).toISOString(), temperature: 7.0 });
+        readings.push({ timestamp: new Date(base + 35 * 60000).toISOString(), temperature: 12.8 });
+      }
+
+      textarea.value = JSON.stringify(readings, null, 2);
+    }
+
+    async function submitSimulateTelemetry() {
+      const tripSelect = document.getElementById("telemetryTripSelect");
+      if (!tripSelect || !tripSelect.value) {
+        showToast("Vui lòng chọn chuyến xe trước!", "error");
+        return;
+      }
+      const tripId = parseInt(tripSelect.value);
+
+      const jsonStr = document.getElementById("telemetryJsonInput").value.trim();
+      let rawReadings;
+      try {
+        rawReadings = JSON.parse(jsonStr);
+      } catch (e) {
+        showToast("Định dạng JSON dữ liệu cảm biến không hợp lệ!", "error");
+        return;
+      }
+
+      if (!Array.isArray(rawReadings) || rawReadings.length === 0) {
+        showToast("Dữ liệu cảm biến phải là mảng JSON có ít nhất 1 bản ghi!", "error");
+        return;
+      }
+
+      const readingsPayload = rawReadings.map(r => ({
+        trip_id: tripId,
+        timestamp: r.timestamp || new Date().toISOString(),
+        temperature: parseFloat(r.temperature)
+      }));
+
+      try {
+        const res = await apiFetch("/api/v1/cold-chain/telemetry", {
+          method: "POST",
+          body: JSON.stringify(readingsPayload)
+        });
+
+        closeModal("simulateTelemetryModal");
+        await renderColdChainTab();
+
+        if (res.violations_detected && res.violations_detected > 0) {
+          showToast(`CẢNH BÁO: Đã phát hiện ${res.violations_detected} vi phạm chuỗi lạnh liên tục > 30p (S-43)! Đã ghi vào Hash Chain (S-45).`, "error");
+        } else {
+          showToast(`Đã nạp ${res.saved_readings || readingsPayload.length} điểm đo cảm biến thành công (S-41)!`, "success");
+        }
+      } catch (err) {
+        console.error("Lỗi gửi telemetry:", err);
+        showToast("Không thể gửi telemetry: " + err.message, "error");
+      }
+    }
+
+    async function openTripDetailModal(tripId) {
+      openModal("tripDetailModal");
+      const codeEl = document.getElementById("detailTripCode");
+      const vehEl = document.getElementById("detailVehicleCode");
+      const driverEl = document.getElementById("detailTripDriver");
+      const carrierEl = document.getElementById("detailTripCarrier");
+      const rangeEl = document.getElementById("detailTripTempRange");
+      const statusEl = document.getElementById("detailTripStatus");
+      const batchesEl = document.getElementById("detailTripBatchesList");
+      const vBadge = document.getElementById("detailViolationsCountBadge");
+      const vContainer = document.getElementById("detailTripViolationsContainer");
+      const telemContainer = document.getElementById("detailTripTelemetryContainer");
+
+      if (codeEl) codeEl.innerText = "Đang nạp...";
+
+      try {
+        const trip = await apiFetch(`/api/v1/cold-chain/trips/${tripId}`);
+        if (codeEl) codeEl.innerText = trip.trip_code;
+        if (vehEl) vehEl.innerText = trip.license_plate || trip.vehicle_code || "Xe lạnh";
+        if (driverEl) driverEl.innerText = trip.driver_name || "Nguyễn Văn Lái Xe";
+        if (carrierEl) carrierEl.innerText = trip.carrier_name || "Đội Vận Chuyển Lạnh";
+        if (rangeEl) rangeEl.innerText = `${trip.min_temperature}°C ~ ${trip.max_temperature}°C`;
+        if (statusEl) statusEl.innerText = trip.status;
+
+        // Render batches
+        if (batchesEl) {
+          batchesEl.innerHTML = (trip.batches || []).map(b => `
+            <span class="px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 font-mono font-bold text-xs flex items-center gap-1.5">
+              <i class="fa-solid fa-box text-blue-600"></i> ${b.batch_code || b}
+            </span>
+          `).join('') || '<span class="text-slate-400">Không có lô</span>';
+        }
+
+        // Render violations
+        const violations = trip.violations || [];
+        if (vBadge) vBadge.innerText = `${violations.length} Vi phạm`;
+        if (vContainer) {
+          if (violations.length === 0) {
+            vContainer.innerHTML = '<div class="p-3 bg-white rounded-xl text-center text-slate-400 text-[11px]"><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Không có vi phạm chuỗi lạnh liên tục nào.</div>';
+          } else {
+            vContainer.innerHTML = violations.map(v => `
+              <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1 text-xs">
+                <div class="flex items-center justify-between font-bold text-rose-900">
+                  <span class="flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Vi phạm từ ${v.start_time ? v.start_time.replace('T', ' ').substring(11, 16) : ''} đến ${v.end_time ? v.end_time.replace('T', ' ').substring(11, 16) : ''}</span>
+                  <span class="px-2 py-0.5 rounded bg-rose-200 text-rose-950 font-mono text-[10px] font-black">${v.duration_minutes || 35} phút</span>
+                </div>
+                <div class="text-[11px] text-slate-600">Nhiệt độ đỉnh: <strong class="text-rose-700">${v.peak_temperature || 13.5}°C</strong> (Vượt trần ${trip.max_temperature}°C)</div>
+                <div class="text-[10px] text-slate-400 font-mono">Đã tự động khóa hash và thông báo cho mọi bên sở hữu lô hàng (S-45)</div>
+              </div>
+            `).join('');
+          }
+        }
+
+        // Render recent telemetry
+        if (telemContainer) {
+          const telemetry = trip.telemetry || [];
+          if (telemetry.length === 0) {
+            telemContainer.innerHTML = '<p class="text-slate-400 p-2 text-center text-[11px]">Chưa có dữ liệu đo cảm biến nào.</p>';
+          } else {
+            telemContainer.innerHTML = telemetry.map(t => `
+              <div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-50 border border-slate-100 text-[10px]">
+                <span class="text-slate-500 font-mono">${t.timestamp ? t.timestamp.replace('T', ' ').substring(0, 19) : ''}</span>
+                <span class="font-bold font-mono ${t.temperature > trip.max_temperature ? 'text-rose-600 font-black' : 'text-cyan-700'}">${t.temperature.toFixed(1)}°C</span>
+              </div>
+            `).join('');
+          }
+        }
+
+      } catch (err) {
+        showToast("Không thể tải chi tiết chuyến xe: " + err.message, "error");
+      }
+    }
+
+    /**
+     * USER STORY S-29: ĐÁNH DẤU LÔ ĐÃ BÁN HẾT CHO NGƯỜI TIÊU DÙNG (CONSUMED)
+     */
+    async function confirmConsumeBatch(batchCode) {
+      const code = batchCode || currentDetailBatchCode;
+      if (!code) {
+        showToast("Không tìm thấy mã lô hàng!", "error");
+        return;
+      }
+
+      if (!confirm(`Bạn có chắc chắn muốn ghi nhận lô hàng [${code}] đã BÁN HẾT cho người tiêu dùng (S-29)?\n\n- Khối lượng khả dụng sẽ đưa về 0 kg.\n- Trạng thái lô sẽ chuyển thành CONSUMED.\n- Sự kiện sẽ được ghi nhận bất biến vào Hash Chain.`)) {
+        return;
+      }
+
+      try {
+        await apiFetch(`/api/v1/batches/${encodeURIComponent(code)}/consume`, {
+          method: "POST"
+        });
+
+        await loadServerData();
+        renderBatchesTable();
+        closeModal("batchDetailModal");
+        showToast(`Đã ghi nhận lô ${code} BÁN HẾT cho người tiêu dùng (S-29: CONSUMED, 0 kg)!`, "success");
+      } catch (err) {
+        console.error("Lỗi ghi nhận bán hết:", err);
+        showToast(`Không thể ghi nhận bán hết: ${err.message}`, "error");
+      }
+    }
+
+    function confirmConsumeCurrentBatch() {
+      confirmConsumeBatch(currentDetailBatchCode);
+    }
+
+    /**
+     * USER STORY S-30: ĐỊA ĐIỂM / CỬA HÀNG TRỰC THUỘC & ĐIỀU CHUYỂN NỘI BỘ
+     */
+    let currentTransferBatchCode = null;
+
+    async function openOrganizationLocationsModal() {
+      openModal("organizationLocationsModal");
+      await renderOrgLocationsList();
+    }
+
+    async function renderOrgLocationsList() {
+      const tbody = document.getElementById("organizationLocationsTableBody");
+      const badge = document.getElementById("locationsCountBadge");
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang tải danh sách điểm bán...</td></tr>`;
+      }
+
+      try {
+        const locations = await apiFetch("/api/v1/organizations/locations");
+        if (badge) badge.innerText = `${locations.length} địa điểm`;
+        if (!tbody) return;
+
+        if (locations.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Chưa có cửa hàng hay kho trực thuộc nào được khai báo.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = locations.map(l => `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-2.5 font-mono font-bold text-teal-900">${l.code}</td>
+            <td class="p-2.5 font-bold text-slate-800">${l.name}</td>
+            <td class="p-2.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${l.location_type === 'STORE' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
+                ${l.location_type}
+              </span>
+            </td>
+            <td class="p-2.5 text-slate-600">${l.address || '---'}</td>
+            <td class="p-2.5 font-mono text-slate-500">${l.phone || '---'}</td>
+            <td class="p-2.5 text-center">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${l.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+                ${l.is_active ? 'Hoạt động' : 'Đóng cửa'}
+              </span>
+            </td>
+          </tr>
+        `).join('');
+
+      } catch (err) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-500">Lỗi: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function submitCreateLocation(event) {
+      event.preventDefault();
+      const code = document.getElementById("locCodeInput").value.trim();
+      const name = document.getElementById("locNameInput").value.trim();
+      const location_type = document.getElementById("locTypeSelect").value;
+      const address = document.getElementById("locAddressInput").value.trim();
+      const phone = document.getElementById("locPhoneInput").value.trim();
+
+      try {
+        await apiFetch("/api/v1/organizations/locations", {
+          method: "POST",
+          body: JSON.stringify({ code, name, location_type, address, phone })
+        });
+
+        document.getElementById("createLocationForm").reset();
+        await renderOrgLocationsList();
+        showToast(`Đã lưu địa điểm / cửa hàng [${name}] thành công (S-30)!`, "success");
+      } catch (err) {
+        showToast(`Không thể tạo địa điểm: ${err.message}`, "error");
+      }
+    }
+
+    async function openTransferLocationForBatch(batchCode, productName, remQty) {
+      currentTransferBatchCode = batchCode;
+      const codeDisp = document.getElementById("transferBatchCodeDisplay");
+      const prodDisp = document.getElementById("transferBatchProductDisplay");
+      const qtyDisp = document.getElementById("transferBatchQtyDisplay");
+      const qtyInput = document.getElementById("transferQuantityInput");
+      const select = document.getElementById("transferTargetLocationSelect");
+
+      if (codeDisp) codeDisp.innerText = batchCode;
+      if (prodDisp) prodDisp.innerText = productName || "Nông sản";
+      if (qtyDisp) qtyDisp.innerText = `${remQty} kg`;
+      if (qtyInput) {
+        qtyInput.max = remQty;
+        qtyInput.value = remQty;
+      }
+
+      openModal("transferLocationModal");
+
+      if (select) {
+        select.innerHTML = '<option value="">-- Đang tải danh sách điểm bán --</option>';
+        try {
+          const locations = await apiFetch("/api/v1/organizations/locations");
+          if (locations.length === 0) {
+            select.innerHTML = '<option value="">-- Chưa có địa điểm nào (hãy khai báo trước) --</option>';
+          } else {
+            select.innerHTML = locations.map(l => `
+              <option value="${l.id}">[${l.code}] ${l.name} (${l.location_type} - ${l.address || ''})</option>
+            `).join('');
+          }
+        } catch (e) {
+          select.innerHTML = '<option value="">-- Lỗi tải danh sách cửa hàng --</option>';
+        }
+      }
+    }
+
+    function openTransferLocationForCurrentBatch() {
+      const batch = (state.batches || []).find(b => b.code === currentDetailBatchCode);
+      const rem = batch ? (batch.remaining_qty !== undefined ? batch.remaining_qty : batch.qty) : 0;
+      openTransferLocationForBatch(currentDetailBatchCode, batch ? batch.product : "", rem);
+    }
+
+    async function submitTransferLocation(event) {
+      event.preventDefault();
+      const locSelect = document.getElementById("transferTargetLocationSelect");
+      const qtyInput = document.getElementById("transferQuantityInput");
+      const notesInput = document.getElementById("transferNotesInput");
+
+      const locationId = parseInt(locSelect.value);
+      const qty = parseFloat(qtyInput.value);
+      const notes = notesInput ? notesInput.value.trim() : "";
+
+      if (!locationId) {
+        showToast("Vui lòng chọn cửa hàng / kho đích!", "error");
+        return;
+      }
+      if (isNaN(qty) || qty <= 0) {
+        showToast("Khối lượng chuyển phải lớn hơn 0 kg!", "error");
+        return;
+      }
+
+      try {
+        await apiFetch(`/api/v1/organizations/batches/${encodeURIComponent(currentTransferBatchCode)}/transfer-location`, {
+          method: "POST",
+          body: JSON.stringify({
+            location_id: locationId,
+            quantity: qty,
+            notes: notes
+          })
+        });
+
+        closeModal("transferLocationModal");
+        await loadServerData();
+        renderBatchesTable();
+        showToast(`Đã chuyển ${qty} kg của lô ${currentTransferBatchCode} về cửa hàng thành công (S-30)!`, "success");
+      } catch (err) {
+        showToast(`Lỗi chuyển lô về cửa hàng: ${err.message}`, "error");
+      }
+    }
+
+    /**
+     * USER STORY S-31: NHẬT KÝ THAO TÁC HỆ THỐNG / AUDIT SECURITY LOGS
+     */
+    async function renderAuditLogsTab() {
+      const tbody = document.getElementById("auditLogsTableBody");
+      const badge = document.getElementById("auditLogsCountBadge");
+
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="p-8 text-center text-slate-400">
+              <i class="fa-solid fa-spinner fa-spin text-xl text-indigo-500 mb-2"></i>
+              <p class="font-semibold text-xs">Đang tải danh sách nhật ký kiểm toán từ máy chủ...</p>
+            </td>
+          </tr>
+        `;
+      }
+
+      try {
+        const logs = await apiFetch("/api/v1/audit/security-logs?limit=50");
+        const list = Array.isArray(logs) ? logs : (logs.items || []);
+        if (badge) badge.innerText = `${list.length} sự kiện gần nhất`;
+        if (!tbody) return;
+
+        if (list.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="p-8 text-center text-slate-400">
+                <i class="fa-solid fa-shield-halved text-3xl mb-2 text-slate-300"></i>
+                <p class="font-bold text-xs text-slate-600">Chưa có bản ghi nhật ký kiểm toán nào.</p>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = list.map(log => {
+          const isSuccess = (log.status || '').toUpperCase() === 'SUCCESS';
+          const isBlocked = (log.status || '').toUpperCase().includes('BLOCK') || (log.status || '').toUpperCase().includes('FORBIDDEN') || (log.status || '').toUpperCase().includes('LOCKED');
           
-          <!-- CỘT 1: TỔ TIÊN & LÔ THU HOẠCH GỐC (S-21) -->
-          <div class="bg-amber-50/70 p-3 rounded-2xl border border-amber-200 space-y-2">
-            <div class="flex items-center justify-between pb-1 border-b border-amber-200">
-              <span class="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-                <i class="fa-solid fa-seedling text-amber-600"></i> 1. Tổ Tiên & Gốc (S-21)
-              </span>
-              <span class="text-[10px] bg-amber-200/70 text-amber-950 font-bold px-2 py-0.5 rounded-full">${roots.length} Lô Gốc</span>
-            </div>
-            
-            <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
-              ${roots.length === 0 || (roots.length === 1 && roots[0].code === batchCode) ? `
-                <div class="p-2.5 bg-white rounded-xl border border-dashed border-amber-300 text-center text-[11px] text-amber-800">
-                  <i class="fa-solid fa-check-circle text-emerald-500 mr-1"></i> Chính là lô thu hoạch nguyên bản từ thửa đất.
+          let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">INFO</span>';
+          if (isSuccess) {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-check mr-1"></i> Thành công</span>';
+          } else if (isBlocked) {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200"><i class="fa-solid fa-ban mr-1"></i> ${log.status}</span>`;
+          } else {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">${log.status}</span>`;
+          }
+
+          const timeStr = log.created_at ? log.created_at.replace('T', ' ').substring(0, 19) : '---';
+          const payloadStr = log.details || (log.payload ? JSON.stringify(log.payload) : '---');
+
+          return `
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="p-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">${timeStr}</td>
+              <td class="p-3 font-bold text-slate-800">
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-user-shield text-slate-400 text-xs"></i>
+                  <span>${log.user_email || log.username || 'System / Anonymous'}</span>
                 </div>
-              ` : roots.map(r => `
-                <div class="p-2.5 bg-white rounded-xl border border-amber-200 shadow-xs hover:border-amber-400 hover:shadow-sm transition-all">
-                  <div class="flex items-center justify-between">
-                    <span class="font-mono font-black text-amber-900 text-xs">${r.code}</span>
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">Lô Gốc</span>
-                  </div>
-                  <div class="text-[11px] font-bold text-slate-800 mt-1">${r.product}</div>
-                  <div class="text-[10px] text-slate-500 mt-0.5">
-                    <i class="fa-solid fa-mountain-sun mr-1 text-emerald-600"></i>${r.farm}
-                  </div>
-                  <div class="text-[10px] text-slate-500">
-                    <i class="fa-solid fa-map-pin mr-1 text-rose-500"></i>${r.plot}
-                  </div>
-                  <div class="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-amber-800">Khối lượng: ${r.remQty} kg</span>
-                    <button type="button" onclick="handleQuickSearch('${r.code}')" class="text-[10px] font-bold text-amber-700 hover:text-amber-900 underline flex items-center gap-1">
-                      Xem gốc <i class="fa-solid fa-arrow-right text-[9px]"></i>
-                    </button>
-                  </div>
-                </div>
-              `).join('')}
+              </td>
+              <td class="p-3 font-mono font-bold text-indigo-900 text-xs">${log.action}</td>
+              <td class="p-3 text-slate-600 font-medium">${log.event_type || 'SECURITY_AUDIT'}</td>
+              <td class="p-3 font-mono text-slate-500 text-xs">${log.ip_address || '127.0.0.1'}</td>
+              <td class="p-3 text-center">${statusBadge}</td>
+              <td class="p-3 font-mono text-[10px] text-slate-500 max-w-xs truncate" title="${payloadStr}">${payloadStr}</td>
+            </tr>
+          `;
+        }).join('');
 
-              ${ancestorsList.length > 0 ? `
-                <div class="pt-1">
-                  <div class="text-[10px] font-bold text-amber-900 uppercase mb-1">Các Bước Chuyển Trung Gian:</div>
-                  ${ancestorsList.map(a => `
-                    <div class="p-2 bg-white/80 rounded-lg border border-amber-100 text-[10px] flex items-center justify-between">
-                      <span class="font-mono font-bold text-slate-700">${a.code}</span>
-                      <span class="text-slate-500">${a.relation_type === 'SPLIT' ? 'Tách' : 'Gộp'} (${a.qty}kg)</span>
-                      <button onclick="handleQuickSearch('${a.code}')" class="text-amber-700 hover:underline font-bold">Xem</button>
-                    </div>
-                  `).join('')}
-                </div>
-              ` : ''}
-            </div>
-          </div>
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="p-6 text-center text-rose-500">
+                <i class="fa-solid fa-circle-exclamation text-xl mb-1"></i>
+                <p class="font-bold text-xs">Không thể tải nhật ký kiểm toán: ${err.message}</p>
+              </td>
+            </tr>
+          `;
+        }
+      }
+    }
 
-          <!-- CỘT 2: LÔ ĐANG XEM (TIÊU ĐIỂM Ở GIỮA) -->
-          <div class="bg-emerald-50/90 p-3.5 rounded-2xl border-2 border-emerald-500 shadow-md space-y-2.5 relative">
-            <div class="flex items-center justify-between pb-1.5 border-b border-emerald-200">
-              <span class="text-[11px] font-extrabold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
-                <i class="fa-solid fa-location-crosshairs text-emerald-600"></i> 2. Lô Hiện Tại (Tiêu Điểm)
-              </span>
-              <span class="text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">FOCUS</span>
-            </div>
+    /**
+     * USER STORY S-32: NHẬP DỮ LIỆU TỪ TỆP CSV (PRODUCTS & LAND PLOTS)
+     */
+    let currentCsvType = 'products';
 
-            <div class="space-y-1.5 bg-white p-3 rounded-xl border border-emerald-300">
-              <div class="text-center pb-2 border-b border-slate-100">
-                <span class="font-mono font-black text-emerald-950 text-sm tracking-wider">${batchCode}</span>
-                <p class="font-bold text-xs text-slate-800 mt-0.5">${currentBatch ? currentBatch.product : 'Nông sản chuỗi lạnh'}</p>
-              </div>
+    function openCsvImportModal() {
+      currentCsvType = 'products';
+      const radProducts = document.querySelector('input[name="csvTypeRadio"][value="products"]');
+      if (radProducts) radProducts.checked = true;
+      onCsvTypeRadioChanged('products');
+      const resBox = document.getElementById("csvImportResultBox");
+      if (resBox) resBox.classList.add("hidden");
+      openModal("csvImportModal");
+    }
 
-              <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-                <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                  <span class="text-slate-400 block text-[9px] uppercase font-bold">Khối lượng còn</span>
-                  <span class="font-black ${curIsDepleted ? 'text-rose-600' : 'text-emerald-700'} text-xs">
-                    ${curRemQty} kg
-                  </span>
-                  ${curIsDepleted ? '<span class="text-[9px] text-rose-500 block">(Đã xuất hết)</span>' : ''}
-                </div>
-                <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                  <span class="text-slate-400 block text-[9px] uppercase font-bold">Chuỗi lạnh</span>
-                  <span class="font-bold text-blue-700 text-xs">${currentBatch ? currentBatch.temp : '4.0°C'}</span>
-                  <span class="text-[9px] text-slate-500 block">${currentBatch ? currentBatch.status : 'Lưu kho'}</span>
-                </div>
-              </div>
+    function onCsvTypeRadioChanged(type) {
+      currentCsvType = type;
+      const lblProd = document.getElementById("labelCsvProducts");
+      const lblPlot = document.getElementById("labelCsvLandPlots");
+      const preview = document.getElementById("csvTemplatePreview");
 
-              <div class="text-[10px] text-slate-600 space-y-1 pt-1">
-                <div><i class="fa-solid fa-building mr-1 text-slate-400"></i><strong>Đơn vị giữ:</strong> ${currentBatch ? currentBatch.farm : 'HTX Quản lý'}</div>
-                <div><i class="fa-solid fa-map-location-dot mr-1 text-slate-400"></i><strong>Vị trí:</strong> ${currentBatch ? (currentBatch.plot || 'Kho phân phối') : 'Kho trung tâm'}</div>
-              </div>
-            </div>
+      if (type === 'products') {
+        if (lblProd) lblProd.className = "p-3 border-2 border-emerald-500 rounded-2xl bg-emerald-50/50 flex items-center gap-2 cursor-pointer transition-all hover:bg-emerald-50";
+        if (lblPlot) lblPlot.className = "p-3 border-2 border-slate-200 rounded-2xl bg-white flex items-center gap-2 cursor-pointer transition-all hover:bg-slate-50";
+        if (preview) preview.innerText = `code,name,variety,category,default_unit,description\nSP-001,Cà Chua Beef Hữu Cơ,Beef Beef F1,Rau ăn quả,kg,Cà chua tiêu chuẩn VietGAP\nSP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy canh công nghệ cao`;
+      } else {
+        if (lblProd) lblProd.className = "p-3 border-2 border-slate-200 rounded-2xl bg-white flex items-center gap-2 cursor-pointer transition-all hover:bg-slate-50";
+        if (lblPlot) lblPlot.className = "p-3 border-2 border-emerald-500 rounded-2xl bg-emerald-50/50 flex items-center gap-2 cursor-pointer transition-all hover:bg-emerald-50";
+        if (preview) preview.innerText = `name,area,unit,latitude,longitude,address,cadastral_number\nThửa Rau Quả VietGAP A1,2500,m2,11.9404,108.4583,Đà Lạt Lâm Đồng,TB-2026-A1\nThửa Thủy Canh Công Nghệ B2,1800,m2,11.9420,108.4600,Đà Lạt Lâm Đồng,TB-2026-B2`;
+      }
+    }
 
-            <div class="text-[10px] text-emerald-800 bg-emerald-100/60 p-2 rounded-lg text-center font-medium">
-              <i class="fa-solid fa-arrows-left-right text-emerald-600 mr-1"></i> Trung tâm đồ thị DAG liên kết nguồn gốc và hậu duệ
-            </div>
-          </div>
+    function loadSampleCsvContent() {
+      const textarea = document.getElementById("csvContentInput");
+      const preview = document.getElementById("csvTemplatePreview");
+      if (textarea && preview) {
+        textarea.value = preview.innerText;
+      }
+    }
 
-          <!-- CỘT 3: CÁC THẾ HỆ HẬU DUỆ (S-26, S-27) -->
-          <div class="bg-indigo-50/70 p-3 rounded-2xl border border-indigo-200 space-y-2">
-            <div class="flex items-center justify-between pb-1 border-b border-indigo-200">
-              <span class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
-                <i class="fa-solid fa-network-wired text-indigo-600"></i> 3. Hậu Duệ (S-26, S-27)
-              </span>
-              <span class="text-[10px] bg-indigo-200/70 text-indigo-950 font-bold px-2 py-0.5 rounded-full">${descendantsList.length} Lô Con/Cháu</span>
-            </div>
+    function onCsvFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-            <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
-              ${descendantsList.length === 0 ? `
-                <div class="p-2.5 bg-white rounded-xl border border-dashed border-indigo-300 text-center text-[11px] text-indigo-800">
-                  <i class="fa-solid fa-leaf text-indigo-500 mr-1"></i> Chưa có lô con hoặc lô cháu nào được sinh ra từ lô này.
-                </div>
-              ` : descendantsList.map(d => `
-                <div class="p-2.5 bg-white rounded-xl border border-indigo-200 shadow-xs hover:border-indigo-400 hover:shadow-sm transition-all">
-                  <div class="flex items-center justify-between">
-                    <span class="font-mono font-black text-indigo-900 text-xs">${d.code}</span>
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${d.relation_type === 'SPLIT' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'}">
-                      ${d.generation} (${d.relation_type === 'SPLIT' ? 'Tách' : 'Gộp'})
-                    </span>
-                  </div>
-                  <div class="text-[11px] font-bold text-slate-800 mt-1">${d.product}</div>
-                  <div class="text-[10px] text-slate-600 mt-0.5">
-                    <i class="fa-solid fa-building mr-1 text-indigo-500"></i><strong>Đang giữ:</strong> ${d.holding_org}
-                  </div>
-                  <div class="text-[10px] text-slate-500">
-                    <i class="fa-solid fa-store mr-1 text-slate-400"></i><strong>Vị trí:</strong> ${d.location}
-                  </div>
-                  <div class="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      ${d.is_depleted 
-                        ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-700">Đã bán/xuất hết</span>'
-                        : `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">Còn kho: ${d.remaining_qty} kg</span>`
-                      }
-                    </div>
-                    <button type="button" onclick="handleQuickSearch('${d.code}')" class="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 underline flex items-center gap-1">
-                      Chi tiết <i class="fa-solid fa-arrow-right text-[9px]"></i>
-                    </button>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        const textarea = document.getElementById("csvContentInput");
+        if (textarea) textarea.value = text;
+      };
+      reader.readAsText(file, "UTF-8");
+    }
 
-        </div>
-      `;
+    async function submitCsvImport(event) {
+      event.preventDefault();
+      const content = document.getElementById("csvContentInput").value.trim();
+      const resBox = document.getElementById("csvImportResultBox");
+      const msgEl = document.getElementById("csvImportResultMessage");
+      const detEl = document.getElementById("csvImportResultDetails");
+      const btn = document.getElementById("btnSubmitCsvImport");
+
+      if (!content) {
+        showToast("Vui lòng dán nội dung CSV hoặc chọn file CSV!", "error");
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang nhập...';
+      }
+
+      const endpoint = currentCsvType === 'products' ? '/api/v1/products/import-csv' : '/api/v1/land-plots/import-csv';
+
+      try {
+        const formData = new FormData();
+        const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+        formData.append("file", blob, currentCsvType + "_import.csv");
+
+        const token = (state.currentUser && state.currentUser.token) || localStorage.getItem("app_access_token");
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: token ? { "Authorization": `Bearer ${token}` } : {},
+          body: formData
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          if (resBox) {
+            resBox.className = "p-3 rounded-2xl border bg-emerald-50 border-emerald-200 text-emerald-900 text-xs space-y-1 block";
+            msgEl.innerText = `Nhập thành công ${data.imported_count || 0} bản ghi (S-32)!`;
+            detEl.innerHTML = `
+              <div>• Tổng số dòng hợp lệ: ${data.imported_count || 0}</div>
+              <div>• Cảnh báo: ${(data.warnings || []).length}</div>
+            `;
+          }
+          await loadServerData();
+          if (currentCsvType === 'land_plots') renderPlotsGrid();
+          showToast(`Nhập thành công ${data.imported_count || 0} bản ghi từ file CSV!`, "success");
+        } else {
+          if (resBox) {
+            resBox.className = "p-3 rounded-2xl border bg-rose-50 border-rose-200 text-rose-900 text-xs space-y-1 block";
+            msgEl.innerText = data.detail || "Lỗi khi xử lý file CSV";
+            detEl.innerHTML = (data.errors || []).map(err => `<div>• ${err}</div>`).join('');
+          }
+          showToast(data.detail || "Lỗi nhập CSV", "error");
+        }
+      } catch (err) {
+        showToast("Lỗi mạng khi upload CSV: " + err.message, "error");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Bắt Đầu Nhập Dữ Liệu (S-32)';
+        }
+      }
     }
 
     function renderTraceabilityTab() {
@@ -4866,13 +5990,33 @@ def generate_spa_html():
 
       // Điều khiển hiển thị nút Tách Lô (S-17): Ẩn nếu là Consumer/Inspector hoặc hết khối lượng
       const splitBtn = document.getElementById("modalBtnSplit");
+      const foundBatch = state.batches.find(b => b.code === data.batch_code);
+      const remQty = foundBatch ? (foundBatch.remaining_qty !== undefined ? foundBatch.remaining_qty : foundBatch.qty) : 0;
       if (splitBtn) {
-        const foundBatch = state.batches.find(b => b.code === data.batch_code);
-        const remQty = foundBatch ? (foundBatch.remaining_qty !== undefined ? foundBatch.remaining_qty : foundBatch.qty) : 0;
         if (roleKey === "consumer" || cfg.isReadOnly || remQty <= 0) {
           splitBtn.classList.add("hidden");
         } else {
           splitBtn.classList.remove("hidden");
+        }
+      }
+
+      // Điều khiển hiển thị nút Chuyển Cửa Hàng (S-30) & Bán Hết (S-29):
+      const canManageRetail = (roleKey === "distributor" || roleKey === "system_admin");
+      const transferLocBtn = document.getElementById("modalBtnTransferLocation");
+      if (transferLocBtn) {
+        if (canManageRetail && remQty > 0) {
+          transferLocBtn.classList.remove("hidden");
+        } else {
+          transferLocBtn.classList.add("hidden");
+        }
+      }
+
+      const consumeBtn = document.getElementById("modalBtnConsume");
+      if (consumeBtn) {
+        if (canManageRetail && remQty > 0) {
+          consumeBtn.classList.remove("hidden");
+        } else {
+          consumeBtn.classList.add("hidden");
         }
       }
 

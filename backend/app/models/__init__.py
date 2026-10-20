@@ -17,7 +17,7 @@ from app.models.handover import Handover, HandoverStatus
 from app.models.hr import DailyTask, Timesheet, Worker
 from app.models.land_plot import LandPlot
 from app.models.material import BatchMaterialLog, Material, MaterialRequest
-from app.models.organization import Organization
+from app.models.organization import Organization, OrganizationLocation
 from app.models.product import Product
 from app.models.recall import (
     Recall,
@@ -50,6 +50,7 @@ __all__ = [
     "Material",
     "MaterialRequest",
     "Organization",
+    "OrganizationLocation",
     "Product",
     "ReadOnlyChainEventError",
     "Recall",

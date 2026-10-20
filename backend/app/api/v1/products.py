@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import csv
+import io
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, require_admin
@@ -132,3 +135,84 @@ def delete_product(
             detail=f"Không tìm thấy sản phẩm có ID {product_id}.",
         )
     ProductRepository.delete(db, product)
+
+
+class ProductCsvImportRequest(BaseModel):
+    csv_content: str = Field(..., description="Nội dung tệp CSV chứa danh mục sản phẩm")
+
+
+class ProductCsvImportResponse(BaseModel):
+    imported_count: int
+    skipped_count: int
+    total_rows: int
+    errors: list[str] = []
+
+
+@router.post("/import-csv", response_model=ProductCsvImportResponse)
+def import_products_csv(
+    payload: ProductCsvImportRequest,
+    db: Annotated[Session, Depends(get_db)],
+    admin_user: Annotated[User, Depends(require_admin)],
+):
+    """
+    User Story S-32: Nhập danh mục sản phẩm từ tệp CSV (Chỉ Admin).
+    - Cột: name (tên sản phẩm), unit (đơn vị: kg/tấn/thùng), description (mô tả), standard (tiêu chuẩn).
+    - Kiểm tra đơn vị tính bắt buộc là enum: 'kg', 'tấn', 'thùng'.
+    - Bỏ qua các sản phẩm trùng tên.
+    """
+    lines = payload.csv_content.strip()
+    if not lines:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nội dung CSV không được để trống.",
+        )
+
+    f = io.StringIO(lines)
+    reader = csv.DictReader(f)
+    imported = 0
+    skipped = 0
+    total = 0
+    errors = []
+
+    valid_units = {"kg", "tấn", "thùng"}
+
+    for idx, row in enumerate(reader, start=2):
+        total += 1
+        clean_row = {str(k).strip().lower(): str(v).strip() for k, v in row.items() if k}
+        name = clean_row.get("name") or clean_row.get("tên sản phẩm") or clean_row.get("tên")
+        unit = clean_row.get("unit") or clean_row.get("đơn vị tính") or clean_row.get("đơn vị")
+        desc = clean_row.get("description") or clean_row.get("mô tả") or ""
+
+        if not name:
+            errors.append(f"Dòng {idx}: Thiếu tên sản phẩm.")
+            skipped += 1
+            continue
+
+        if not unit or unit.lower() not in valid_units:
+            errors.append(f"Dòng {idx} ({name}): Đơn vị tính '{unit}' không hợp lệ. Chỉ chấp nhận 'kg', 'tấn', 'thùng'.")
+            skipped += 1
+            continue
+
+        unit = unit.lower()
+
+        existing = ProductRepository.get_by_name(db, name)
+        if existing:
+            skipped += 1
+            continue
+
+        new_prod = Product(
+            name=name,
+            unit=unit,
+            description=desc if desc else None,
+        )
+        db.add(new_prod)
+        imported += 1
+
+    db.commit()
+    return ProductCsvImportResponse(
+        imported_count=imported,
+        skipped_count=skipped,
+        total_rows=total,
+        errors=errors,
+    )
+

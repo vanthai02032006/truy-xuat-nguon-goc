@@ -1,6 +1,9 @@
+import csv
+import io
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.deps import (
@@ -169,3 +172,98 @@ def delete_land_plot(
             detail="Chỉ Chủ nông trại hoặc Quản trị viên mới có quyền xóa thửa đất.",
         )
     LandPlotRepository.delete(db, plot)
+
+
+class LandPlotCsvImportRequest(BaseModel):
+    csv_content: str = Field(..., description="Nội dung tệp CSV chứa danh sách thửa đất")
+
+
+class LandPlotCsvImportResponse(BaseModel):
+    imported_count: int
+    skipped_count: int
+    total_rows: int
+    errors: list[str] = []
+
+
+@router.post("/import-csv", response_model=LandPlotCsvImportResponse)
+def import_land_plots_csv(
+    payload: LandPlotCsvImportRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    User Story S-32: Nhập danh sách thửa đất từ tệp CSV.
+    - Cột: name (tên thửa), address (địa chỉ), area (diện tích ha), latitude, longitude.
+    - Thuộc về organization_id của người dùng hiện tại (hoặc farm được chỉ định).
+    """
+    if current_user.role in [UserRole.INSPECTOR.value, "inspector"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cán bộ kiểm tra chỉ có quyền xem (Read-only), không được phép thêm thửa đất.",
+        )
+
+    lines = payload.csv_content.strip()
+    if not lines:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nội dung CSV không được để trống.",
+        )
+
+    f = io.StringIO(lines)
+    reader = csv.DictReader(f)
+    imported = 0
+    skipped = 0
+    total = 0
+    errors = []
+
+    target_org_id = current_user.organization_id or 1
+
+    for idx, row in enumerate(reader, start=2):
+        total += 1
+        clean_row = {str(k).strip().lower(): str(v).strip() for k, v in row.items() if k}
+        name = clean_row.get("name") or clean_row.get("tên thửa") or clean_row.get("tên")
+        address = clean_row.get("address") or clean_row.get("địa chỉ") or "Lâm Đồng, Việt Nam"
+        area_str = clean_row.get("area") or clean_row.get("diện tích") or "1.0"
+        lat_str = clean_row.get("latitude") or clean_row.get("vĩ độ") or "11.94"
+        lng_str = clean_row.get("longitude") or clean_row.get("kinh độ") or "108.45"
+
+        if not name:
+            errors.append(f"Dòng {idx}: Thiếu tên thửa đất.")
+            skipped += 1
+            continue
+
+        try:
+            area = float(area_str)
+            if area <= 0:
+                raise ValueError("Diện tích phải > 0")
+        except ValueError:
+            errors.append(f"Dòng {idx} ({name}): Diện tích '{area_str}' không hợp lệ.")
+            skipped += 1
+            continue
+
+        try:
+            lat = float(lat_str)
+            lng = float(lng_str)
+        except ValueError:
+            lat = 11.94
+            lng = 108.45
+
+        new_plot = LandPlot(
+            name=name,
+            address=address,
+            area=area,
+            latitude=lat,
+            longitude=lng,
+            organization_id=target_org_id,
+        )
+        db.add(new_plot)
+        imported += 1
+
+    db.commit()
+    return LandPlotCsvImportResponse(
+        imported_count=imported,
+        skipped_count=skipped,
+        total_rows=total,
+        errors=errors,
+    )
+

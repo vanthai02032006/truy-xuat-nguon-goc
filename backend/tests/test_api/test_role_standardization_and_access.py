@@ -255,3 +255,114 @@ class TestRoleStandardizationAndAccessMatrix:
         # 2. Distributor gọi thẳng API lấy thửa đất của Farm (khác tổ chức) -> 403 Forbidden
         res_cross = client.get(f"/api/v1/land-plots/{plot_10.id}", headers=dist_headers)
         assert res_cross.status_code == 403
+
+    def test_mark_batch_consumed_s29(self, client: TestClient, test_setup, db_session):
+        """User Story S-29: Đánh dấu lô đã bán hết cho người tiêu dùng (status=CONSUMED)."""
+        from app.models.batch import Batch
+
+        dist_user = test_setup["user_distributor"]
+        batch = Batch(
+            batch_code="BATCH-RETAIL-SELL-01",
+            product_name="Dâu Tây New Zealand",
+            organization_id=dist_user.organization_id,
+            initial_quantity=200.0,
+            remaining_quantity=80.0,
+            unit="kg",
+            status="ACTIVE",
+        )
+        db_session.add(batch)
+        db_session.commit()
+
+        dist_headers = get_auth_headers(dist_user.email, dist_user.role, dist_user.organization_id)
+        res = client.post(f"/api/v1/batches/{batch.id}/consume", headers=dist_headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert data["remaining_quantity"] == 0.0
+        assert data["status"] == "CONSUMED"
+
+    def test_organization_locations_and_transfer_s30(self, client: TestClient, test_setup, db_session):
+        """User Story S-30: Quản lý địa điểm/cửa hàng và chuyển lô về cửa hàng."""
+        from app.models.batch import Batch
+
+        dist_user = test_setup["user_distributor"]
+        dist_headers = get_auth_headers(dist_user.email, dist_user.role, dist_user.organization_id)
+
+        # 1. Tạo cửa hàng mới
+        res_loc = client.post(
+            "/api/v1/organizations/locations",
+            headers=dist_headers,
+            json={
+                "name": "BioMart Tây Hồ - Hà Nội",
+                "address": "88 Xuân Diệu, Quảng An, Tây Hồ",
+                "location_type": "STORE",
+            },
+        )
+        assert res_loc.status_code == 201
+        loc_id = res_loc.json()["id"]
+
+        # 2. Xem danh sách địa điểm
+        res_list = client.get("/api/v1/organizations/locations", headers=dist_headers)
+        assert res_list.status_code == 200
+        assert any(l["id"] == loc_id for l in res_list.json())
+
+        # 3. Tạo lô và chuyển lô về cửa hàng
+        batch = Batch(
+            batch_code="BATCH-STORE-TRANSFER-01",
+            product_name="Cà Chua Cherry",
+            organization_id=dist_user.organization_id,
+            initial_quantity=100.0,
+            remaining_quantity=100.0,
+            unit="kg",
+            status="ACTIVE",
+        )
+        db_session.add(batch)
+        db_session.commit()
+
+        res_transfer = client.post(
+            f"/api/v1/organizations/batches/{batch.id}/transfer-location",
+            headers=dist_headers,
+            json={"location_id": loc_id, "notes": "Phân phối đợt sáng"},
+        )
+        assert res_transfer.status_code == 200
+        assert res_transfer.json()["status"] == "ok"
+
+    def test_csv_import_products_and_land_plots_s32(self, client: TestClient, test_setup):
+        """User Story S-32: Nhập danh mục sản phẩm và thửa đất từ CSV."""
+        admin_user = test_setup["user_sysadmin"]
+        farm_user = test_setup["user_farm"]
+        admin_headers = get_auth_headers(admin_user.email, admin_user.role)
+        farm_headers = get_auth_headers(farm_user.email, farm_user.role, farm_user.organization_id)
+
+        # 1. Import danh mục sản phẩm CSV (Admin)
+        csv_products = """name,unit,description,standard
+Xoài Cát Hòa Lộc,kg,Xoài đặc sản Tiền Giang,VietGAP
+Gạo ST25 Hữu Cơ,tấn,Gạo ngon nhất thế giới,Hữu cơ
+Nho Mẫu Đơn Ninh Thuận,thùng,Nho ngọt thơm,GlobalGAP
+Trái Cây Lỗi Đơn Vị,bó,Không hợp lệ,Test
+"""
+        res_prod = client.post(
+            "/api/v1/products/import-csv",
+            headers=admin_headers,
+            json={"csv_content": csv_products},
+        )
+        assert res_prod.status_code == 200
+        data_p = res_prod.json()
+        assert data_p["imported_count"] == 3
+        assert data_p["skipped_count"] == 1  # Đơn vị 'bó' bị từ chối
+        assert len(data_p["errors"]) == 1
+
+        # 2. Import danh sách thửa đất CSV (Farm)
+        csv_plots = """name,address,area,latitude,longitude
+Khu Vực Bưởi Da Xanh 01,Mỏ Cày Nam Bến Tre,2.5,10.24,106.37
+Khu Vực Sầu Riêng Ri6 02,Cai Lậy Tiền Giang,3.0,10.35,106.12
+"""
+        res_plots = client.post(
+            "/api/v1/land-plots/import-csv",
+            headers=farm_headers,
+            json={"csv_content": csv_plots},
+        )
+        assert res_plots.status_code == 200
+        data_plots = res_plots.json()
+        assert data_plots["imported_count"] == 2
+        assert len(data_plots["errors"]) == 0
+
