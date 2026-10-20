@@ -262,9 +262,7 @@ def list_all_material_logs(
         query = query.filter(
             BatchMaterialLog.organization_id == current_user.organization_id
         )
-    return (
-        query.order_by(BatchMaterialLog.id.desc()).offset(skip).limit(limit).all()
-    )
+    return query.order_by(BatchMaterialLog.id.desc()).offset(skip).limit(limit).all()
 
 
 @router.get("/{batch_id}/materials", response_model=list[BatchMaterialLogResponse])
@@ -383,8 +381,7 @@ def check_batch_phi_compliance(
 
     # Tìm ngày an toàn xa nhất trong tất cả các lần dùng vật tư
     safe_dates = [
-        datetime.strptime(log.safe_harvest_date, "%Y-%m-%d").date()
-        for log in logs
+        datetime.strptime(log.safe_harvest_date, "%Y-%m-%d").date() for log in logs
     ]
     max_safe_dt = max(safe_dates)
     max_safe_date_str = max_safe_dt.strftime("%Y-%m-%d")
@@ -427,4 +424,3 @@ def check_batch_phi_compliance(
         ),
         material_logs=logs,
     )
-

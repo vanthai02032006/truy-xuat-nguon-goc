@@ -8,20 +8,38 @@ from app.core.database import Base
 
 
 class UserRole(str, enum.Enum):
-    # 3 Vai trò cốt lõi của hệ thống
-    ADMIN = "admin"  # Quản trị viên hệ thống (cấu hình, tài khoản, phân quyền, sao lưu)
-    FARM_OWNER = "farm_owner"  # Chủ nông trại (quản lý kinh doanh, tài chính, duyệt chi, bán hàng)
-    SUPERVISOR = (
-        "supervisor"  # Giám sát nông trại (nhật ký canh tác, chấm công, đề xuất vật tư)
+    # 7 Vai trò thuộc các tổ chức độc lập trong chuỗi cung ứng theo Epic E-02:
+    FARM = "farm"  # Vùng trồng (Farm)
+    PROCESSING = "processing"  # Hợp tác xã sơ chế (Processing Co-op)
+    LOGISTICS = (
+        "logistics"  # Đơn vị vận chuyển lạnh (Logistics / Cold Chain Transporter)
     )
+    RETAILER = "retailer"  # Nhà phân phối / Bán lẻ (Distributor / Retailer)
+    INSPECTOR = "inspector"  # Cán bộ kiểm tra (Inspector - Read-only toàn hệ thống)
+    SYSTEM_ADMIN = "system_admin"  # Quản trị hệ thống (System Admin)
+    CONSUMER = "consumer"  # Người tiêu dùng (Consumer - không cần đăng nhập)
 
     # Vai trò kế thừa / tương thích ngược
+    ADMIN = "admin"
+    FARM_OWNER = "farm_owner"
+    SUPERVISOR = "supervisor"
     OWNER = "owner"
     FIELD_MANAGER = "field_manager"
     MEMBER = "member"
-    INSPECTOR = "inspector"
     FARMER = "farmer"
     VUNG_TRONG = "vung_trong"
+
+
+# Danh mục 7 vai trò chuỗi cung ứng độc lập chuẩn Epic E-02
+SUPPLY_CHAIN_ROLES = {
+    UserRole.FARM.value,
+    UserRole.PROCESSING.value,
+    UserRole.LOGISTICS.value,
+    UserRole.RETAILER.value,
+    UserRole.INSPECTOR.value,
+    UserRole.SYSTEM_ADMIN.value,
+    UserRole.CONSUMER.value,
+}
 
 
 class User(Base):

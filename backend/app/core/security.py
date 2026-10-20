@@ -45,6 +45,7 @@ def create_access_token(
         "sub": str(subject),
         "role": role,
         "org_id": organization_id,
+        "organization_id": organization_id,
         "iat": now,
     }
     encoded_jwt = jwt.encode(
