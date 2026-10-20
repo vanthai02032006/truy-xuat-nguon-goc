@@ -5,8 +5,8 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.batches import router as batches_router
 from app.api.v1.chain_events import router as chain_events_router
 from app.api.v1.cold_chain import router as cold_chain_router
-from app.api.v1.farming import router as farming_router
 from app.api.v1.farmers import router as farmers_router
+from app.api.v1.farming import router as farming_router
 from app.api.v1.finance import router as finance_router
 from app.api.v1.handovers import router as handovers_router
 from app.api.v1.hr import router as hr_router

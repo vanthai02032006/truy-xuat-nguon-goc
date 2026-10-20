@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
-
 from fastapi import status
 from fastapi.testclient import TestClient
 
 from app.core.security import create_access_token
 from app.models.batch import Batch
 from app.models.chain_event import ChainEvent
-from app.models.cold_chain import ColdChainViolation, TransportTrip, TripBatch
 from app.models.farmer import FarmerIdentity
 from app.models.organization import Organization
 from app.models.user import User, UserRole
-from app.services.hash_chain_service import simulate_tamper_attack, verify_chain_integrity
+from app.services.hash_chain_service import (
+    simulate_tamper_attack,
+    verify_chain_integrity,
+)
 
 
 class TestFinalBacklogSprint678:

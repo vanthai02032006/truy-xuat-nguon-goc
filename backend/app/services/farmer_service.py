@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 
 from app.models.batch import Batch
 from app.models.farmer import FarmerIdentity
-from app.models.land_plot import LandPlot
 from app.models.organization import Organization
 from app.models.user import User, UserRole
 from app.schemas.farmer import (

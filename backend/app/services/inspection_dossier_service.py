@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import secrets
 from datetime import UTC, datetime
-from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.batch import Batch
 from app.models.chain_event import ChainEvent
-from app.models.cold_chain import TransportTrip, TripBatch
+from app.models.cold_chain import TripBatch
 from app.models.farmer import FarmerIdentity
 from app.models.recall import RecallAffectedBatch
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.schemas.inspection_dossier import (
     DossierBatchInfo,
     DossierColdChainInfo,
@@ -123,13 +122,13 @@ class InspectionDossierService:
         try:
             upstream = LineageDagService.trace_upstream_roots(db, batch.id)
             ancestors_data = upstream.get("roots", [])
-        except Exception:
+        except (ValueError, KeyError, AttributeError):
             ancestors_data = []
 
         try:
             downstream = LineageDagService.trace_downstream_descendants(db, batch.id)
             descendants_data = downstream.get("descendants", [])
-        except Exception:
+        except (ValueError, KeyError, AttributeError):
             descendants_data = []
 
         lineage_info = DossierLineageInfo(

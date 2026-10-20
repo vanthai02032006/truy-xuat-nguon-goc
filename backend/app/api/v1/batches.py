@@ -26,13 +26,13 @@ from app.schemas.batch_relation import (
     BatchSplitRequest,
     BatchSplitResponse,
 )
+from app.schemas.inspection_dossier import InspectionDossierResponse
 from app.schemas.lineage_dag import (
     DagGraphResponse,
     DescendantsResponse,
     RootOriginsResponse,
     SeedLineageDagResponse,
 )
-from app.schemas.inspection_dossier import InspectionDossierResponse
 from app.schemas.material import (
     BatchMaterialLogCreate,
     BatchMaterialLogResponse,
