@@ -206,8 +206,48 @@ def verify_batch_access(
         return batch
 
     # Trường hợp là thành viên / quản trị tổ chức (Member / Admin)
-    # Kiểm tra xem lô hàng có thuộc tổ chức của user hay không (AC 2)
-    if batch.organization_id != current_user.organization_id:
+    # Áp dụng quy tắc S-23 & T-54 (Hàm canView):
+    # - Nếu là thao tác đọc (GET, HEAD, OPTIONS): cho phép nếu là đơn vị đang giữ, tổ tiên, hoặc từng giữ
+    # - Nếu là thao tác ghi/sửa/xóa (POST, PUT, PATCH, DELETE): bắt buộc là tổ chức đang trực tiếp giữ lô
+    from app.services.batch_access_service import can_view_batch
+
+    if request.method in ["GET", "HEAD", "OPTIONS"]:
+        allowed, _reason, cutoff_time = can_view_batch(
+            org_id=current_user.organization_id,
+            batch=batch,
+            db=db,
+            user_role=current_user.role,
+        )
+        if not allowed:
+            SecurityLogRepository.log_attempt(
+                db=db,
+                user_id=current_user.id,
+                user_email=current_user.email,
+                user_org_id=current_user.organization_id,
+                attempt_type="cross_tenant_access_denied",
+                target_resource="batch",
+                target_id=str(batch.id),
+                target_org_id=batch.organization_id,
+                endpoint=request.url.path,
+                method=request.method,
+                ip_address=client_ip,
+                description=(
+                    f"Người dùng {current_user.email} (Tổ chức {current_user.organization_id}) "
+                    f"cố tình gọi thẳng API truy cập lô #{batch.id} của Tổ chức {batch.organization_id} (không thuộc phả hệ)."
+                ),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Không có quyền truy cập dữ liệu của tổ chức khác.",
+            )
+        request.state.timeline_cutoff = cutoff_time
+        return batch
+
+    # Thao tác ghi/sửa/xóa: bắt buộc phải là tổ chức đang trực tiếp giữ lô
+    if batch.organization_id != current_user.organization_id and current_user.role not in [
+        UserRole.SYSTEM_ADMIN.value,
+        UserRole.ADMIN.value,
+    ]:
         SecurityLogRepository.log_attempt(
             db=db,
             user_id=current_user.id,
@@ -222,7 +262,7 @@ def verify_batch_access(
             ip_address=client_ip,
             description=(
                 f"Người dùng {current_user.email} (Tổ chức {current_user.organization_id}) "
-                f"cố tình gọi thẳng API truy cập lô #{batch.id} của Tổ chức {batch.organization_id}."
+                f"cố tình gọi thao tác ghi/xóa trên lô #{batch.id} của Tổ chức {batch.organization_id}."
             ),
         )
         raise HTTPException(

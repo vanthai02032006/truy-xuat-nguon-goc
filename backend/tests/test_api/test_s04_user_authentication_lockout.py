@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from fastapi import status
-from fastapi.testclient import TestClient
-
 from app.core.security import get_password_hash
 from app.models.organization import Organization
 from app.models.user import User, UserRole
+from fastapi import status
+from fastapi.testclient import TestClient
 
 
 class TestUserAuthenticationAndLockoutS04:

@@ -16,7 +16,7 @@ from app.repositories.security_log_repository import SecurityLogRepository
 from app.repositories.user_repository import UserRepository
 
 # Regex patterns nhận diện các API thao tác tài nguyên đơn lẻ
-BATCH_DETAIL_REGEX = re.compile(r"^/api/v1/batches/(\d+)(?:/.*)?$")
+BATCH_DETAIL_REGEX = re.compile(r"^/api/v1/(?:batches|handovers/batches)/(\d+)(?:/.*)?$")
 LAND_PLOT_DETAIL_REGEX = re.compile(r"^/api/v1/land-plots/(\d+)(?:/.*)?$")
 
 
@@ -99,17 +99,13 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
 
         client_ip = request.client.host if request.client else "unknown"
 
-        # 4. Kiểm tra Cán bộ kiểm tra (Inspector) cố tình tạo mới lô hàng, tách/gộp hoặc thao tác bàn giao
+        # 4. Kiểm tra Cán bộ kiểm tra (Inspector) bị chặn mọi thao tác ghi/sửa/xóa (trả về 403)
         if (
-            (
-                path.startswith("/api/v1/batches")
-                and method in ["POST", "PUT", "PATCH", "DELETE"]
-            )
-            or (
-                path.startswith("/api/v1/handovers")
-                and method in ["POST", "PUT", "PATCH", "DELETE"]
-            )
-        ) and user_role == UserRole.INSPECTOR.value:
+            path.startswith("/api/v1/")
+            and not path.startswith(("/api/v1/auth/", "/api/v1/recalls"))
+            and method in ["POST", "PUT", "PATCH", "DELETE"]
+            and user_role == UserRole.INSPECTOR.value
+        ):
             db, should_close = _get_db_session()
             try:
                 user_obj = UserRepository.get_by_email(db, user_email)
@@ -120,13 +116,13 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                     user_email=user_email,
                     user_org_id=user_org_id,
                     attempt_type="inspector_write_violation",
-                    target_resource="handover" if "handover" in path else "batch",
-                    target_id="write_action",
+                    target_resource="api_resource",
+                    target_id=method,
                     target_org_id=None,
                     endpoint=path,
                     method=method,
                     ip_address=client_ip,
-                    description="Cán bộ kiểm tra cố gắng thực hiện thao tác ghi/sửa (chỉ được phép đọc).",
+                    description="Cán bộ kiểm tra cố gắng thực hiện thao tác ghi/sửa/xóa (chỉ được phép đọc).",
                 )
             finally:
                 if should_close:
@@ -192,31 +188,68 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                         ]:
                             return await call_next(request)
 
-                        # 5.3 Trường hợp là thành viên chuỗi cung ứng (Farm, Processing, Logistics, Retailer,...)
-                        if batch.organization_id != user_org_id:
-                            SecurityLogRepository.log_attempt(
+                        # 5.3 Áp dụng quy tắc canView(org, batch) theo chuẩn S-23 & Task T-54
+                        from app.services.batch_access_service import can_view_batch
+
+                        if method in ["GET", "HEAD", "OPTIONS"]:
+                            allowed, _reason, cutoff_time = can_view_batch(
+                                org_id=user_org_id,
+                                batch=batch,
                                 db=db,
-                                user_id=current_uid,
-                                user_email=user_email,
-                                user_org_id=user_org_id,
-                                attempt_type="cross_tenant_access_denied",
-                                target_resource="batch",
-                                target_id=str(batch.id),
-                                target_org_id=batch.organization_id,
-                                endpoint=path,
-                                method=method,
-                                ip_address=client_ip,
-                                description=(
-                                    f"Người dùng {user_email} (Tổ chức {user_org_id}) "
-                                    f"cố tình gọi API truy cập lô #{batch.id} của Tổ chức {batch.organization_id}."
-                                ),
+                                user_role=user_role,
                             )
-                            return JSONResponse(
-                                status_code=status.HTTP_403_FORBIDDEN,
-                                content={
-                                    "detail": "Không có quyền truy cập dữ liệu của tổ chức khác."
-                                },
-                            )
+                            if not allowed:
+                                SecurityLogRepository.log_attempt(
+                                    db=db,
+                                    user_id=current_uid,
+                                    user_email=user_email,
+                                    user_org_id=user_org_id,
+                                    attempt_type="cross_tenant_access_denied",
+                                    target_resource="batch",
+                                    target_id=str(batch.id),
+                                    target_org_id=batch.organization_id,
+                                    endpoint=path,
+                                    method=method,
+                                    ip_address=client_ip,
+                                    description=(
+                                        f"Người dùng {user_email} (Tổ chức {user_org_id}) "
+                                        f"cố tình gọi API truy cập lô #{batch.id} của Tổ chức {batch.organization_id} (không thuộc phả hệ)."
+                                    ),
+                                )
+                                return JSONResponse(
+                                    status_code=status.HTTP_403_FORBIDDEN,
+                                    content={
+                                        "detail": "Không có quyền truy cập dữ liệu của tổ chức khác."
+                                    },
+                                )
+                            request.state.timeline_cutoff = cutoff_time
+                            return await call_next(request)
+                        else:
+                            # Thao tác ghi/sửa/xóa: bắt buộc phải là tổ chức đang trực tiếp giữ lô
+                            if batch.organization_id != user_org_id:
+                                SecurityLogRepository.log_attempt(
+                                    db=db,
+                                    user_id=current_uid,
+                                    user_email=user_email,
+                                    user_org_id=user_org_id,
+                                    attempt_type="cross_tenant_access_denied",
+                                    target_resource="batch",
+                                    target_id=str(batch.id),
+                                    target_org_id=batch.organization_id,
+                                    endpoint=path,
+                                    method=method,
+                                    ip_address=client_ip,
+                                    description=(
+                                        f"Người dùng {user_email} (Tổ chức {user_org_id}) "
+                                        f"cố tình gọi thao tác ghi/xóa trên lô #{batch.id} của Tổ chức {batch.organization_id}."
+                                    ),
+                                )
+                                return JSONResponse(
+                                    status_code=status.HTTP_403_FORBIDDEN,
+                                    content={
+                                        "detail": "Không có quyền truy cập dữ liệu của tổ chức khác."
+                                    },
+                                )
                 finally:
                     if should_close:
                         db.close()
