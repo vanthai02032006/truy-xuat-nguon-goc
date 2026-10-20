@@ -15,6 +15,7 @@ class LandPlot(Base):
     latitude = Column(Float, nullable=False)  # Toạ độ vĩ độ (số thực)
     longitude = Column(Float, nullable=False)  # Toạ độ kinh độ (số thực)
     address = Column(String(255), nullable=True)
+    farmer_ref_id = Column(String(50), nullable=True, index=True)
     organization_id = Column(
         Integer,
         ForeignKey("organizations.id", ondelete="CASCADE"),

@@ -25,6 +25,7 @@ class Batch(Base):
         nullable=True,
         index=True,
     )
+    farmer_ref_id = Column(String(50), nullable=True, index=True)
     status = Column(
         String(50),
         nullable=False,

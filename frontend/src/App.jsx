@@ -4,24 +4,32 @@ import ProductManagement from './pages/ProductManagement';
 import ChainIntegrityCheck from './pages/ChainIntegrityCheck';
 import BatchLineageDAG from './pages/BatchLineageDAG';
 import EmergencyRecallManagement from './pages/EmergencyRecallManagement';
+import ColdChainMonitoring from './pages/ColdChainMonitoring';
+import FarmerPrivacyManagement from './pages/FarmerPrivacyManagement';
+import InspectionDossierModal from './components/InspectionDossierModal';
 import {
   Boxes,
   Hash,
   Network,
   ShieldAlert,
   ChevronDown,
-  UserCheck,
   Building2,
+  ThermometerSnowflake,
+  UserCheck,
+  FileText,
+  Printer,
 } from 'lucide-react';
 
 function MainApp() {
   const [activeTab, setActiveTab] = useState('dag'); // Mặc định mở tab Phả hệ lô hàng (DAG)
   const { currentRole, activeRoleConfig, switchRole, isSwitching, currentUser } = useAuthRole();
+  const [showGlobalDossierModal, setShowGlobalDossierModal] = useState(false);
+  const [targetBatchId, setTargetBatchId] = useState(1);
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-800 flex flex-col font-sans">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-16 flex items-center justify-between gap-4">
             {/* Logo & Platform Name */}
@@ -31,19 +39,28 @@ function MainApp() {
               </div>
               <div>
                 <div className="text-base font-bold text-slate-900 leading-tight flex items-center gap-2">
-                  Hệ Thống Truy Xuất Nguồn Gốc
+                  Hệ Thống Truy Xuất Nguồn Gốc Nông Sản
                   <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    Sprint 2 & 3
+                    Sprint 6, 7 & 8 Hoàn Thiện
                   </span>
                 </div>
                 <div className="text-xs text-slate-500 font-medium">
-                  Phả Hệ Lô Hàng (E-05) • Thu Hồi Khẩn Cấp (E-06) • RBAC 7 Vai Trò
+                  Chuỗi Lạnh 5 Kịch Bản (S-42) • Hồ Sơ PDF (S-52) • Ẩn Danh PII NĐ 13 (S-56)
                 </div>
               </div>
             </div>
 
-            {/* 7-Role Switcher Widget */}
+            {/* Quick Action: Xuất Hồ Sơ Kiểm Tra (S-52) & 7-Role Switcher Widget */}
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowGlobalDossierModal(true)}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95"
+                title="Xuất Hồ Sơ Kiểm Tra Truy Xuất Nguồn Gốc (PDF / Bản In)"
+              >
+                <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Xuất Hồ Sơ (PDF)</span>
+              </button>
+
               <div className="hidden md:flex flex-col text-right">
                 <span className="text-[10px] uppercase font-bold text-slate-400">
                   Phiên làm việc (7 Vai trò)
@@ -77,7 +94,7 @@ function MainApp() {
           <div className="flex items-center gap-2 overflow-x-auto py-2 border-t border-slate-100 scrollbar-none">
             <button
               onClick={() => setActiveTab('dag')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                 activeTab === 'dag'
                   ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -88,8 +105,20 @@ function MainApp() {
             </button>
 
             <button
+              onClick={() => setActiveTab('coldchain')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                activeTab === 'coldchain'
+                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <ThermometerSnowflake className="w-4 h-4" />
+              ❄️ Chuỗi Lạnh 5 Kịch Bản (S-40 -&gt; S-45)
+            </button>
+
+            <button
               onClick={() => setActiveTab('recall')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                 activeTab === 'recall'
                   ? 'bg-rose-600 text-white shadow-sm shadow-rose-500/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -100,8 +129,20 @@ function MainApp() {
             </button>
 
             <button
+              onClick={() => setActiveTab('farmer_privacy')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                activeTab === 'farmer_privacy'
+                  ? 'bg-teal-600 text-white shadow-sm shadow-teal-500/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <UserCheck className="w-4 h-4" />
+              👤 Ẩn Danh Nông Hộ NĐ 13 (S-56)
+            </button>
+
+            <button
               onClick={() => setActiveTab('products')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                 activeTab === 'products'
                   ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -113,30 +154,41 @@ function MainApp() {
 
             <button
               onClick={() => setActiveTab('chain')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                 activeTab === 'chain'
                   ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <Hash className="w-4 h-4" />
-              ⛓️ Chuỗi Hash & T-30 (S-10, S-11, S-12)
+              ⛓️ Chuỗi Hash & T-30 (S-10 - S-12)
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 print:p-0 print:m-0 print:max-w-none">
         {activeTab === 'dag' && <BatchLineageDAG />}
+        {activeTab === 'coldchain' && <ColdChainMonitoring />}
         {activeTab === 'recall' && <EmergencyRecallManagement />}
+        {activeTab === 'farmer_privacy' && <FarmerPrivacyManagement />}
         {activeTab === 'products' && <ProductManagement />}
         {activeTab === 'chain' && <ChainIntegrityCheck />}
       </main>
 
+      {/* Quick Global Inspection Dossier Modal */}
+      {showGlobalDossierModal && (
+        <InspectionDossierModal
+          batchId={targetBatchId}
+          isOpen={showGlobalDossierModal}
+          onClose={() => setShowGlobalDossierModal(false)}
+        />
+      )}
+
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-        Hệ thống Truy xuất nguồn gốc nông sản © 2026 • Tuân thủ chuẩn RBAC 7 Vai Trò • Thuật toán DAG Phả hệ BFS • Khóa Tức Thì Chống Lan Rộng (S-38)
+      <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 print:hidden">
+        Hệ thống Truy xuất nguồn gốc nông sản © 2026 • Chuỗi lạnh S-40 - S-45 • Hồ sơ kiểm tra S-52, S-53 • Bảo vệ dữ liệu cá nhân Nghị định 13/2023/NĐ-CP (S-56)
       </footer>
     </div>
   );

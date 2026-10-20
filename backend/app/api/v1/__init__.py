@@ -5,6 +5,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.batches import router as batches_router
 from app.api.v1.chain_events import router as chain_events_router
 from app.api.v1.cold_chain import router as cold_chain_router
+from app.api.v1.farmers import router as farmers_router
 from app.api.v1.farming import router as farming_router
 from app.api.v1.finance import router as finance_router
 from app.api.v1.handovers import router as handovers_router
@@ -31,5 +32,6 @@ api_v1_router.include_router(farming_router)
 api_v1_router.include_router(protected_router)
 api_v1_router.include_router(audit_router)
 api_v1_router.include_router(recalls_router)
+api_v1_router.include_router(farmers_router)
 
 __all__ = ["api_v1_router"]

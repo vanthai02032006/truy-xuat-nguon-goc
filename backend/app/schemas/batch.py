@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class BatchBase(BaseModel):
     product_name: str
     land_plot_id: int | None = None
+    farmer_ref_id: str | None = None
     initial_quantity: float = Field(default=100.0, ge=0)
     remaining_quantity: float = Field(default=100.0, ge=0)
     unit: str = "kg"

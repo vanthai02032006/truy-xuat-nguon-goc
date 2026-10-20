@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import InspectionDossierModal from '../components/InspectionDossierModal';
 
 export default function ChainIntegrityCheck() {
   const [batchCode, setBatchCode] = useState('VN-DL-2026-CH01');
@@ -7,6 +8,7 @@ export default function ChainIntegrityCheck() {
   const [error, setError] = useState(null);
   const [simMessage, setSimMessage] = useState(null);
   const [simLoading, setSimLoading] = useState(false);
+  const [showDossierModal, setShowDossierModal] = useState(false);
 
   // Mẫu dữ liệu ban đầu
   const sampleReport = {
@@ -296,13 +298,21 @@ export default function ChainIntegrityCheck() {
 
           {/* Dòng thời gian trực quan hóa chuỗi khối (Block Timeline) */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <span>⛓️</span> Chuỗi Khối Sự Kiện Của Lô: <span className="font-mono text-emerald-700">{report.batch_code || batchCode}</span>
               </h2>
-              <span className="text-xs font-medium text-slate-500">
-                Tổng số sự kiện: <strong>{report.total_events}</strong>
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-slate-500">
+                  Tổng số sự kiện: <strong>{report.total_events}</strong>
+                </span>
+                <button
+                  onClick={() => setShowDossierModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition active:scale-95"
+                >
+                  📄 Xuất Hồ Sơ Kiểm Tra (PDF / Bản in)
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -401,6 +411,14 @@ export default function ChainIntegrityCheck() {
             </div>
           </div>
         </div>
+      )}
+
+      {showDossierModal && report && (
+        <InspectionDossierModal
+          batchId={report.batch_id || 1}
+          isOpen={showDossierModal}
+          onClose={() => setShowDossierModal(false)}
+        />
       )}
     </div>
   );

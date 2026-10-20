@@ -96,3 +96,32 @@ class TelemetryIngestResponse(BaseModel):
     ignored_count: int
     message: str
     violations_detected: list[ColdChainViolationItem] = []
+
+
+class ScenarioSimulationRequest(BaseModel):
+    """Yêu cầu chạy kịch bản giả lập cảm biến nhiệt độ (S-42)."""
+
+    reset_previous_telemetry: bool = Field(
+        True,
+        description="Xóa dữ liệu telemetry và vi phạm cũ của chuyến để quan sát kịch bản độc lập",
+    )
+
+
+class ScenarioSimulationResponse(BaseModel):
+    """Kết quả chạy Script Giả lập Cảm biến theo 5 kịch bản mẫu (S-42)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    scenario_id: int
+    scenario_name: str
+    trip_id: int
+    trip_code: str
+    vehicle_code: str
+    readings_injected: int
+    violations_count: int
+    violations: list[ColdChainViolationItem] = []
+    is_violated: bool
+    description: str
+    rule_explanation: str
+    hash_chain_updated: bool
+

@@ -26,7 +26,20 @@ router = APIRouter(prefix="/handovers", tags=["handovers"])
 
 
 def _to_handover_response(h: Handover) -> HandoverResponse:
-    """Helper chuyển đổi model Handover thành schema response đầy đủ thông tin."""
+    """Helper chuyển đổi model Handover thành schema response đầy đủ thông tin kèm cảnh báo S-45."""
+    has_violation = False
+    warning_msg = None
+    if h.batch and h.batch.chain_events:
+        viol_events = [e for e in h.batch.chain_events if e.event_type == "COLD_CHAIN_VIOLATION"]
+        if viol_events:
+            has_violation = True
+            latest_viol = viol_events[-1]
+            warning_msg = (
+                f"CẢNH BÁO VI PHẠM CHUỖI LẠNH (S-45): Lô hàng {h.batch.batch_code} từng ghi nhận "
+                f"vi phạm nhiệt độ bảo quản trong hành trình vận chuyển ({latest_viol.event_data}). "
+                "Bên tiếp nhận cần kiểm tra kỹ phẩm chất lô hàng trước khi xác nhận!"
+            )
+
     return HandoverResponse(
         id=h.id,
         batch_id=h.batch_id,
@@ -42,6 +55,8 @@ def _to_handover_response(h: Handover) -> HandoverResponse:
         from_org_name=h.from_org.name if h.from_org else f"Tổ chức #{h.from_org_id}",
         to_org_name=h.to_org.name if h.to_org else f"Tổ chức #{h.to_org_id}",
         batch_status=h.batch.status if h.batch else None,
+        has_cold_chain_violation=has_violation,
+        cold_chain_warning=warning_msg,
     )
 
 
