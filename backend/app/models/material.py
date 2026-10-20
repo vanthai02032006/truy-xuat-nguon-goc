@@ -69,3 +69,50 @@ class MaterialRequest(Base):
     organization = relationship("Organization")
     requester = relationship("User", foreign_keys=[requester_id])
     approver = relationship("User", foreign_keys=[approver_id])
+
+
+class BatchMaterialLog(Base):
+    """
+    User Story S-62: Ghi nhận vật tư (phân bón, thuốc BVTV) đã dùng gắn với một lô hàng cụ thể
+    để phục vụ việc kiểm tra thời gian cách ly khi thu hoạch.
+    """
+    __tablename__ = "batch_material_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    batch_id = Column(
+        Integer,
+        ForeignKey("batches.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    material_id = Column(
+        Integer,
+        ForeignKey("materials.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    material_name = Column(String(200), nullable=False)
+    category = Column(
+        String(50), nullable=False, default="pesticide"
+    )  # pesticide, fertilizer, bio_pesticide
+    dosage = Column(String(100), nullable=False)  # ví dụ: "50ml/bình 16L", "10kg/1000m2"
+    applied_date = Column(String(20), nullable=False)  # YYYY-MM-DD
+    isolation_days = Column(Integer, nullable=False, default=7)  # Số ngày cách ly (PHI)
+    safe_harvest_date = Column(String(20), nullable=False)  # Ngày an toàn thu hoạch: YYYY-MM-DD
+    applied_by = Column(String(100), nullable=True)  # Người thực hiện
+    notes = Column(String(500), nullable=True)
+    organization_id = Column(
+        Integer,
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    batch = relationship("Batch", back_populates="material_logs")
+    material = relationship("Material")
+    organization = relationship("Organization")
+
