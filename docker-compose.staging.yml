@@ -21,7 +21,7 @@ services:
     container_name: app_staging
     image: ghcr.io/vanthai02032006/truy-xuat-nguon-goc:${IMAGE_TAG:-latest}
     ports:
-      - "80:8000"
+      - "${APP_PORT_BIND:-8000}:8000"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-farm_db}
       POSTGRES_USER: ${POSTGRES_USER:-farm_user}

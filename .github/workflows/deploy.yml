@@ -92,8 +92,10 @@ jobs:
               echo "POSTGRES_PASSWORD=replace_with_a_local_secret" >> .env
             fi
 
-            # Mo firewall port 80 tren VPS neu co ufw
+            # Mo firewall port 80 va 443 (HTTPS) tren VPS neu co ufw
             sudo ufw allow 80/tcp || true
+            sudo ufw allow 443/tcp || true
+            sudo ufw reload || true
 
             # Dang nhap GHCR de keo image
             echo "$GHCR_TOKEN" | docker login ghcr.io \
@@ -116,29 +118,17 @@ jobs:
             # Xoa container app_staging cu de tranh conflict name khi compose tao container moi
             docker rm -f app_staging || true
 
-            # Giai phong port 80 neu co container hoac process khac dang chiem giu
-            echo "Kiem tra va giai phong port 80 tren VPS..."
-            CONTAINER_80="$(docker ps -q --filter 'publish=80')"
-            if [ -n "$CONTAINER_80" ]; then
-              echo "Dung container dang chiem port 80: $CONTAINER_80"
-              docker stop $CONTAINER_80 || true
-              docker rm -f $CONTAINER_80 || true
-            fi
-
-            # Tat web server he thong neu vo tinh chiem port 80
-            sudo systemctl stop nginx 2>/dev/null || true
-            sudo systemctl stop apache2 2>/dev/null || true
-            sudo systemctl stop caddy 2>/dev/null || true
-
-            # Kill bat ky process nao con nam giu port 80 tren host
-            sudo fuser -k 80/tcp 2>/dev/null || true
-            sleep 2
+            # Giai phong port 8000 neu can
+            sudo fuser -k 8000/tcp 2>/dev/null || true
+            sleep 1
 
             # Deploy va cho container healthy
             if docker compose -f "$COMPOSE" \
               up -d --wait --wait-timeout 120 web; then
 
               echo "Deploy thanh cong: $NEW_TAG"
+              # Reload/restart Nginx de tiep tuc phuc vu HTTPS cong 443
+              sudo systemctl reload nginx 2>/dev/null || sudo systemctl restart nginx 2>/dev/null || true
               docker logout ghcr.io
 
             else
