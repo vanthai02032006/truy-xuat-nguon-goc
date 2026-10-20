@@ -292,6 +292,13 @@
         </button>
 
         <button 
+          id="tabBtn_cold_chain" 
+          onclick="switchNavTab('cold_chain')"
+          class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-cyan-600 hover:bg-cyan-50 hover:text-cyan-900 transition-all flex items-center gap-2">
+          <i class="fa-solid fa-snowflake text-cyan-600"></i> Chuỗi Lạnh & IoT (E-07)
+        </button>
+
+        <button 
           id="tabBtn_traceability" 
           onclick="switchNavTab('traceability')"
           class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2">
@@ -975,6 +982,118 @@
 
     </div>
 
+    <!-- ======================================================== -->
+    <!-- VIEW: GIÁM SÁT CHUỖI LẠNH & CẢM BIẾN IoT (EPIC E-07)     -->
+    <!-- User Stories S-40, S-41, S-43, S-45                      -->
+    <!-- ======================================================== -->
+    <div id="view_cold_chain" class="module-view hidden space-y-8">
+      
+      <!-- Cold Chain Hero Banner -->
+      <div class="bg-gradient-to-r from-cyan-900 via-sky-800 to-teal-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-700/60 border border-cyan-500/30 text-cyan-200 text-xs font-bold">
+            <i class="fa-solid fa-snowflake text-cyan-300"></i> Epic E-07: Giám Sát Chuỗi Lạnh & Cảm Biến Nhiệt Độ IoT
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-white">Giám Sát Chuỗi Lạnh & Chuyến Vận Chuyển</h2>
+          <p class="text-xs sm:text-sm text-cyan-100/90 max-w-2xl">
+            Quản lý chuyến xe lạnh (S-40), tiếp nhận dữ liệu cảm biến IoT theo thời gian thực (S-41), phát hiện vi phạm sốc nhiệt có độ trễ 30 phút và cơ chế gộp dưới 5 phút (S-43), tự động kích hoạt cảnh báo vào chuỗi Hash SHA-256 của toàn bộ lô hàng (S-45).
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button onclick="openCreateTripModal()" class="px-4 py-2.5 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
+            <i class="fa-solid fa-truck-ramp-box"></i> Tạo Chuyến Xe Lạnh (S-40)
+          </button>
+          <button onclick="openSimulateTelemetryModal()" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
+            <i class="fa-solid fa-temperature-arrow-up"></i> Giả Lập Cảm Biến (S-41, S-43)
+          </button>
+        </div>
+      </div>
+
+      <!-- Cold Chain KPI Bar -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Chuyến Đang Chạy</p>
+            <div class="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
+              <i class="fa-solid fa-truck-fast"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-slate-900 mt-2" id="kpiActiveTrips">0 Chuyến</p>
+          <p class="text-[11px] text-cyan-600 font-semibold mt-1">Trạng thái IN_TRANSIT (S-40)</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Lô Hàng Đang Chở</p>
+            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-blue-700 mt-2" id="kpiCarriedBatches">0 Lô</p>
+          <p class="text-[11px] text-slate-500 mt-1">Được bảo quản dải 2 - 8°C</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Vi Phạm Chuỗi Lạnh</p>
+            <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-rose-700 mt-2" id="kpiColdChainViolations">0 Đợt</p>
+          <p class="text-[11px] text-rose-600 font-semibold mt-1">Độ trễ 30 phút & gộp 5p (S-43)</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Điểm Đo Cảm Biến</p>
+            <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-teal-700 mt-2" id="kpiTelemetryReadings">0 Điểm</p>
+          <p class="text-[11px] text-teal-600 font-semibold mt-1">Lọc timestamp cũ (S-41)</p>
+        </div>
+      </div>
+
+      <!-- Trips Table Card -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-4 p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-snowflake text-cyan-600"></i> Danh Sách Chuyến Xe Lạnh & Giám Sát Cảm Biến IoT
+            </h3>
+            <p class="text-xs text-slate-500">Mỗi tổ chức vận chuyển chỉ quản lý các chuyến của mình (cô lập đa tổ chức E-02)</p>
+          </div>
+          <button onclick="renderColdChainTab()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-arrows-rotate"></i> Làm Mới Dữ Liệu
+          </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-slate-200">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">Mã Chuyến Xe</th>
+                <th class="p-3.5">Mã Xe / Thùng Lạnh</th>
+                <th class="p-3.5">Đơn Vị Vận Chuyển</th>
+                <th class="p-3.5">Tài Xế</th>
+                <th class="p-3.5">Ngưỡng Nhiệt Độ</th>
+                <th class="p-3.5">Lô Hàng Đang Chở (S-40)</th>
+                <th class="p-3.5 text-center">Vi Phạm (S-43)</th>
+                <th class="p-3.5">Trạng Thái</th>
+                <th class="p-3.5 text-right">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody id="coldChainTripsTableBody" class="divide-y divide-slate-100">
+              <!-- Dynamic trip rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
   </main>
 
   <!-- ================= FOOTER ================= -->
@@ -993,6 +1112,184 @@
     </div>
   </footer>
 
+
+  <!-- ======================================================== -->
+  <!-- MODAL: TẠO CHUYẾN XE VẬN CHUYỂN LẠNH MỚI (USER STORY S-40)  -->
+  <!-- ======================================================== -->
+  <div id="createTripModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center text-sm font-black"><i class="fa-solid fa-truck-ramp-box"></i></span>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Tạo Chuyến Vận Chuyển Lạnh (S-40)</h3>
+            <p class="text-[11px] text-cyan-700 font-semibold">Ghi nhận xe lạnh, tài xế và các lô hàng đang chở</p>
+          </div>
+        </div>
+        <button onclick="closeModal('createTripModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Mã Thùng Lạnh / Xe Lạnh <span class="text-rose-600">*</span></label>
+          <input type="text" id="tripVehicleCode" placeholder="VD: REEFER-51D-888.99 hoặc CONT-COOL-01" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold font-mono text-cyan-950 uppercase" value="REEFER-51D-888.99" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Tài Xế Phụ Trách</label>
+          <input type="text" id="tripDriverName" placeholder="VD: Nguyễn Văn Tài Xế" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium" value="Nguyễn Văn Tài Xế" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Nhiệt Độ Tối Thiểu (°C)</label>
+            <input type="number" step="0.5" id="tripMinTemp" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold font-mono text-cyan-900" value="2.0" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Nhiệt Độ Tối Đa (°C)</label>
+            <input type="number" step="0.5" id="tripMaxTemp" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold font-mono text-rose-700" value="8.0" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Chọn Các Lô Hàng Đang Chở Trên Chuyến Xe <span class="text-rose-600">*</span></label>
+          <div id="tripBatchesChecklist" class="max-h-40 overflow-y-auto space-y-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <!-- Dynamic batch checkboxes -->
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('createTripModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs">Hủy</button>
+        <button onclick="submitCreateTrip()" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-check"></i> Tạo Chuyến Xe (S-40)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: GIẢ LẬP GỬI DỮ LIỆU CẢM BIẾN NHIỆT ĐỘ IoT (S-41)  -->
+  <!-- Thuật toán phát hiện vi phạm độ trễ 30 phút (S-43, S-45) -->
+  <!-- ======================================================== -->
+  <div id="simulateTelemetryModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-sm font-black"><i class="fa-solid fa-temperature-arrow-up"></i></span>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Giả Lập Cảm Biến Nhiệt Độ IoT (S-41, S-43)</h3>
+            <p class="text-[11px] text-amber-700 font-semibold">Kiểm thử thuật toán độ trễ 30 phút & ghi Hash Chain (S-45)</p>
+          </div>
+        </div>
+        <button onclick="closeModal('simulateTelemetryModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Chọn Chuyến Xe Cần Gửi Telemetry</label>
+          <select id="telemetryTripSelect" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold font-mono text-cyan-950">
+            <!-- Dynamic trips options -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Chọn Kịch Bản Kiểm Thử Nhanh (Preset Testing):</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="applyTelemetryPreset('normal')" class="p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-left">
+              <p class="font-bold text-emerald-950 flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-600"></i> Nhiệt Độ Chuẩn</p>
+              <p class="text-[10px] text-emerald-800">3.5°C - 5.0°C (An toàn tuyệt đối)</p>
+            </button>
+            <button type="button" onclick="applyTelemetryPreset('short_spike')" class="p-2.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl text-left">
+              <p class="font-bold text-blue-950 flex items-center gap-1.5"><i class="fa-solid fa-door-open text-blue-600"></i> Mở Cửa 15 Phút</p>
+              <p class="text-[10px] text-blue-800">14°C trong 15p &lt; 30p: KHÔNG vi phạm (S-43)</p>
+            </button>
+            <button type="button" onclick="applyTelemetryPreset('long_violation')" class="p-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-left">
+              <p class="font-bold text-rose-950 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Hỏng Máy Lạnh 40p</p>
+              <p class="text-[10px] text-rose-800">&gt; 30p: Kích hoạt vi phạm & ghi Hash (S-45)</p>
+            </button>
+            <button type="button" onclick="applyTelemetryPreset('merge_gap')" class="p-2.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl text-left">
+              <p class="font-bold text-purple-950 flex items-center gap-1.5"><i class="fa-solid fa-object-group text-purple-600"></i> Cách Nhau 3 Phút</p>
+              <p class="text-[10px] text-purple-800">Gộp 2 lần cách nhau &lt; 5p thành 1 (S-43)</p>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Mảng Dữ Liệu Cảm Biến JSON ({ timestamp, temperature }):</label>
+          <textarea id="telemetryJsonInput" rows="6" class="w-full p-2.5 font-mono text-[11px] bg-slate-900 text-emerald-400 border border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500"></textarea>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('simulateTelemetryModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs">Hủy</button>
+        <button onclick="submitSimulateTelemetry()" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-paper-plane"></i> Gửi Telemetry (S-41)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CHI TIẾT CHUYẾN XE & LỊCH SỬ VI PHẠM (S-43, S-45) -->
+  <!-- ======================================================== -->
+  <div id="tripDetailModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center text-sm font-black"><i class="fa-solid fa-snowflake"></i></span>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base" id="detailTripCode">TRIP-CODE</h3>
+            <p class="text-[11px] text-cyan-700 font-semibold" id="detailVehicleCode">REEFER-VEHICLE</p>
+          </div>
+        </div>
+        <button onclick="closeModal('tripDetailModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <!-- Thông tin chuyến xe -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div><p class="text-slate-400 uppercase text-[10px]">Tài Xế</p><p class="font-bold text-slate-800" id="detailTripDriver">...</p></div>
+          <div><p class="text-slate-400 uppercase text-[10px]">Đơn Vị Vận Chuyển</p><p class="font-bold text-slate-800" id="detailTripCarrier">...</p></div>
+          <div><p class="text-slate-400 uppercase text-[10px]">Dải Nhiệt Độ Chuẩn</p><p class="font-bold text-cyan-700" id="detailTripTempRange">2°C - 8°C</p></div>
+          <div><p class="text-slate-400 uppercase text-[10px]">Trạng Thái</p><p class="font-bold text-emerald-600" id="detailTripStatus">IN_TRANSIT</p></div>
+        </div>
+
+        <!-- Danh sách lô hàng đang chở -->
+        <div class="border border-slate-200 rounded-2xl p-4 bg-white space-y-2">
+          <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
+            <i class="fa-solid fa-boxes-stacked text-blue-600"></i> Danh Sách Lô Hàng Đang Chở (S-40):
+          </p>
+          <div id="detailTripBatchesList" class="flex flex-wrap gap-2">
+            <!-- Dynamic badges -->
+          </div>
+        </div>
+
+        <!-- Danh sách sự kiện vi phạm chuỗi lạnh (S-43 & S-45) -->
+        <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-3">
+          <div class="flex items-center justify-between">
+            <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
+              <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Các Lần Vi Phạm Chuỗi Lạnh Liên Tục &gt; 30 Phút (S-43):
+            </p>
+            <span id="detailViolationsCountBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">0 Vi phạm</span>
+          </div>
+          <div id="detailTripViolationsContainer" class="space-y-2">
+            <!-- Dynamic violation cards -->
+          </div>
+        </div>
+
+        <!-- 20 điểm đo gần nhất -->
+        <div class="border border-slate-200 rounded-2xl p-4 bg-white space-y-2">
+          <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
+            <i class="fa-solid fa-chart-line text-teal-600"></i> Các Điểm Đo Cảm Biến Telemetry Gần Nhất (S-41):
+          </p>
+          <div id="detailTripTelemetryContainer" class="max-h-36 overflow-y-auto space-y-1 font-mono text-[11px]">
+            <!-- Dynamic telemetry readings -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ======================================================== -->
   <!-- MODALS PHỤC VỤ CHUỖI CUNG ỨNG                            -->
@@ -2160,7 +2457,7 @@
       state.activeTab = tabId;
       saveAppState(state);
 
-      const allTabs = ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'traceability', 'public'];
+      const allTabs = ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain', 'traceability', 'public'];
       allTabs.forEach(t => {
         const btn = document.getElementById(`tabBtn_${t}`);
         const view = document.getElementById(`view_${t}`);
@@ -2183,6 +2480,7 @@
       else if (tabId === 'materials_phi') renderMaterialsPhiTab();
       else if (tabId === 'handovers') renderHandoversTable();
       else if (tabId === 'recalls') renderRecallsTab();
+      else if (tabId === 'cold_chain') renderColdChainTab();
       else if (tabId === 'traceability') renderTraceabilityTab();
       else if (tabId === 'public') renderPublicBatches('all');
       else renderOverviewTab();

@@ -1,0 +1,544 @@
+from __future__ import annotations
+
+import secrets
+from datetime import UTC, datetime
+from typing import Any
+
+from fastapi import HTTPException, status
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from app.models.batch import Batch
+from app.models.cold_chain import (
+    ColdChainViolation,
+    TemperatureTelemetry,
+    TransportTrip,
+    TripBatch,
+    TripStatus,
+    ViolationType,
+)
+from app.models.organization import Organization
+from app.models.user import User
+from app.schemas.cold_chain import (
+    ColdChainViolationItem,
+    TelemetryReadingInput,
+    TelemetryReadingItem,
+    TransportTripDetailResponse,
+    TransportTripResponse,
+    TripBatchItem,
+    TripCreateRequest,
+)
+from app.services.hash_chain_service import record_chain_event
+
+
+def _normalize_dt(dt: datetime | None) -> datetime | None:
+    """Đảm bảo datetime luôn có tzinfo UTC để so sánh chính xác trên mọi database (SQLite/Postgres)."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
+
+
+class ColdChainService:
+    @staticmethod
+    def generate_trip_code() -> str:
+        """Sinh mã chuyến xe lạnh duy nhất: TRIP-YYYYMMDD-XXXXXX."""
+        date_str = datetime.now(UTC).strftime("%Y%m%d")
+        rand_str = secrets.token_hex(3).upper()
+        return f"TRIP-{date_str}-{rand_str}"
+
+    @classmethod
+    def create_trip(
+        cls,
+        db: Session,
+        user: User,
+        payload: TripCreateRequest,
+    ) -> TransportTripResponse:
+        """
+        User Story S-40: Tạo Chuyến vận chuyển gồm: Mã chuyến, Mã thùng lạnh/xe lạnh, Danh sách các lô hàng đang chở.
+        """
+        role_lower = str(user.role).lower()
+        allowed_roles = ["transporter", "logistics", "admin", "system_admin"]
+        if role_lower not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Chỉ Đơn vị vận chuyển lạnh (Transporter/Logistics) hoặc Quản trị hệ thống mới có quyền tạo Chuyến vận chuyển.",
+            )
+
+        carrier_org_id = payload.carrier_org_id or user.organization_id
+        if not carrier_org_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Vui lòng xác định Đơn vị vận chuyển lạnh (carrier_org_id).",
+            )
+
+        carrier_org = db.query(Organization).filter(Organization.id == carrier_org_id).first()
+        if not carrier_org:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy tổ chức vận chuyển với ID {carrier_org_id}.",
+            )
+
+        # Kiểm tra danh sách các lô hàng có tồn tại không
+        batch_ids = list(set(payload.batch_ids))
+        batches = db.query(Batch).filter(Batch.id.in_(batch_ids)).all()
+        found_ids = {b.id for b in batches}
+        missing_ids = set(batch_ids) - found_ids
+        if missing_ids:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy các lô hàng với ID: {list(missing_ids)}",
+            )
+
+        trip_code = payload.trip_code.strip() if payload.trip_code else cls.generate_trip_code()
+
+        # Kiểm tra mã chuyến có bị trùng lặp không
+        existing_trip = db.query(TransportTrip).filter(TransportTrip.trip_code == trip_code).first()
+        if existing_trip:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Mã chuyến {trip_code} đã tồn tại trong hệ thống.",
+            )
+
+        trip = TransportTrip(
+            trip_code=trip_code,
+            vehicle_code=payload.vehicle_code.strip(),
+            carrier_org_id=carrier_org_id,
+            driver_name=payload.driver_name.strip() if payload.driver_name else None,
+            min_temperature=payload.min_temperature,
+            max_temperature=payload.max_temperature,
+            status=TripStatus.IN_TRANSIT.value,
+            start_time=datetime.now(UTC),
+        )
+        db.add(trip)
+        db.flush()
+
+        batch_items = []
+        for b in batches:
+            tb = TripBatch(trip_id=trip.id, batch_id=b.id)
+            db.add(tb)
+            batch_items.append(
+                TripBatchItem(batch_id=b.id, batch_code=b.batch_code, product_name=b.product_name)
+            )
+
+            # Ghi nhận sự kiện xuất phát vận chuyển vào Hash Chain của từng lô
+            record_chain_event(
+                db=db,
+                batch_id=b.id,
+                event_type="COLD_CHAIN_DISPATCH",
+                event_data=(
+                    f"Khởi hành chuyến xe lạnh {trip.trip_code} ({trip.vehicle_code}) "
+                    f"bởi {carrier_org.name}. Ngưỡng bảo quản: {trip.min_temperature}°C - {trip.max_temperature}°C."
+                ),
+                organization_id=carrier_org_id,
+            )
+
+        db.commit()
+        db.refresh(trip)
+
+        return TransportTripResponse(
+            id=trip.id,
+            trip_code=trip.trip_code,
+            vehicle_code=trip.vehicle_code,
+            carrier_org_id=trip.carrier_org_id,
+            carrier_org_name=carrier_org.name,
+            driver_name=trip.driver_name,
+            min_temperature=trip.min_temperature,
+            max_temperature=trip.max_temperature,
+            status=trip.status,
+            start_time=trip.start_time,
+            end_time=trip.end_time,
+            created_at=trip.created_at,
+            batches=batch_items,
+            violations_count=0,
+            readings_count=0,
+        )
+
+    @classmethod
+    def list_trips(
+        cls,
+        db: Session,
+        user: User,
+        status_filter: str | None = None,
+        skip: int = 0,
+        limit: int = 50,
+    ) -> list[TransportTripResponse]:
+        """Lấy danh sách các chuyến vận chuyển chuỗi lạnh."""
+        query = db.query(TransportTrip)
+        role_lower = str(user.role).lower()
+
+        # Nếu user là đơn vị vận chuyển: chỉ xem các chuyến của tổ chức mình
+        if role_lower in ("transporter", "logistics") and user.organization_id:
+            query = query.filter(TransportTrip.carrier_org_id == user.organization_id)
+
+        if status_filter:
+            query = query.filter(TransportTrip.status == status_filter)
+
+        trips = query.order_by(TransportTrip.created_at.desc()).offset(skip).limit(limit).all()
+
+        results = []
+        for t in trips:
+            carrier_name = t.carrier_organization.name if t.carrier_organization else None
+            batch_items = [
+                TripBatchItem(
+                    batch_id=tb.batch.id,
+                    batch_code=tb.batch.batch_code,
+                    product_name=tb.batch.product_name,
+                )
+                for tb in t.trip_batches
+                if tb.batch
+            ]
+            v_count = len(t.violations)
+            r_count = len(t.telemetry_readings)
+            results.append(
+                TransportTripResponse(
+                    id=t.id,
+                    trip_code=t.trip_code,
+                    vehicle_code=t.vehicle_code,
+                    carrier_org_id=t.carrier_org_id,
+                    carrier_org_name=carrier_name,
+                    driver_name=t.driver_name,
+                    min_temperature=t.min_temperature,
+                    max_temperature=t.max_temperature,
+                    status=t.status,
+                    start_time=t.start_time,
+                    end_time=t.end_time,
+                    created_at=t.created_at,
+                    batches=batch_items,
+                    violations_count=v_count,
+                    readings_count=r_count,
+                )
+            )
+        return results
+
+    @classmethod
+    def get_trip_detail(cls, db: Session, trip_id: int) -> TransportTripDetailResponse:
+        """Xem chi tiết chuyến xe, gồm các lô hàng, danh sách vi phạm và telemetry gần nhất."""
+        trip = db.query(TransportTrip).filter(TransportTrip.id == trip_id).first()
+        if not trip:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy chuyến xe với ID {trip_id}.",
+            )
+
+        carrier_name = trip.carrier_organization.name if trip.carrier_organization else None
+        batch_items = [
+            TripBatchItem(
+                batch_id=tb.batch.id,
+                batch_code=tb.batch.batch_code,
+                product_name=tb.batch.product_name,
+            )
+            for tb in trip.trip_batches
+            if tb.batch
+        ]
+
+        violation_items = [
+            ColdChainViolationItem(
+                id=v.id,
+                trip_id=v.trip_id,
+                started_at=v.started_at,
+                ended_at=v.ended_at,
+                duration_minutes=v.duration_minutes,
+                peak_temperature=v.peak_temperature,
+                threshold=v.threshold,
+                violation_type=v.violation_type,
+                status=v.status,
+                hash_recorded=v.hash_recorded,
+                created_at=v.created_at,
+            )
+            for v in trip.violations
+        ]
+
+        recent_readings = [
+            TelemetryReadingItem(timestamp=r.timestamp, temperature=r.temperature)
+            for r in trip.telemetry_readings[-100:]  # 100 điểm gần nhất
+        ]
+
+        return TransportTripDetailResponse(
+            id=trip.id,
+            trip_code=trip.trip_code,
+            vehicle_code=trip.vehicle_code,
+            carrier_org_id=trip.carrier_org_id,
+            carrier_org_name=carrier_name,
+            driver_name=trip.driver_name,
+            min_temperature=trip.min_temperature,
+            max_temperature=trip.max_temperature,
+            status=trip.status,
+            start_time=trip.start_time,
+            end_time=trip.end_time,
+            created_at=trip.created_at,
+            batches=batch_items,
+            violations_count=len(violation_items),
+            readings_count=len(trip.telemetry_readings),
+            violations=violation_items,
+            recent_telemetry=recent_readings,
+        )
+
+    @classmethod
+    def ingest_telemetry(
+        cls,
+        db: Session,
+        readings: list[TelemetryReadingInput],
+        user: User | None = None,
+    ) -> dict[str, Any]:
+        """
+        User Story S-41: Endpoint nhận mảng dữ liệu cảm biến: { trip_id, timestamp, temperature }.
+        - Bỏ qua các bản ghi có timestamp cũ hơn bản ghi mới nhất đã lưu.
+        - Gọi thuật toán phát hiện vi phạm có độ trễ 30 phút (S-43).
+        - Tự động ghi vi phạm vào Hash Chain của toàn bộ lô hàng trên chuyến xe (S-45).
+        """
+        if not readings:
+            return {
+                "accepted_count": 0,
+                "ignored_count": 0,
+                "message": "Không có dữ liệu telemetry nào được gửi.",
+                "violations_detected": [],
+            }
+
+        # Nhóm dữ liệu theo trip_id
+        trips_readings: dict[int, list[TelemetryReadingInput]] = {}
+        for r in readings:
+            trips_readings.setdefault(r.trip_id, []).append(r)
+
+        total_accepted = 0
+        total_ignored = 0
+        all_new_violations: list[ColdChainViolationItem] = []
+
+        for trip_id, t_readings in trips_readings.items():
+            trip = db.query(TransportTrip).filter(TransportTrip.id == trip_id).first()
+            if not trip:
+                # Bỏ qua nếu trip_id không tồn tại
+                total_ignored += len(t_readings)
+                continue
+
+            # Lấy timestamp mới nhất đã lưu trong DB cho chuyến này
+            latest_db_ts = (
+                db.query(func.max(TemperatureTelemetry.timestamp))
+                .filter(TemperatureTelemetry.trip_id == trip_id)
+                .scalar()
+            )
+            latest_norm_ts = _normalize_dt(latest_db_ts)
+
+            # Sắp xếp các bản ghi mới gửi theo timestamp tăng dần
+            t_readings.sort(
+                key=lambda x: _normalize_dt(x.timestamp) or datetime.min.replace(tzinfo=UTC)
+            )
+
+            accepted_for_trip = []
+            for r in t_readings:
+                r_norm_ts = _normalize_dt(r.timestamp)
+                # Quy tắc S-41: Bỏ qua các bản ghi có timestamp cũ hơn bản ghi mới nhất đã lưu
+                if latest_norm_ts is not None and r_norm_ts is not None and r_norm_ts <= latest_norm_ts:
+                    total_ignored += 1
+                    continue
+                # Bỏ qua nếu trùng timestamp ngay trong batch gửi
+                if accepted_for_trip:
+                    last_acc_norm = _normalize_dt(accepted_for_trip[-1].timestamp)
+                    if last_acc_norm is not None and r_norm_ts is not None and r_norm_ts <= last_acc_norm:
+                        total_ignored += 1
+                        continue
+
+                accepted_for_trip.append(r)
+
+            if accepted_for_trip:
+                # Lưu các bản ghi hợp lệ vào DB
+                for valid_r in accepted_for_trip:
+                    telemetry_obj = TemperatureTelemetry(
+                        trip_id=trip_id,
+                        timestamp=valid_r.timestamp,
+                        temperature=valid_r.temperature,
+                    )
+                    db.add(telemetry_obj)
+                db.flush()
+                total_accepted += len(accepted_for_trip)
+
+                # Chạy thuật toán phát hiện vi phạm chuỗi lạnh S-43 và ghi Hash Chain S-45
+                new_violations = cls.detect_and_record_violations(db, trip, actor_id=user.id if user else None)
+                all_new_violations.extend(new_violations)
+
+        db.commit()
+
+        return {
+            "accepted_count": total_accepted,
+            "ignored_count": total_ignored,
+            "message": f"Đã tiếp nhận thành công {total_accepted} điểm đo nhiệt độ (bỏ qua {total_ignored} điểm cũ).",
+            "violations_detected": all_new_violations,
+        }
+
+    @classmethod
+    def detect_and_record_violations(
+        cls,
+        db: Session,
+        trip: TransportTrip,
+        actor_id: int | None = None,
+    ) -> list[ColdChainViolationItem]:
+        """
+        User Story S-43: Thuật toán phát hiện vi phạm có độ trễ 30 phút:
+        - Nhiệt độ vượt quá ngưỡng cho phép nhất thời (ví dụ: mở cửa xe vài phút) KHÔNG bị coi là vi phạm.
+        - Chỉ khi nhiệt độ vượt ngưỡng LIÊN TỤC TRÊN 30 PHÚT thì hệ thống mới kích hoạt 1 sự kiện "Vi phạm chuỗi lạnh".
+        - Hai lần vượt ngưỡng cách nhau dưới 5 phút thì gộp thành 1 lần vi phạm duy nhất.
+        User Story S-45:
+        - Tự động ghi sự kiện vi phạm vào chuỗi hash của toàn bộ các lô hàng có mặt trên chuyến xe đó.
+        """
+        # Lấy toàn bộ telemetry của chuyến xe theo thứ tự thời gian
+        readings = (
+            db.query(TemperatureTelemetry)
+            .filter(TemperatureTelemetry.trip_id == trip.id)
+            .order_by(TemperatureTelemetry.timestamp.asc())
+            .all()
+        )
+        if len(readings) < 2:
+            return []
+
+        max_threshold = trip.max_temperature
+        min_threshold = trip.min_temperature
+
+        # 1. Gom nhóm các điểm vượt ngưỡng thành các đợt (raw episodes)
+        raw_episodes: list[dict[str, Any]] = []
+        current_ep: dict[str, Any] | None = None
+
+        for r in readings:
+            is_over = r.temperature > max_threshold
+            is_under = r.temperature < min_threshold
+
+            if is_over or is_under:
+                v_type = ViolationType.HIGH_TEMPERATURE.value if is_over else ViolationType.FREEZING.value
+                thresh = max_threshold if is_over else min_threshold
+
+                if current_ep is None:
+                    current_ep = {
+                        "started_at": r.timestamp,
+                        "ended_at": r.timestamp,
+                        "peak_temp": r.temperature,
+                        "v_type": v_type,
+                        "threshold": thresh,
+                    }
+                else:
+                    current_ep["ended_at"] = r.timestamp
+                    if is_over:
+                        current_ep["peak_temp"] = max(current_ep["peak_temp"], r.temperature)
+                    else:
+                        current_ep["peak_temp"] = min(current_ep["peak_temp"], r.temperature)
+            else:
+                if current_ep is not None:
+                    raw_episodes.append(current_ep)
+                    current_ep = None
+
+        if current_ep is not None:
+            raw_episodes.append(current_ep)
+
+        if not raw_episodes:
+            return []
+
+        # 2. Quy tắc S-43: Hai lần vượt ngưỡng cách nhau DƯỚI 5 PHÚT (300 giây) thì GỘP THÀNH 1 LẦN VI PHẠM DUY NHẤT
+        merged_episodes: list[dict[str, Any]] = []
+        for ep in raw_episodes:
+            if not merged_episodes:
+                merged_episodes.append(ep)
+            else:
+                prev = merged_episodes[-1]
+                ep_start = _normalize_dt(ep["started_at"])
+                prev_end = _normalize_dt(prev["ended_at"])
+                gap_seconds = (
+                    (ep_start - prev_end).total_seconds()
+                    if (ep_start is not None and prev_end is not None)
+                    else 999999.0
+                )
+                # Nếu cách nhau < 300 giây (5 phút) và cùng loại vi phạm: gộp lại
+                if gap_seconds < 300 and prev["v_type"] == ep["v_type"]:
+                    ep_end = _normalize_dt(ep["ended_at"])
+                    if ep_end is not None and prev_end is not None and ep_end > prev_end:
+                        prev["ended_at"] = ep["ended_at"]
+                    if prev["v_type"] == ViolationType.HIGH_TEMPERATURE.value:
+                        prev["peak_temp"] = max(prev["peak_temp"], ep["peak_temp"])
+                    else:
+                        prev["peak_temp"] = min(prev["peak_temp"], ep["peak_temp"])
+                else:
+                    merged_episodes.append(ep)
+
+        # 3. Quy tắc S-43: Chỉ khi nhiệt độ vượt ngưỡng LIÊN TỤC TRÊN 30 PHÚT mới kích hoạt vi phạm
+        new_violations: list[ColdChainViolationItem] = []
+        batches_on_trip = [tb.batch for tb in trip.trip_batches if tb.batch]
+
+        for ep in merged_episodes:
+            ep_start = _normalize_dt(ep["started_at"])
+            ep_end = _normalize_dt(ep["ended_at"])
+            duration_minutes = (
+                (ep_end - ep_start).total_seconds() / 60.0
+                if (ep_start is not None and ep_end is not None)
+                else 0.0
+            )
+
+            # Tiêu chí S-43: Phải liên tục từ 30 phút trở lên (>= 30.0 phút)
+            if duration_minutes < 30.0:
+                continue
+
+            # Kiểm tra xem đợt vi phạm này đã được lưu vào database chưa
+            existing = (
+                db.query(ColdChainViolation)
+                .filter(
+                    ColdChainViolation.trip_id == trip.id,
+                    ColdChainViolation.started_at == ep["started_at"],
+                )
+                .first()
+            )
+
+            if existing:
+                # Nếu đợt vi phạm cũ tiếp tục kéo dài: cập nhật lại ended_at và peak_temp
+                if existing.ended_at < ep["ended_at"]:
+                    existing.ended_at = ep["ended_at"]
+                    existing.duration_minutes = round(duration_minutes, 1)
+                    existing.peak_temperature = ep["peak_temp"]
+                continue
+
+            # Tạo bản ghi vi phạm mới
+            violation = ColdChainViolation(
+                trip_id=trip.id,
+                started_at=ep["started_at"],
+                ended_at=ep["ended_at"],
+                duration_minutes=round(duration_minutes, 1),
+                peak_temperature=ep["peak_temp"],
+                threshold=ep["threshold"],
+                violation_type=ep["v_type"],
+                status="DETECTED",
+                hash_recorded=False,
+            )
+            db.add(violation)
+            db.flush()
+
+            # 4. User Story S-45: Tự động ghi sự kiện vi phạm vào Hash Chain của toàn bộ các lô hàng trên chuyến xe
+            for b in batches_on_trip:
+                record_chain_event(
+                    db=db,
+                    batch_id=b.id,
+                    event_type="COLD_CHAIN_VIOLATION",
+                    event_data=(
+                        f"CẢNH BÁO VI PHẠM CHUỖI LẠNH trên chuyến xe {trip.vehicle_code} (#{trip.trip_code}): "
+                        f"Nhiệt độ đỉnh {ep['peak_temp']}°C vượt ngưỡng {ep['threshold']}°C "
+                        f"liên tục {round(duration_minutes, 1)} phút. "
+                        f"Bắt đầu: {ep['started_at'].isoformat()} - Kết thúc: {ep['ended_at'].isoformat()}."
+                    ),
+                    organization_id=trip.carrier_org_id,
+                )
+
+            violation.hash_recorded = True
+            db.flush()
+
+            new_violations.append(
+                ColdChainViolationItem(
+                    id=violation.id,
+                    trip_id=violation.trip_id,
+                    started_at=violation.started_at,
+                    ended_at=violation.ended_at,
+                    duration_minutes=violation.duration_minutes,
+                    peak_temperature=violation.peak_temperature,
+                    threshold=violation.threshold,
+                    violation_type=violation.violation_type,
+                    status=violation.status,
+                    hash_recorded=violation.hash_recorded,
+                    created_at=violation.created_at,
+                )
+            )
+
+        return new_violations

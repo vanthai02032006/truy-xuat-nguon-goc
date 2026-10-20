@@ -2,6 +2,14 @@ from app.core.database import Base
 from app.models.batch import Batch
 from app.models.batch_relation import BatchRelation, BatchRelationType
 from app.models.chain_event import ChainEvent
+from app.models.cold_chain import (
+    ColdChainViolation,
+    TemperatureTelemetry,
+    TransportTrip,
+    TripBatch,
+    TripStatus,
+    ViolationType,
+)
 from app.models.farming import FarmingLog, FieldIncident
 from app.models.finance import FinancialTransaction
 from app.models.handover import Handover, HandoverStatus
@@ -27,6 +35,7 @@ __all__ = [
     "BatchRelation",
     "BatchRelationType",
     "ChainEvent",
+    "ColdChainViolation",
     "DailyTask",
     "FarmingLog",
     "FieldIncident",
@@ -43,8 +52,13 @@ __all__ = [
     "RecallSeverity",
     "RecallStatus",
     "SecurityLog",
+    "TemperatureTelemetry",
     "Timesheet",
+    "TransportTrip",
+    "TripBatch",
+    "TripStatus",
     "User",
     "UserRole",
+    "ViolationType",
     "Worker",
 ]
