@@ -7,9 +7,10 @@ from app.models.land_plot import LandPlot
 from app.models.material import BatchMaterialLog, Material, MaterialRequest
 from app.models.organization import Organization
 from app.models.security_log import SecurityLog
-from app.models.user import User, UserRole
+from app.models.user import SUPPLY_CHAIN_ROLES, User, UserRole
 
 __all__ = [
+    "SUPPLY_CHAIN_ROLES",
     "Base",
     "Batch",
     "BatchMaterialLog",

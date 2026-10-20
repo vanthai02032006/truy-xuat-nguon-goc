@@ -19,12 +19,8 @@ from app.services.batch_code_service import (
 )
 
 
-def get_auth_headers(
-    user_email: str, role: str, org_id: int | None
-) -> dict[str, str]:
-    token = create_access_token(
-        subject=user_email, role=role, organization_id=org_id
-    )
+def get_auth_headers(user_email: str, role: str, org_id: int | None) -> dict[str, str]:
+    token = create_access_token(subject=user_email, role=role, organization_id=org_id)
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -65,9 +61,7 @@ def test_batch_code_10000_consecutive_generations_no_duplicates_no_forbidden_cha
         f"LỖI TRÙNG LẶP: Sinh {total} mã nhưng chỉ có {len(generated_codes)} mã duy nhất!"
     )
     # Tốc độ sinh 10.000 mã bằng CSPRNG phải nhanh (< 3 giây)
-    assert elapsed < 3.0, (
-        f"Thời gian sinh 10.000 mã quá chậm: {elapsed:.2f} giây"
-    )
+    assert elapsed < 3.0, f"Thời gian sinh 10.000 mã quá chậm: {elapsed:.2f} giây"
 
 
 def test_generate_unique_batch_code_with_db_retry(db_session: Session):
@@ -96,9 +90,7 @@ def test_generate_unique_batch_code_with_db_retry(db_session: Session):
     assert is_valid_batch_code(second_code)
 
 
-def test_api_generate_code_endpoint(
-    client: TestClient, seed_data: dict[str, Any]
-):
+def test_api_generate_code_endpoint(client: TestClient, seed_data: dict[str, Any]):
     """
     Kiểm tra endpoint GET /api/v1/batches/generate-code:
     Trả về mã 8 ký tự hợp lệ, không chứa ký tự cấm.

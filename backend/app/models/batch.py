@@ -34,4 +34,3 @@ class Batch(Base):
     material_logs = relationship(
         "BatchMaterialLog", back_populates="batch", cascade="all, delete-orphan"
     )
-

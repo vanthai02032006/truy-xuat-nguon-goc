@@ -30,7 +30,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 3. Gắn router API v1
+# 3. Cấu hình Tenant Isolation Middleware (Epic E-02: Cô lập dữ liệu theo Organization ID & Inspector Read-only)
+from app.middlewares.tenant_isolation import TenantIsolationMiddleware
+
+app.add_middleware(TenantIsolationMiddleware)
+
+# 4. Gắn router API v1
 app.include_router(api_v1_router)
 
 # Đường dẫn tới file SPA giao diện tĩnh

@@ -58,7 +58,9 @@ class MaterialRequestResponse(BaseModel):
 
 class BatchMaterialLogCreate(BaseModel):
     material_name: str = Field(..., min_length=1, max_length=200)
-    category: str = Field(default="pesticide", max_length=50)  # pesticide, fertilizer, bio_pesticide
+    category: str = Field(
+        default="pesticide", max_length=50
+    )  # pesticide, fertilizer, bio_pesticide
     dosage: str = Field(..., min_length=1, max_length=100)
     applied_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")  # YYYY-MM-DD
     isolation_days: int = Field(default=7, ge=0)
@@ -95,4 +97,3 @@ class BatchPHICheckResponse(BaseModel):
     status: str  # compliant, violating, no_pesticide_applied
     message: str
     material_logs: list[BatchMaterialLogResponse]
-
