@@ -80,6 +80,15 @@ def create_handover(
             detail="Bạn không có quyền bàn giao lô hàng của tổ chức khác.",
         )
 
+    # S-38: Khóa tức thì quyền Bàn giao đối với các lô nằm trong danh sách lệnh thu hồi
+    from app.services.recall_service import RecallService
+
+    if RecallService.is_batch_in_active_recall(db, batch.id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Lô hàng #{batch.batch_code} đang nằm trong Lệnh thu hồi khẩn cấp (S-38), nghiêm cấm bàn giao luân chuyển!",
+        )
+
     # 2. Không cho phép tự bàn giao cho chính mình
     if payload.to_org_id == current_user.organization_id:
         raise HTTPException(
