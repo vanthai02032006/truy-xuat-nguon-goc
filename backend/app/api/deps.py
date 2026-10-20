@@ -67,7 +67,24 @@ def get_current_user(
     return user
 
 
-ADMIN_ROLES = {UserRole.ADMIN.value, "admin"}
+ADMIN_ROLES = {
+    UserRole.ADMIN.value,
+    UserRole.SYSTEM_ADMIN.value,
+    "admin",
+    "system_admin",
+}
+
+
+def require_admin(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    """Yêu cầu vai trò Quản trị hệ thống (Admin) (S-07, T-17)."""
+    if current_user.role not in ADMIN_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ vai trò Quản trị hệ thống (Admin) mới có quyền thực hiện thao tác này.",
+        )
+    return current_user
 OWNER_ROLES = {
     UserRole.ADMIN.value,
     UserRole.FARM_OWNER.value,

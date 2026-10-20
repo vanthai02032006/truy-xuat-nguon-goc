@@ -1,7 +1,7 @@
 from app.core.database import Base
 from app.models.batch import Batch
 from app.models.batch_relation import BatchRelation, BatchRelationType
-from app.models.chain_event import ChainEvent
+from app.models.chain_event import BatchEvent, ChainEvent, ReadOnlyChainEventError
 from app.models.cold_chain import (
     ColdChainViolation,
     TemperatureTelemetry,
@@ -17,6 +17,7 @@ from app.models.hr import DailyTask, Timesheet, Worker
 from app.models.land_plot import LandPlot
 from app.models.material import BatchMaterialLog, Material, MaterialRequest
 from app.models.organization import Organization
+from app.models.product import Product
 from app.models.recall import (
     Recall,
     RecallAffectedBatch,
@@ -31,6 +32,7 @@ __all__ = [
     "SUPPLY_CHAIN_ROLES",
     "Base",
     "Batch",
+    "BatchEvent",
     "BatchMaterialLog",
     "BatchRelation",
     "BatchRelationType",
@@ -46,6 +48,8 @@ __all__ = [
     "Material",
     "MaterialRequest",
     "Organization",
+    "Product",
+    "ReadOnlyChainEventError",
     "Recall",
     "RecallAffectedBatch",
     "RecallOrganizationAction",
