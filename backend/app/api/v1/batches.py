@@ -38,6 +38,7 @@ from app.schemas.material import (
 from app.services.batch_code_service import generate_unique_batch_code
 from app.services.hash_chain_service import record_chain_event
 from app.services.lineage_dag_service import LineageCycleError, LineageDagService
+from app.services.recall_service import RecallService
 
 router = APIRouter(prefix="/batches", tags=["batches"])
 
@@ -333,6 +334,11 @@ def merge_batches(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Lô {p.batch_code} đang trong trạng thái chờ bàn giao, không thể gộp lô.",
             )
+        if RecallService.is_batch_in_active_recall(db, p.id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Lô {p.batch_code} đang nằm trong danh sách lệnh thu hồi khẩn cấp, đã bị khóa quyền Gộp lô theo S-38.",
+            )
 
     # 4. Kiểm tra CÙNG LOẠI SẢN PHẨM (S-19 tiêu chí chấp nhận)
     product_names = {p.product_name.strip().lower() for p in parents}
@@ -484,6 +490,13 @@ def split_batch(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Lô hàng đang trong quá trình bàn giao chờ xác nhận, không thể tách lô.",
+        )
+
+    # Chặn lan rộng S-38: Khóa quyền Tách lô đối với lô đang nằm trong lệnh thu hồi
+    if RecallService.is_batch_in_active_recall(db, parent.id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Lô {parent.batch_code} đang nằm trong danh sách lệnh thu hồi khẩn cấp, đã bị khóa quyền Tách lô theo S-38.",
         )
 
     total_split_qty = sum(item.quantity for item in payload.splits)
