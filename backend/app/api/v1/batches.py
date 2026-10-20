@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 from typing import Annotated
 
@@ -14,14 +15,19 @@ from app.api.deps import (
 from app.core.config import settings
 from app.models.batch import Batch
 from app.models.batch_relation import BatchRelation, BatchRelationType
+from app.models.chain_event import ChainEvent
+from app.models.cold_chain import TransportTrip, TripBatch, TripStatus
+from app.models.handover import Handover, HandoverStatus
 from app.models.land_plot import LandPlot
 from app.models.material import BatchMaterialLog
+from app.models.product import Product
 from app.models.user import User, UserRole
 from app.repositories.batch_repository import BatchRepository
 from app.schemas.batch import (
     BatchCodeGenerateResponse,
     BatchCreate,
     BatchResponse,
+    FarmOriginInfo,
     JourneyMilestone,
     PublicBatchTraceResponse,
 )
@@ -66,12 +72,14 @@ def get_public_batch_trace(
     db: Annotated[Session, Depends(get_db)],
 ):
     """
-    User Story S-48 & E-08: Tra cứu nguồn gốc công khai bảo mật cho người tiêu dùng.
+    User Story S-47, S-48 & Epic E-08: Tra cứu nguồn gốc công khai bảo mật cho người tiêu dùng.
     - Không yêu cầu xác thực JWT (dành cho người tiêu dùng quét mã QR).
-    - CHỈ trả về thông tin công khai: Tên sản phẩm, Tên vùng trồng, Tỉnh/thành, Ngày thu hoạch,
-      và các mốc hành trình chuỗi cung ứng chính (sơ chế, vận chuyển, phân phối).
+    - CHỈ trả về thông tin công khai trong Allowlist S-48: Tên sản phẩm, Tên vùng trồng, Tỉnh/thành,
+      Ngày thu hoạch, Chứng nhận (nếu có căn cứ DB), và các mốc hành trình chuỗi cung ứng thực tế.
     - TUYỆT ĐỐI KHÔNG TRẢ VỀ: Khối lượng lô, Giá bán, Doanh thu, Tên đối tác trung gian, hay bất kỳ dữ liệu nội bộ nào.
-    - Chống scraping: Không cung cấp danh sách toàn bộ mã lô.
+    - Hỗ trợ lô hàng được tách/gộp nhiều tầng (Multi-tier lineage): Thể hiện đầy đủ tất cả vùng trồng gốc (origins).
+    - Tự động phát hiện chu trình (cycle detection) trong đồ thị phả hệ và dừng an toàn.
+    - Không tạo mốc giả hoặc chứng nhận giả: Chỉ hiển thị dữ liệu thực có trong database.
     """
     batch = BatchRepository.get_by_code(db, batch_code.strip())
     if not batch:
@@ -80,69 +88,325 @@ def get_public_batch_trace(
             detail=f"Mã lô '{batch_code}' không tồn tại hoặc chưa kích hoạt truy xuất công khai.",
         )
 
-    # Xác định tên vùng trồng và địa bàn (tỉnh/thành)
-    farm_name = "Vùng trồng Nông Sản Lành"
-    province = "Lâm Đồng"
-    farmer_ref = batch.farmer_ref_id or (batch.land_plot.farmer_ref_id if batch.land_plot else None)
-    if farmer_ref:
-        from app.models.farmer import FarmerIdentity
-        farmer_obj = db.query(FarmerIdentity).filter(FarmerIdentity.farmer_ref_id == farmer_ref).first()
-        if farmer_obj and farmer_obj.is_anonymized:
-            farm_name = f"Vùng trồng nông hộ ẩn danh ({farmer_ref})"
-            province = farmer_obj.province or "Lâm Đồng"
-        elif farmer_obj:
-            farm_name = farmer_obj.full_name or "Vùng trồng Nông Sản Lành"
-            province = farmer_obj.province or "Lâm Đồng"
-    elif batch.land_plot:
-        farm_name = batch.land_plot.name
-        if batch.land_plot.address:
-            province = batch.land_plot.address.split(",")[-1].strip()
-        elif batch.organization:
-            farm_name = f"{batch.land_plot.name} ({batch.organization.name})"
-    elif batch.organization:
-        farm_name = batch.organization.name
+    # 1. Truy vết nguồn gốc phả hệ nhiều tầng (Multi-tier Lineage & Cycle Detection - S-47)
+    visited_batch_ids: set[int] = set()
+    queue: list[Batch] = [batch]
+    all_related_batches: list[Batch] = []
 
-    harvest_date = (
-        batch.created_at.strftime("%Y-%m-%d")
-        if batch.created_at
-        else datetime.now().strftime("%Y-%m-%d")
+    origins: list[FarmOriginInfo] = []
+    seen_origin_keys: set[tuple[str, str]] = set()
+
+    def _extract_farm_info(b: Batch) -> FarmOriginInfo | None:
+        f_name = None
+        prov = None
+        plot_name = None
+
+        farmer_ref = b.farmer_ref_id or (b.land_plot.farmer_ref_id if b.land_plot else None)
+        if farmer_ref:
+            from app.models.farmer import FarmerIdentity
+            farmer_obj = db.query(FarmerIdentity).filter(FarmerIdentity.farmer_ref_id == farmer_ref).first()
+            if farmer_obj and farmer_obj.is_anonymized:
+                f_name = f"Vùng trồng nông hộ ẩn danh ({farmer_ref})"
+                prov = farmer_obj.province or "Chưa có thông tin địa phương"
+            elif farmer_obj:
+                f_name = farmer_obj.full_name or "Vùng trồng nông hộ"
+                prov = farmer_obj.province or "Chưa có thông tin địa phương"
+
+        if not f_name and b.land_plot:
+            f_name = b.land_plot.name
+            plot_name = b.land_plot.name
+            if b.land_plot.address:
+                prov = b.land_plot.address.split(",")[-1].strip()
+            elif b.organization:
+                f_name = f"{b.land_plot.name} ({b.organization.name})"
+                prov = "Chưa có thông tin địa phương"
+
+        if not f_name and b.organization:
+            f_name = b.organization.name
+            prov = "Chưa có thông tin địa phương"
+
+        if f_name:
+            return FarmOriginInfo(
+                farm_name=f_name,
+                province=prov or "Chưa có thông tin địa phương",
+                land_plot_name=plot_name,
+            )
+        return None
+
+    while queue:
+        curr = queue.pop(0)
+        if curr.id in visited_batch_ids:
+            # Phát hiện chu trình (Cycle detection) -> Dừng an toàn để ngăn vòng lặp vô hạn
+            continue
+        visited_batch_ids.add(curr.id)
+        all_related_batches.append(curr)
+
+        parent_relations = (
+            db.query(BatchRelation)
+            .filter(BatchRelation.child_batch_id == curr.id)
+            .all()
+        )
+
+        if not parent_relations:
+            # Lô gốc (Root Origin)
+            origin_info = _extract_farm_info(curr)
+            if origin_info:
+                key = (origin_info.farm_name, origin_info.province)
+                if key not in seen_origin_keys:
+                    seen_origin_keys.add(key)
+                    origins.append(origin_info)
+        else:
+            for rel in parent_relations:
+                if rel.parent_batch_id not in visited_batch_ids:
+                    p_batch = db.query(Batch).filter(Batch.id == rel.parent_batch_id).first()
+                    if p_batch:
+                        queue.append(p_batch)
+
+    # Nếu lô không có cha và không có plot gốc ở loop, fallback về chính nó
+    if not origins:
+        fallback_origin = _extract_farm_info(batch)
+        if fallback_origin:
+            origins.append(fallback_origin)
+
+    if origins:
+        if len(origins) == 1:
+            farm_name = origins[0].farm_name
+            province = origins[0].province
+        else:
+            farm_name = "; ".join(o.farm_name for o in origins)
+            valid_provinces = list(dict.fromkeys(
+                o.province for o in origins if o.province != "Chưa có thông tin địa phương"
+            ))
+            province = ", ".join(valid_provinces) if valid_provinces else "Chưa có thông tin địa phương"
+    else:
+        farm_name = "Chưa có thông tin vùng trồng"
+        province = "Chưa có thông tin địa phương"
+
+    # 2. Xác định ngày thu hoạch thực tế từ database
+    all_chain_events = (
+        db.query(ChainEvent)
+        .filter(ChainEvent.batch_id.in_(visited_batch_ids))
+        .order_by(ChainEvent.created_at.asc(), ChainEvent.id.asc())
+        .all()
     )
 
-    # Đánh giá an toàn thời gian cách ly thuốc BVTV (S-62)
+    harvest_date = None
+    for ev in all_chain_events:
+        if ev.event_type.upper() in ["HARVESTED", "HARVEST"]:
+            harvest_date = ev.created_at.strftime("%Y-%m-%d")
+            break
+    if not harvest_date and batch.created_at:
+        harvest_date = batch.created_at.strftime("%Y-%m-%d")
+    elif not harvest_date:
+        harvest_date = "Chưa có thông tin ngày thu hoạch"
+
+    # 3. Xác định chứng nhận chất lượng (VietGAP, GlobalGAP, Organic...) có bằng chứng thực tế
+    certification = "Chưa có thông tin chứng nhận"
+    for ce in all_chain_events:
+        ev_type = (ce.event_type or "").upper()
+        ev_data_str = str(ce.event_data or "")
+        ev_data_lower = ev_data_str.lower()
+        if "VIETGAP" in ev_type or "vietgap" in ev_data_lower:
+            certification = "VietGAP"
+            break
+        elif "GLOBALGAP" in ev_type or "globalgap" in ev_data_lower:
+            certification = "GlobalGAP"
+            break
+        elif "ORGANIC" in ev_type or "hữu cơ" in ev_data_lower or "organic" in ev_data_lower:
+            certification = "Hữu cơ (Organic)"
+            break
+        elif "CERTIFICATION" in ev_type:
+            try:
+                parsed = json.loads(ev_data_str)
+                if isinstance(parsed, dict) and "certification" in parsed:
+                    certification = str(parsed["certification"])
+                    break
+            except (json.JSONDecodeError, ValueError, TypeError):
+                continue
+
+    if certification == "Chưa có thông tin chứng nhận":
+        prod_obj = db.query(Product).filter(Product.name == batch.product_name).first()
+        if prod_obj and prod_obj.description:
+            desc_lower = prod_obj.description.lower()
+            if "vietgap" in desc_lower:
+                certification = "VietGAP"
+            elif "globalgap" in desc_lower:
+                certification = "GlobalGAP"
+            elif "hữu cơ" in desc_lower or "organic" in desc_lower:
+                certification = "Hữu cơ (Organic)"
+
+    # 4. Đánh giá an toàn thời gian cách ly thuốc BVTV (S-62)
+    all_material_logs: list[BatchMaterialLog] = []
+    for b_item in all_related_batches:
+        if b_item.material_logs:
+            all_material_logs.extend(b_item.material_logs)
+
     is_safe = True
-    phi_msg = "Đạt chuẩn an toàn thời gian cách ly thuốc BVTV (VietGAP)"
-    if batch.material_logs:
+    if all_material_logs:
         today = datetime.now().date()
-        violating = [
-            l
-            for l in batch.material_logs
-            if datetime.strptime(l.safe_harvest_date, "%Y-%m-%d").date() > today
-        ]
+        violating = []
+        for l in all_material_logs:
+            try:
+                safe_dt = datetime.strptime(l.safe_harvest_date, "%Y-%m-%d").date()
+                if safe_dt > today:
+                    violating.append(l)
+            except (ValueError, TypeError):
+                continue
         if violating:
             is_safe = False
             phi_msg = "Đang trong thời gian giám sát cách ly vật tư nông nghiệp."
+        else:
+            phi_msg = (
+                f"Đạt chuẩn an toàn thời gian cách ly thuốc BVTV ({certification})"
+                if certification != "Chưa có thông tin chứng nhận"
+                else "Đạt chuẩn an toàn thời gian cách ly thuốc BVTV."
+            )
+    else:
+        is_safe = True
+        phi_msg = "Chưa ghi nhận nhật ký sử dụng vật tư nông nghiệp"
 
-    # Các mốc hành trình chuỗi cung ứng chính (không để lộ đối tác trung gian bí mật kinh doanh)
-    milestones = [
-        JourneyMilestone(
-            stage="Thu hoạch & Sơ chế",
-            description=f"Thu hoạch tại {farm_name}, sơ chế phân loại đạt chuẩn chất lượng.",
-            timestamp=harvest_date,
-            status="completed",
-        ),
-        JourneyMilestone(
+    # 5. Các mốc hành trình chuỗi cung ứng thực tế (Không tự tạo nội dung giả)
+    milestones: list[JourneyMilestone] = []
+    seen_milestones: set[tuple[str, str]] = set()
+
+    def _add_milestone(stage: str, description: str, dt: datetime | None, status_str: str = "completed"):
+        ts_str = dt.strftime("%Y-%m-%d %H:%M:%S") if dt else None
+        key = (stage, ts_str or "")
+        if key not in seen_milestones:
+            seen_milestones.add(key)
+            milestones.append(
+                JourneyMilestone(
+                    stage=stage,
+                    description=description,
+                    timestamp=ts_str,
+                    status=status_str,
+                )
+            )
+
+    # 5.1. Mốc từ chuỗi sự kiện ChainEvent
+    for ce in all_chain_events:
+        etype = ce.event_type.upper()
+        if etype in ["BATCH_INITIALIZED", "BATCH_CREATED"]:
+            _add_milestone(
+                stage="Khởi tạo lô hàng",
+                description=f"Khởi tạo lô hàng tại {farm_name}.",
+                dt=ce.created_at,
+            )
+        elif etype in ["HARVESTED", "HARVEST"]:
+            _add_milestone(
+                stage="Thu hoạch",
+                description=f"Thu hoạch nông sản tại {farm_name}.",
+                dt=ce.created_at,
+            )
+        elif etype in ["PROCESSING", "PREPROCESSING", "SORTING"]:
+            _add_milestone(
+                stage="Sơ chế & Phân loại",
+                description="Sơ chế, phân loại và kiểm tra chất lượng ban đầu.",
+                dt=ce.created_at,
+            )
+        elif etype in ["PACKAGING", "PACKING"]:
+            _add_milestone(
+                stage="Đóng gói",
+                description="Đóng gói bao bì và niêm phong lô hàng.",
+                dt=ce.created_at,
+            )
+        elif etype in ["COLD_STORAGE"]:
+            _add_milestone(
+                stage="Lưu kho lạnh",
+                description="Bảo quản trong kho lạnh kiểm soát nhiệt độ.",
+                dt=ce.created_at,
+            )
+        elif etype in ["BATCH_SPLIT"]:
+            _add_milestone(
+                stage="Phân tách lô hàng",
+                description="Phân tách lô hàng phục vụ phân phối chuỗi cung ứng.",
+                dt=ce.created_at,
+            )
+        elif etype in ["BATCH_MERGED"]:
+            _add_milestone(
+                stage="Gộp lô hàng",
+                description="Gộp nông sản từ các nguồn gốc đạt chuẩn chất lượng.",
+                dt=ce.created_at,
+            )
+        elif etype in ["HANDOVER_INITIATED"]:
+            _add_milestone(
+                stage="Bắt đầu vận chuyển",
+                description="Bắt đầu vận chuyển trong chuỗi cung ứng.",
+                dt=ce.created_at,
+            )
+        elif etype in ["HANDOVER_ACCEPTED", "TRANSFERRED"]:
+            _add_milestone(
+                stage="Bàn giao chuỗi cung ứng",
+                description="Hoàn tất bàn giao tiếp nhận giữa các chặng trong chuỗi cung ứng.",
+                dt=ce.created_at,
+            )
+        elif etype in ["RECALL_APPLIED"]:
+            _add_milestone(
+                stage="Thu hồi khẩn cấp",
+                description="Lô hàng đang trong diện giám sát hoặc xử lý thu hồi.",
+                dt=ce.created_at,
+                status_str="active",
+            )
+        elif etype in ["INSPECTION", "QUALITY_CHECK"]:
+            _add_milestone(
+                stage="Kiểm tra chất lượng",
+                description="Kiểm tra và xác nhận chất lượng nông sản.",
+                dt=ce.created_at,
+            )
+
+    # 5.2. Mốc từ chuyến vận chuyển chuỗi lạnh (TransportTrip)
+    trips = (
+        db.query(TransportTrip)
+        .join(TripBatch, TripBatch.trip_id == TransportTrip.id)
+        .filter(TripBatch.batch_id.in_(visited_batch_ids))
+        .order_by(TransportTrip.start_time.asc())
+        .all()
+    )
+    for trip in trips:
+        readings = trip.telemetry_readings
+        if readings:
+            min_t = min(r.temperature for r in readings)
+            max_t = max(r.temperature for r in readings)
+            desc_temp = f" (nhiệt độ thực đo: {min_t:.1f}°C - {max_t:.1f}°C)"
+        else:
+            desc_temp = f" (dải nhiệt độ cài đặt: {trip.min_temperature:.1f}°C - {trip.max_temperature:.1f}°C)"
+
+        t_status = "completed" if trip.status == TripStatus.COMPLETED.value else "active"
+        t_dt = trip.end_time or trip.start_time or trip.created_at
+        _add_milestone(
             stage="Vận chuyển chuỗi lạnh",
-            description="Vận chuyển bằng xe chuyên dụng bảo ôn kiểm soát nhiệt độ tự động 2°C - 6°C.",
-            timestamp=harvest_date,
-            status="completed",
-        ),
-        JourneyMilestone(
-            stage="Phân phối & Bán lẻ",
-            description="Phân phối đến hệ thống điểm bán / siêu thị nông sản đạt chuẩn kiểm định.",
-            timestamp=harvest_date,
-            status="active",
-        ),
-    ]
+            description=f"Vận chuyển bằng xe chuyên dụng bảo quản lạnh{desc_temp}.",
+            dt=t_dt,
+            status_str=t_status,
+        )
+
+    # 5.3. Mốc từ biên bản bàn giao (Handover)
+    handovers = (
+        db.query(Handover)
+        .filter(Handover.batch_id.in_(visited_batch_ids))
+        .order_by(Handover.created_at.asc())
+        .all()
+    )
+    for h in handovers:
+        h_dt = h.updated_at if h.status == HandoverStatus.ACCEPTED.value else h.created_at
+        h_temp = f" (nhiệt độ ghi nhận: {h.temperature})" if h.temperature else ""
+        if h.status == HandoverStatus.ACCEPTED.value:
+            _add_milestone(
+                stage="Bàn giao chuỗi cung ứng",
+                description=f"Hoàn thành bàn giao tiếp nhận trong chuỗi cung ứng{h_temp}.",
+                dt=h_dt,
+                status_str="completed",
+            )
+        elif h.status == HandoverStatus.PENDING.value:
+            _add_milestone(
+                stage="Bàn giao chuỗi cung ứng",
+                description=f"Đang chờ tiếp nhận trong chuỗi cung ứng{h_temp}.",
+                dt=h_dt,
+                status_str="active",
+            )
+
+    # Sắp xếp các mốc thời gian tăng dần
+    milestones.sort(key=lambda m: m.timestamp or "")
 
     return PublicBatchTraceResponse(
         batch_code=batch.batch_code,
@@ -150,10 +414,11 @@ def get_public_batch_trace(
         farm_name=farm_name,
         province=province,
         harvest_date=harvest_date,
-        certification="VietGAP",
+        certification=certification,
         journey_milestones=milestones,
         is_safe_phi=is_safe,
         phi_message=phi_msg,
+        origins=origins,
     )
 
 
