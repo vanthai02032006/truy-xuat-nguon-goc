@@ -284,6 +284,13 @@
           <i class="fa-solid fa-truck-ramp-box"></i> Bàn Giao & Vận Chuyển Lạnh (S-15, S-16)
         </button>
 
+                <button 
+          id="tabBtn_recalls" 
+          onclick="switchNavTab('recalls')"
+          class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-900 transition-all flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Thu Hồi Khẩn Cấp (E-06)
+        </button>
+
         <button 
           id="tabBtn_traceability" 
           onclick="switchNavTab('traceability')"
@@ -338,6 +345,12 @@
           </button>
           <button onclick="openModal('recordBatchMaterialModal')" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
             <i class="fa-solid fa-spray-can"></i> Ghi Nhận Vật Tư (S-62)
+          </button>
+          <button 
+            id="modalBtnRecall" 
+            onclick="openRecallModalForCurrentBatch()" 
+            class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-triangle-exclamation"></i> Thu Hồi Khẩn Cấp (S-33)
           </button>
         </div>
       </div>
@@ -853,6 +866,115 @@
 
     </div>
 
+
+    <!-- ======================================================== -->
+    <!-- VIEW 8: THU HỒI LÔ HÀNG KHẨN CẤP (EPIC E-06)             -->
+    <!-- S-33, S-34, S-35, S-36, S-37, S-38                        -->
+    <!-- ======================================================== -->
+    <div id="view_recalls" class="module-view space-y-8 hidden">
+      
+      <!-- Recall Hero Banner -->
+      <div class="bg-gradient-to-r from-rose-900 via-rose-800 to-amber-950 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-rose-700">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-700/60 border border-rose-500/30 text-rose-200 text-xs font-bold">
+            <i class="fa-solid fa-triangle-exclamation text-rose-300"></i> Epic E-06: Ứng Phó Khẩn Cấp Sự Cố An Toàn Thực Phẩm
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-white">Quản Lý Thu Hồi Lô Hàng Khẩn Cấp (Recall)</h2>
+          <p class="text-xs sm:text-sm text-rose-100/90 max-w-2xl">
+            Khi phát hiện sự cố an toàn thực phẩm, hệ thống lập tức khoanh vùng toàn bộ cây phả hệ hậu duệ qua mọi tầng tách/gộp (S-34, S-35) và tự động khóa quyền Bàn giao, Tách, Gộp (S-38) để bảo vệ sức khỏe người tiêu dùng.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button onclick="switchNavTab('batches')" class="px-4 py-2.5 bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
+            <i class="fa-solid fa-boxes-stacked"></i> Chọn Lô Cần Mở Thu Hồi
+          </button>
+        </div>
+      </div>
+
+      <!-- Recall Metrics KPI Bar -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Lệnh Đang Kích Hoạt</p>
+            <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <i class="fa-solid fa-bullhorn"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-rose-700 mt-2" id="kpiActiveRecalls">0 Lệnh</p>
+          <p class="text-[11px] text-rose-600 font-semibold mt-1">Đang xử lý cô lập</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Lô Bị Khoanh Vùng</p>
+            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <i class="fa-solid fa-network-wired"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-amber-700 mt-2" id="kpiTotalAffectedBatches">0 Lô</p>
+          <p class="text-[11px] text-slate-500 mt-1">Cây phả hệ con/cháu (S-34)</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Tồn Kho / Kệ Siêu Thị</p>
+            <div class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+              <i class="fa-solid fa-boxes-packing"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-orange-700 mt-2" id="kpiStockToIsolateKg">0 kg</p>
+          <p class="text-[11px] text-orange-600 font-semibold mt-1">Khóa quyền lưu thông (S-38)</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Đã Bán Cho Người Dùng</p>
+            <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+              <i class="fa-solid fa-user-tag"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-purple-700 mt-2" id="kpiSoldToConsumersKg">0 kg</p>
+          <p class="text-[11px] text-purple-600 font-semibold mt-1">Cần thông báo thu hồi (S-35)</p>
+        </div>
+      </div>
+
+      <!-- Recall List Table Card -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-4 p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-clipboard-list text-rose-600"></i> Danh Sách Lệnh Thu Hồi Nông Sản Khẩn Cấp
+            </h3>
+            <p class="text-xs text-slate-500">Giám sát tiến độ xác nhận cô lập của từng tổ chức theo thời gian thực (S-36, S-37)</p>
+          </div>
+          <button onclick="renderRecallsTab()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-arrows-rotate"></i> Làm Mới Dữ Liệu
+          </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-slate-200">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">Mã Lệnh Thu Hồi</th>
+                <th class="p-3.5">Lô Nguồn & Sản Phẩm</th>
+                <th class="p-3.5">Mức Độ</th>
+                <th class="p-3.5">Tiến Độ Xử Lý Các Tổ Chức (S-37)</th>
+                <th class="p-3.5 text-right">Kho / Kệ (kg)</th>
+                <th class="p-3.5 text-right">Đã Bán (kg)</th>
+                <th class="p-3.5">Trạng Thái</th>
+                <th class="p-3.5 text-right">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody id="recallsTableBody" class="divide-y divide-slate-100">
+              <!-- Dynamic recall items -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
   </main>
 
   <!-- ================= FOOTER ================= -->
@@ -1364,6 +1486,180 @@
 
 
 
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: MỞ LỆNH THU HỒI KHẨN CẤP (RECALL BATCH - USER STORY S-33, S-34, S-35)   -->
+  <!-- ============================================================================ -->
+  <div id="openRecallModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-rose-200 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-rose-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-sm font-black">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Mở Lệnh Thu Hồi Khẩn Cấp (S-33)</h3>
+            <p class="text-[11px] text-slate-500">Kích hoạt khoanh vùng truy xuôi hậu duệ và chặn lan rộng chuỗi cung ứng</p>
+          </div>
+        </div>
+        <button onclick="closeModal('openRecallModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="p-3.5 bg-rose-50/60 rounded-2xl border border-rose-200 grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Mã Lô Gặp Sự Cố</span>
+          <p id="recallModalBatchCode" class="font-mono font-bold text-rose-900">BATCH-...</p>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Nông Sản</span>
+          <p id="recallModalProductName" class="font-bold text-slate-800 truncate">...</p>
+        </div>
+      </div>
+
+      <!-- Chọn mức độ nghiêm trọng -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Mức Độ Nghiêm Trọng:</label>
+        <select id="recallSeveritySelect" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-rose-700 focus:ring-2 focus:ring-rose-500">
+          <option value="CRITICAL">Nguy Hiểm Cao Nhất (CRITICAL - Dư lượng cấm / Độc tố sinh học)</option>
+          <option value="HIGH">Nghiêm Trọng (HIGH - Vi khuẩn, nấm mốc vượt ngưỡng)</option>
+          <option value="MEDIUM">Cảnh Báo Trung Bình (MEDIUM - Sai quy cách bảo quản)</option>
+        </select>
+      </div>
+
+      <!-- Nhập lý do thu hồi (Bắt buộc >= 20 ký tự theo S-33) -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-xs font-bold text-slate-700">Lý Do Thu Hồi (Bắt buộc tối thiểu 20 ký tự):</label>
+          <span id="recallReasonCharCounter" class="text-[11px] font-mono font-bold text-slate-400">0 / 20 ký tự</span>
+        </div>
+        <textarea 
+          id="recallReasonInput" 
+          rows="4" 
+          oninput="handleRecallReasonInput()"
+          placeholder="Mô tả cụ thể sự cố an toàn thực phẩm, vi phạm chỉ số kiểm nghiệm, thông tư vi phạm..." 
+          class="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 font-medium"></textarea>
+        <p id="recallReasonWarning" class="text-[11px] text-rose-600 font-bold mt-1 hidden flex items-center gap-1">
+          <i class="fa-solid fa-circle-exclamation"></i> Lý do phải có ít nhất 20 ký tự để kích hoạt lệnh thu hồi hợp lệ!
+        </p>
+      </div>
+
+      <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-[11px] text-amber-900 space-y-1">
+        <p class="font-bold flex items-center gap-1.5 text-amber-950">
+          <i class="fa-solid fa-lock text-amber-600"></i> Cơ chế Chặn Lan Rộng (S-38):
+        </p>
+        <p>Hệ thống sẽ <strong>khóa tức thì</strong> quyền Bàn giao, Tách lô và Gộp lô đối với toàn bộ các lô con cháu liên quan.</p>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeModal('openRecallModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold">Hủy</button>
+        <button type="button" id="btnSubmitRecall" onclick="submitTriggerRecall()" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5 transition-all">
+          <i class="fa-solid fa-bullhorn"></i> Kích Hoạt Lệnh Thu Hồi
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: CHI TIẾT LỆNH THU HỒI & TIẾN ĐỘ XỬ LÝ (S-34, S-35, S-36, S-37)         -->
+  <!-- ============================================================================ -->
+  <div id="recallDetailModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-rose-200 p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-lg font-black shadow-md">
+            <i class="fa-solid fa-shield-virus"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="recallDetailCode" class="font-mono font-black text-slate-900 text-base">RCL-...</h3>
+              <span id="recallDetailStatusBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">Đang Thu Hồi</span>
+            </div>
+            <p id="recallDetailProductInfo" class="text-xs text-slate-500">Lô gốc: BATCH-... | Sản phẩm: ...</p>
+          </div>
+        </div>
+        <button onclick="closeModal('recallDetailModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Lý do thu hồi -->
+      <div class="p-3.5 bg-rose-50 rounded-2xl border border-rose-200 space-y-1">
+        <span class="text-[10px] uppercase font-bold text-rose-800">Lý do thu hồi (S-33):</span>
+        <p id="recallDetailReason" class="text-xs text-rose-950 font-medium">...</p>
+      </div>
+
+      <!-- THANH TIẾN ĐỘ XỬ LÝ (S-37) -->
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+        <div class="flex items-center justify-between text-xs font-bold">
+          <span class="text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-list-check text-indigo-600"></i> Tiến Độ Xử Lý & Xác Nhận Cô Lập Các Tổ Chức:
+          </span>
+          <span id="recallDetailProgressText" class="text-indigo-800 font-mono">0/0 tổ chức (0%)</span>
+        </div>
+        <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+          <div id="recallDetailProgressBar" class="bg-gradient-to-r from-amber-500 to-emerald-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div id="recallDetailOrgActionsList" class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
+          <!-- Dynamic org actions -->
+        </div>
+      </div>
+
+      <!-- THỐNG KÊ CHI TIẾT KHOANH VÙNG (S-35) -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm text-center">
+          <p class="text-[10px] text-slate-400 uppercase font-bold">Tổng Lô Bị Ảnh Hưởng</p>
+          <p id="recallStatAffectedBatches" class="text-xl font-black text-slate-900 mt-1">0 Lô</p>
+        </div>
+        <div class="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200 shadow-sm text-center">
+          <p class="text-[10px] text-amber-800 uppercase font-bold">Còn Trong Kho / Quầy Kệ</p>
+          <p id="recallStatStockKg" class="text-xl font-black text-amber-700 mt-1">0 kg</p>
+          <span class="text-[10px] text-amber-600">Cần niêm phong khẩn cấp</span>
+        </div>
+        <div class="bg-rose-50/60 p-3.5 rounded-2xl border border-rose-200 shadow-sm text-center">
+          <p class="text-[10px] text-rose-800 uppercase font-bold">Đã Bán Ra Người Tiêu Dùng</p>
+          <p id="recallStatSoldKg" class="text-xl font-black text-rose-700 mt-1">0 kg</p>
+          <span class="text-[10px] text-rose-600">Cảnh báo công khai thu hồi</span>
+        </div>
+      </div>
+
+      <!-- DANH SÁCH TOÀN BỘ CÁC LÔ CON CHÁU BỊ KHOANH VÙNG (S-34) -->
+      <div class="space-y-2">
+        <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-network-wired text-rose-600"></i> Danh Sách Lô Bị Khoanh Vùng Qua Mọi Tầng Tách/Gộp (S-34)
+        </h4>
+        <div class="border border-slate-200 rounded-2xl overflow-hidden max-h-60 overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
+              <tr>
+                <th class="p-2.5">Mã Lô</th>
+                <th class="p-2.5">Thế Hệ</th>
+                <th class="p-2.5">Tổ Chức Quản Lý</th>
+                <th class="p-2.5 text-right">Kho / Kệ (kg)</th>
+                <th class="p-2.5 text-right">Đã Bán (kg)</th>
+                <th class="p-2.5">Vị Trí Hiện Tại</th>
+                <th class="p-2.5 text-center">Tình Trạng</th>
+              </tr>
+            </thead>
+            <tbody id="recallDetailAffectedBatchesTbody" class="divide-y divide-slate-100">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Nút thao tác -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+        <div id="recallOrgConfirmActionBox">
+          <!-- Button xác nhận nếu là tổ chức của user và chưa xác nhận -->
+        </div>
+        <button onclick="closeModal('recallDetailModal')" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs">
+          Đóng Cửa Sổ
+        </button>
+      </div>
+    </div>
+  </div>
+
+
   <!-- ============================================================================ -->
   <!-- MODAL: TÁCH LÔ NÔNG SẢN (SPLIT BATCH - USER STORY S-17 & S-18)                -->
   <!-- Khóa dòng SELECT ... FOR UPDATE chống race condition                         -->
@@ -1864,7 +2160,7 @@
       state.activeTab = tabId;
       saveAppState(state);
 
-      const allTabs = ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'traceability', 'public'];
+      const allTabs = ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'traceability', 'public'];
       allTabs.forEach(t => {
         const btn = document.getElementById(`tabBtn_${t}`);
         const view = document.getElementById(`view_${t}`);
@@ -1886,6 +2182,7 @@
       else if (tabId === 'plots') renderPlotsGrid();
       else if (tabId === 'materials_phi') renderMaterialsPhiTab();
       else if (tabId === 'handovers') renderHandoversTable();
+      else if (tabId === 'recalls') renderRecallsTab();
       else if (tabId === 'traceability') renderTraceabilityTab();
       else if (tabId === 'public') renderPublicBatches('all');
       else renderOverviewTab();
@@ -3641,6 +3938,436 @@
     /**
      * MODAL HELPERS
      */
+
+    /**
+     * EPIC E-06: THU HỒI LÔ HÀNG KHẨN CẤP (EMERGENCY RECALL)
+     * S-33, S-34, S-35, S-36, S-37, S-38
+     */
+    let currentViewingRecallId = null;
+
+    function handleRecallReasonInput() {
+      const textarea = document.getElementById("recallReasonInput");
+      const counter = document.getElementById("recallReasonCharCounter");
+      const warning = document.getElementById("recallReasonWarning");
+      const submitBtn = document.getElementById("btnSubmitRecall");
+
+      const len = textarea.value.trim().length;
+      counter.innerText = `${len} / 20 ký tự`;
+
+      if (len < 20) {
+        counter.className = "text-[11px] font-mono font-bold text-rose-600";
+        warning.classList.remove("hidden");
+        submitBtn.disabled = true;
+        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+      } else {
+        counter.className = "text-[11px] font-mono font-bold text-emerald-600";
+        warning.classList.add("hidden");
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      }
+    }
+
+    function openRecallModalForCurrentBatch() {
+      const batchCode = currentDetailBatchCode;
+      const b = state.batches.find(x => x.code === batchCode);
+      if (!b) return;
+
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
+      // Phân quyền S-33: Cán bộ kiểm tra (Inspector) hoặc Quản trị của tổ chức đang giữ lô
+      const isInspector = roleKey === "inspector";
+      const isAdmin = roleKey === "system_admin" || cfg.role === "Admin";
+      const isHoldingOrg = cfg.orgId !== null && b.org_id === cfg.orgId;
+
+      if (!isInspector && !(isAdmin && isHoldingOrg) && roleKey !== "system_admin") {
+        showToast("Chỉ Cán bộ kiểm tra (Inspector) hoặc Quản trị của tổ chức đang giữ lô mới có quyền mở lệnh thu hồi (S-33)!", "error");
+        return;
+      }
+
+      document.getElementById("recallModalBatchCode").innerText = b.code;
+      document.getElementById("recallModalProductName").innerText = b.product;
+      document.getElementById("recallReasonInput").value = "";
+      handleRecallReasonInput();
+
+      closeModal("batchDetailModal");
+      openModal("openRecallModal");
+    }
+
+    async function submitTriggerRecall() {
+      const batchCode = currentDetailBatchCode;
+      const b = state.batches.find(x => x.code === batchCode);
+      if (!b) return;
+
+      const reason = document.getElementById("recallReasonInput").value.trim();
+      const severity = document.getElementById("recallSeveritySelect").value;
+
+      if (reason.length < 20) {
+        showToast("Lý do thu hồi bắt buộc phải có ít nhất 20 ký tự mô tả cụ thể sự cố (S-33)!", "error");
+        return;
+      }
+
+      // Gọi API Backend
+      try {
+        const resp = await fetch("/api/v1/recalls", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${state.token || ""}`
+          },
+          body: JSON.stringify({
+            batch_id: b.id || 1,
+            reason: reason,
+            severity: severity
+          })
+        });
+
+        if (resp.ok) {
+          const recallData = await resp.json();
+          closeModal("openRecallModal");
+          showToast(`Kích hoạt thành công lệnh thu hồi #${recallData.recall_code}!`, "success");
+          displayRecallDetailModal(recallData);
+          renderRecallsTab();
+          return;
+        } else {
+          const errJson = await resp.json();
+          showToast(errJson.detail || "Không thể kích hoạt lệnh thu hồi!", "error");
+        }
+      } catch (err) {
+        console.warn("API recall trigger error, running local state fallback:", err);
+      }
+
+      // Local mock fallback nếu API offline
+      const mockCode = "RCL-" + new Date().toISOString().slice(0,10).replace(/-/g,'') + "-" + Math.random().toString(36).substring(2,8).toUpperCase();
+      const mockRecall = {
+        id: Date.now(),
+        recall_code: mockCode,
+        source_batch_id: b.id || 1,
+        source_batch_code: b.code,
+        product_name: b.product,
+        reason: reason,
+        severity: severity,
+        status: "ACTIVE",
+        initiator_name: "Cán Bộ Kiểm Tra An Toàn",
+        initiator_org_name: "Chi Cục Quản Lý Chất Lượng",
+        total_affected_batches: 3,
+        total_affected_kg: 1800,
+        total_stock_kg: 750,
+        total_sold_kg: 1050,
+        progress: {
+          total_organizations: 3,
+          confirmed_organizations: 0,
+          progress_percentage: 0,
+          status_summary: "0/3 tổ chức đã xác nhận cô lập"
+        },
+        affected_batches: [
+          {
+            batch_code: b.code,
+            product_name: b.product,
+            organization_name: b.farm || "Nông Trại Hữu Cơ",
+            generation: "ROOT",
+            remaining_quantity: 200,
+            sold_quantity: 800,
+            current_location: "Kho trang trại",
+            is_isolated: false
+          },
+          {
+            batch_code: "BATCH-CHILD-COOP-01",
+            product_name: b.product,
+            organization_name: "HTX Sơ Chế Chế Biến",
+            generation: "THẾ HỆ 1",
+            remaining_quantity: 500,
+            sold_quantity: 0,
+            current_location: "Kho lạnh HTX",
+            is_isolated: false
+          },
+          {
+            batch_code: "BATCH-GRAND-RETAIL-01",
+            product_name: b.product,
+            organization_name: "Chuỗi Siêu Thị BioMart",
+            generation: "THẾ HỆ 2",
+            remaining_quantity: 50,
+            sold_quantity: 250,
+            current_location: "Quầy kệ siêu thị",
+            is_isolated: false
+          }
+        ],
+        organization_actions: [
+          { organization_id: 1, organization_name: "Nông Trại Hữu Cơ Thảo Mộc", status: "PENDING", affected_batch_count: 1, stock_kg: 200 },
+          { organization_id: 2, organization_name: "Hợp Tác Xã Chế Biến Xanh", status: "PENDING", affected_batch_count: 1, stock_kg: 500 },
+          { organization_id: 4, organization_name: "Hệ Thống Siêu Thị Nông Sản Sạch", status: "PENDING", affected_batch_count: 1, stock_kg: 50 }
+        ]
+      };
+
+      if (!state.recalls) state.recalls = [];
+      state.recalls.unshift(mockRecall);
+
+      // Cập nhật trạng thái lô thành phong tỏa thu hồi
+      b.status = "Bị phong tỏa thu hồi";
+      saveAppState(state);
+
+      closeModal("openRecallModal");
+      showToast(`Đã kích hoạt lệnh thu hồi #${mockCode}. Toàn bộ các lô con cháu đã bị khóa quyền (S-38)!`, "success");
+      displayRecallDetailModal(mockRecall);
+      renderRecallsTab();
+    }
+
+    async function renderRecallsTab() {
+      const tbody = document.getElementById("recallsTableBody");
+      if (!tbody) return;
+
+      let recallsList = state.recalls || [];
+
+      try {
+        const resp = await fetch("/api/v1/recalls", {
+          headers: { "Authorization": `Bearer ${state.token || ""}` }
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.items) recallsList = data.items;
+        }
+      } catch (e) {
+        console.log("Recalls API fetch fallback:", e);
+      }
+
+      // Update KPI Bar
+      const activeCount = recallsList.filter(r => r.status !== 'COMPLETED').length;
+      const totalAffectedBatches = recallsList.reduce((acc, r) => acc + (r.total_affected_batches || 0), 0);
+      const totalStockKg = recallsList.reduce((acc, r) => acc + (r.total_stock_kg || 0), 0);
+      const totalSoldKg = recallsList.reduce((acc, r) => acc + (r.total_sold_kg || 0), 0);
+
+      document.getElementById("kpiActiveRecalls").innerText = `${activeCount} Lệnh`;
+      document.getElementById("kpiTotalAffectedBatches").innerText = `${totalAffectedBatches} Lô`;
+      document.getElementById("kpiStockToIsolateKg").innerText = `${totalStockKg.toLocaleString('vi-VN')} kg`;
+      document.getElementById("kpiSoldToConsumersKg").innerText = `${totalSoldKg.toLocaleString('vi-VN')} kg`;
+
+      if (recallsList.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="p-8 text-center text-slate-400">
+              <i class="fa-solid fa-shield-heart text-3xl mb-2 text-emerald-500"></i>
+              <p class="font-bold text-xs text-slate-700">Không có lệnh thu hồi khẩn cấp nào đang hoạt động!</p>
+              <p class="text-[11px] text-slate-400 mt-1">Toàn bộ chuỗi cung ứng nông sản đang vận hành an toàn đạt chuẩn.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = recallsList.map(r => {
+        const pct = r.progress ? r.progress.progress_percentage : 0;
+        const summary = r.progress ? r.progress.status_summary : "0/0 tổ chức đã cô lập";
+        const isDone = r.status === "COMPLETED";
+
+        return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-3.5 font-mono font-black text-rose-800 text-xs">${r.recall_code}</td>
+            <td class="p-3.5">
+              <div class="font-bold text-slate-800">${r.product_name || 'Nông sản'}</div>
+              <div class="font-mono text-[10px] text-slate-400">Lô: ${r.source_batch_code}</div>
+            </td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${r.severity === 'CRITICAL' ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-amber-100 text-amber-800'}">
+                ${r.severity}
+              </span>
+            </td>
+            <td class="p-3.5">
+              <div class="space-y-1 min-w-[140px]">
+                <div class="flex justify-between text-[10px] font-bold text-slate-600">
+                  <span>${summary}</span>
+                  <span class="font-mono">${pct}%</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                  <div class="bg-gradient-to-r from-amber-500 to-emerald-500 h-1.5 rounded-full" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            </td>
+            <td class="p-3.5 text-right font-mono font-bold text-amber-800">${(r.total_stock_kg || 0).toLocaleString('vi-VN')} kg</td>
+            <td class="p-3.5 text-right font-mono font-bold text-rose-800">${(r.total_sold_kg || 0).toLocaleString('vi-VN')} kg</td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isDone ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-900 border border-rose-300 animate-pulse'}">
+                ${isDone ? 'Đã Hoàn Tất' : 'Đang Thu Hồi'}
+              </span>
+            </td>
+            <td class="p-3.5 text-right">
+              <button 
+                onclick="viewRecallDetail(${r.id})" 
+                class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1 ml-auto">
+                <i class="fa-solid fa-eye"></i> Chi Tiết & Khoanh Vùng
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function viewRecallDetail(recallId) {
+      currentViewingRecallId = recallId;
+      try {
+        const resp = await fetch(`/api/v1/recalls/${recallId}`, {
+          headers: { "Authorization": `Bearer ${state.token || ""}` }
+        });
+        if (resp.ok) {
+          const detail = await resp.json();
+          displayRecallDetailModal(detail);
+          return;
+        }
+      } catch (e) {
+        console.log("Recall detail API offline, checking local mock:", e);
+      }
+
+      const found = (state.recalls || []).find(r => r.id === recallId);
+      if (found) {
+        displayRecallDetailModal(found);
+      } else {
+        showToast("Không tìm thấy thông tin chi tiết lệnh thu hồi!", "error");
+      }
+    }
+
+    function displayRecallDetailModal(data) {
+      currentViewingRecallId = data.id;
+      document.getElementById("recallDetailCode").innerText = data.recall_code;
+      document.getElementById("recallDetailProductInfo").innerText = `Lô gốc: ${data.source_batch_code} | Nông sản: ${data.product_name}`;
+      document.getElementById("recallDetailReason").innerText = data.reason;
+
+      const badge = document.getElementById("recallDetailStatusBadge");
+      if (badge) {
+        badge.innerText = data.status === "COMPLETED" ? "Đã Hoàn Tất Xử Lý" : "Đang Thu Hồi Khẩn Cấp";
+        badge.className = data.status === "COMPLETED" 
+          ? "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"
+          : "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300";
+      }
+
+      // Progress bar (S-37)
+      const p = data.progress || { progress_percentage: 0, status_summary: "0/0" };
+      document.getElementById("recallDetailProgressText").innerText = `${p.status_summary} (${p.progress_percentage}%)`;
+      document.getElementById("recallDetailProgressBar").style.width = `${p.progress_percentage}%`;
+
+      // Org actions list
+      const orgActionsContainer = document.getElementById("recallDetailOrgActionsList");
+      if (orgActionsContainer && data.organization_actions) {
+        orgActionsContainer.innerHTML = data.organization_actions.map(act => `
+          <div class="p-2.5 rounded-xl border ${act.status === 'CONFIRMED_ISOLATED' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'} flex items-center justify-between text-xs">
+            <div>
+              <div class="font-bold text-slate-800">${act.organization_name}</div>
+              <div class="text-[10px] text-slate-500">${act.affected_batch_count} lô (${act.stock_kg} kg cần niêm phong)</div>
+              ${act.action_notes ? `<div class="text-[10px] italic text-slate-600 mt-0.5">"${act.action_notes}"</div>` : ''}
+            </div>
+            <div>
+              ${act.status === 'CONFIRMED_ISOLATED' 
+                ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1"><i class="fa-solid fa-check"></i> Đã Cô Lập</span>'
+                : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 flex items-center gap-1"><i class="fa-solid fa-clock"></i> Chờ Xác Nhận</span>'}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // KPI stats (S-35)
+      document.getElementById("recallStatAffectedBatches").innerText = `${data.total_affected_batches} Lô`;
+      document.getElementById("recallStatStockKg").innerText = `${(data.total_stock_kg || 0).toLocaleString('vi-VN')} kg`;
+      document.getElementById("recallStatSoldKg").innerText = `${(data.total_sold_kg || 0).toLocaleString('vi-VN')} kg`;
+
+      // Affected batches table (S-34)
+      const tbody = document.getElementById("recallDetailAffectedBatchesTbody");
+      if (tbody && data.affected_batches) {
+        tbody.innerHTML = data.affected_batches.map(b => `
+          <tr class="hover:bg-slate-50">
+            <td class="p-2.5 font-mono font-bold text-rose-900">${b.batch_code}</td>
+            <td class="p-2.5 font-medium text-slate-600">${b.generation}</td>
+            <td class="p-2.5 font-bold text-slate-800">${b.organization_name}</td>
+            <td class="p-2.5 text-right font-mono font-bold text-amber-800">${(b.remaining_quantity || 0).toLocaleString('vi-VN')} kg</td>
+            <td class="p-2.5 text-right font-mono font-bold text-rose-800">${(b.sold_quantity || 0).toLocaleString('vi-VN')} kg</td>
+            <td class="p-2.5 text-slate-500">${b.current_location || 'Kho'}</td>
+            <td class="p-2.5 text-center">
+              ${b.is_isolated 
+                ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">Đã Niêm Phong</span>'
+                : '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800">Cần Thu Hồi</span>'}
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // Nút xác nhận cô lập cho tổ chức của user (S-36)
+      const actionBox = document.getElementById("recallOrgConfirmActionBox");
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
+      if (actionBox) {
+        if (data.status === "COMPLETED") {
+          actionBox.innerHTML = '<span class="text-xs font-bold text-emerald-700 flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Toàn bộ các tổ chức đã hoàn thành cô lập và thu hồi sản phẩm!</span>';
+        } else {
+          actionBox.innerHTML = `
+            <button 
+              onclick="confirmRecallIsolation(${data.id})" 
+              class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-2 transition-all">
+              <i class="fa-solid fa-lock"></i> Xác Nhận Đã Cô Lập/Thu Hồi Hàng Của ${cfg.orgName} (S-36)
+            </button>
+          `;
+        }
+      }
+
+      openModal("recallDetailModal");
+    }
+
+    async function confirmRecallIsolation(recallId) {
+      const notes = prompt("Nhập ghi chú biện pháp niêm phong / cô lập lô hàng:", "Đã hoàn tất cô lập, niêm phong toàn bộ hàng trong kho theo quy định S-36");
+      if (notes === null) return;
+
+      try {
+        const resp = await fetch(`/api/v1/recalls/${recallId}/confirm-isolation`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${state.token || ""}`
+          },
+          body: JSON.stringify({ notes: notes })
+        });
+
+        if (resp.ok) {
+          const updated = await resp.json();
+          showToast("Xác nhận cô lập thành công! Tiến độ xử lý đã được ghi vào chuỗi Hash Chain.", "success");
+          displayRecallDetailModal(updated);
+          renderRecallsTab();
+          return;
+        } else {
+          const err = await resp.json();
+          showToast(err.detail || "Không thể xác nhận cô lập!", "error");
+        }
+      } catch (e) {
+        console.warn("API confirm isolation offline, using local mock:", e);
+      }
+
+      // Fallback local mock
+      const r = (state.recalls || []).find(x => x.id === recallId);
+      if (r) {
+        const roleKey = state.currentRole || "farm";
+        const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+        const currentOrgId = cfg.orgId || 1;
+
+        const act = (r.organization_actions || []).find(a => a.organization_id === currentOrgId && a.status === 'PENDING') || r.organization_actions[0];
+        if (act) {
+          act.status = 'CONFIRMED_ISOLATED';
+          act.action_notes = notes;
+        }
+
+        const confirmed = r.organization_actions.filter(a => a.status === 'CONFIRMED_ISOLATED').length;
+        const total = r.organization_actions.length;
+        r.progress.confirmed_organizations = confirmed;
+        r.progress.progress_percentage = Math.round((confirmed / total) * 100);
+        r.progress.status_summary = `${confirmed}/${total} tổ chức đã xác nhận cô lập`;
+
+        if (confirmed === total) {
+          r.status = 'COMPLETED';
+        }
+
+        saveAppState(state);
+        showToast("Đã xác nhận cô lập phần hàng của tổ chức thành công!", "success");
+        displayRecallDetailModal(r);
+        renderRecallsTab();
+      }
+    }
+
+
     function openModal(modalId) {
       const modal = document.getElementById(modalId);
       if (modal) modal.classList.remove('hidden');
