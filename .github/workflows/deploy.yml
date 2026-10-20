@@ -100,9 +100,11 @@ jobs:
               -u "$GHCR_USERNAME" --password-stdin
 
             # Lay tag cua phien ban dang chay
-            OLD_IMAGE="$(docker inspect app_staging \
-              --format '{{.Config.Image}}')"
+            OLD_IMAGE="$(docker inspect app_staging --format '{{.Config.Image}}' 2>/dev/null || echo '')"
             OLD_TAG="${OLD_IMAGE##*:}"
+            if [ -z "$OLD_TAG" ]; then
+              OLD_TAG="latest"
+            fi
 
             echo "Old tag: $OLD_TAG"
             echo "New tag: $NEW_TAG"
@@ -110,6 +112,9 @@ jobs:
             # Keo image moi do pipeline build
             export IMAGE_TAG="$NEW_TAG"
             docker compose -f "$COMPOSE" pull web
+
+            # Xoa container app_staging cu de tranh conflict name khi compose tao container moi
+            docker rm -f app_staging || true
 
             # Deploy va cho container healthy
             if docker compose -f "$COMPOSE" \
@@ -123,12 +128,13 @@ jobs:
               echo "DEPLOY THAT BAI! TRUY XUAT LOG DOCKER DE XAC DINH NGUYEN NHAN:"
               echo "=========================================================="
               docker compose -f "$COMPOSE" logs --tail 200 web || true
-              docker inspect app_staging --format 'Status: {{.State.Status}}, ExitCode: {{.State.ExitCode}}, Error: {{.State.Error}}' || true
+              docker inspect app_staging --format 'Status: {{.State.Status}}, ExitCode: {{.State.ExitCode}}, Error: {{.State.Error}}' 2>/dev/null || true
               echo "=========================================================="
               echo "Deploy that bai. Dang rollback ve $OLD_TAG"
 
               # Khoi phuc image cu
               export IMAGE_TAG="$OLD_TAG"
+              docker rm -f app_staging || true
 
               if docker compose -f "$COMPOSE" \
                 up -d --wait --wait-timeout 120 web; then
