@@ -8,18 +8,18 @@ from app.core.database import Base
 
 
 class UserRole(str, enum.Enum):
-    # 7 Vai trò thuộc các tổ chức độc lập trong chuỗi cung ứng theo Epic E-02:
-    FARM = "farm"  # Vùng trồng (Farm)
-    PROCESSING = "processing"  # Hợp tác xã sơ chế (Processing Co-op)
-    LOGISTICS = (
-        "logistics"  # Đơn vị vận chuyển lạnh (Logistics / Cold Chain Transporter)
-    )
-    RETAILER = "retailer"  # Nhà phân phối / Bán lẻ (Distributor / Retailer)
-    INSPECTOR = "inspector"  # Cán bộ kiểm tra (Inspector - Read-only toàn hệ thống)
+    # 6 Vai trò chuẩn hóa trong toàn hệ thống (Epic E-02):
+    FARM = "farm"                  # Vùng trồng (Farm)
+    COOP = "coop"                  # Hợp tác xã sơ chế (Co-op / Processing)
+    LOGISTICS = "logistics"        # Đơn vị vận chuyển lạnh (Logistics / Cold Chain Transporter)
+    DISTRIBUTOR = "distributor"    # Nhà phân phối / Bán lẻ (Distributor / Retailer)
+    INSPECTOR = "inspector"        # Cán bộ kiểm tra (Inspector - Read-only toàn hệ thống)
     SYSTEM_ADMIN = "system_admin"  # Quản trị hệ thống (System Admin)
-    CONSUMER = "consumer"  # Người tiêu dùng (Consumer - không cần đăng nhập)
+    CONSUMER = "consumer"          # Người tiêu dùng (Consumer - không cần đăng nhập)
 
     # Vai trò kế thừa / tương thích ngược
+    PROCESSING = "processing"
+    RETAILER = "retailer"
     ADMIN = "admin"
     FARM_OWNER = "farm_owner"
     SUPERVISOR = "supervisor"
@@ -30,15 +30,25 @@ class UserRole(str, enum.Enum):
     VUNG_TRONG = "vung_trong"
 
 
-# Danh mục 7 vai trò chuỗi cung ứng độc lập chuẩn Epic E-02
-SUPPLY_CHAIN_ROLES = {
+# 6 Vai trò chuẩn hóa chuỗi cung ứng chính thức
+STANDARDIZED_ROLES = {
     UserRole.FARM.value,
-    UserRole.PROCESSING.value,
+    UserRole.COOP.value,
     UserRole.LOGISTICS.value,
-    UserRole.RETAILER.value,
+    UserRole.DISTRIBUTOR.value,
     UserRole.INSPECTOR.value,
     UserRole.SYSTEM_ADMIN.value,
+}
+
+# Danh mục các vai trò được chấp nhận trong chuỗi cung ứng (bao gồm alias)
+SUPPLY_CHAIN_ROLES = STANDARDIZED_ROLES | {
     UserRole.CONSUMER.value,
+    "processing",
+    "retailer",
+    "admin",
+    "farm_owner",
+    "supervisor",
+    "owner",
 }
 
 

@@ -13,13 +13,13 @@ router = APIRouter(prefix="/audit", tags=["audit"])
 
 @router.get("/security-logs", response_model=list[SecurityLogResponse])
 def get_security_logs(
-    _admin_or_inspector: Annotated[
+    _admin_user: Annotated[
         User,
         Depends(
             require_roles(
-                UserRole.ADMIN.value,
                 UserRole.SYSTEM_ADMIN.value,
-                UserRole.INSPECTOR.value,
+                "system_admin",
+                "admin",
             )
         ),
     ],
@@ -28,7 +28,8 @@ def get_security_logs(
     limit: int = 100,
 ):
     """
-    Xem danh sách nhật ký cảnh báo an ninh & lần thử truy cập chéo tổ chức.
-    Chỉ dành cho Quản trị viên (Admin) hoặc Cán bộ kiểm tra (Inspector).
+    Xem danh sách nhật ký cảnh báo an ninh & lần thử truy cập chéo tổ chức (S-31).
+    Chỉ dành riêng cho Quản trị viên hệ thống (system_admin).
+    Cán bộ kiểm tra (Inspector) và các vai trò tổ chức khác bị chặn (HTTP 403 Forbidden).
     """
     return SecurityLogRepository.list_logs(db, skip=skip, limit=limit)

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiFetch } from '../utils/api';
 
 export const ROLES_LIST = [
   {
@@ -26,14 +27,14 @@ export const ROLES_LIST = [
     canOpenRecall: false,
   },
   {
-    id: 'processing',
+    id: 'coop',
     name: 'HTX Sơ chế / Chế biến',
-    code: 'PROCESSING',
+    code: 'COOP',
     icon: '🏭',
     color: 'from-blue-600 to-cyan-600',
     badgeColor: 'bg-blue-50 text-blue-700 border-blue-200',
     desc: 'Tiếp nhận nguyên liệu, Tách lô & Gộp lô sơ chế, đóng gói',
-    orgName: 'HTX Sơ Chế Chế Biến Lành',
+    orgName: 'HTX Sơ Chế Bảo Lộc',
     canSplitMerge: true,
     canOpenRecall: true,
   },
@@ -50,9 +51,9 @@ export const ROLES_LIST = [
     canOpenRecall: false,
   },
   {
-    id: 'retailer',
+    id: 'distributor',
     name: 'Nhà phân phối / Bán lẻ',
-    code: 'RETAILER',
+    code: 'DISTRIBUTOR',
     icon: '🏪',
     color: 'from-teal-600 to-emerald-600',
     badgeColor: 'bg-teal-50 text-teal-700 border-teal-200',
@@ -133,9 +134,20 @@ export function AuthRoleProvider({ children }) {
         setCurrentUser(data);
         localStorage.setItem('app_access_token', data.access_token);
         localStorage.setItem('app_current_user', JSON.stringify(data));
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Không thể lấy token xác thực cho vai trò:', res.status, errData);
+        setToken(null);
+        setCurrentUser(null);
+        localStorage.removeItem('app_access_token');
+        localStorage.removeItem('app_current_user');
       }
     } catch (err) {
-      console.warn('Lỗi kết nối auth quick-role-token, sử dụng mock token:', err);
+      console.error('Lỗi kết nối auth quick-role-token:', err);
+      setToken(null);
+      setCurrentUser(null);
+      localStorage.removeItem('app_access_token');
+      localStorage.removeItem('app_current_user');
     } finally {
       setIsSwitching(false);
     }
@@ -164,6 +176,8 @@ export function AuthRoleProvider({ children }) {
     isSwitching,
     switchRole,
     getAuthHeaders,
+    authFetch: apiFetch,
+    apiFetch,
     canSplitMerge: activeRoleConfig.canSplitMerge,
     canOpenRecall: activeRoleConfig.canOpenRecall,
     isInspector: currentRole === 'inspector',

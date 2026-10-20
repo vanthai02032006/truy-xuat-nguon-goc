@@ -53,6 +53,7 @@ router = APIRouter(prefix="/batches", tags=["batches"])
 
 
 @router.get("/public/{batch_code}", response_model=PublicBatchTraceResponse)
+@router.get("/public/batches/{batch_code}", response_model=PublicBatchTraceResponse)
 def get_public_batch_trace(
     batch_code: str,
     db: Annotated[Session, Depends(get_db)],
@@ -163,8 +164,8 @@ def list_batches(
           Thì thấy được lô của mọi tổ chức nhưng chỉ ở chế độ đọc.
     NFR: Lọc theo tổ chức ở tầng truy vấn (Database Query), không lọc ở giao diện.
     """
-    if current_user.role == UserRole.INSPECTOR.value:
-        # Cán bộ kiểm tra: Thấy được lô của mọi tổ chức (organization_id=None)
+    if current_user.role in [UserRole.INSPECTOR.value, UserRole.SYSTEM_ADMIN.value, "inspector", "system_admin", "admin"]:
+        # Cán bộ kiểm tra & Quản trị hệ thống: Thấy được lô của mọi tổ chức (organization_id=None)
         return BatchRepository.list_batches(
             db, organization_id=None, skip=skip, limit=limit
         )
@@ -726,7 +727,10 @@ def list_all_material_logs(
     Cán bộ kiểm tra (Inspector) xem được của mọi tổ chức ở chế độ đọc.
     """
     query = db.query(BatchMaterialLog)
-    if current_user.role != UserRole.INSPECTOR.value:
+    if (
+        current_user.role not in [UserRole.INSPECTOR.value, UserRole.SYSTEM_ADMIN.value, "inspector", "system_admin", "admin"]
+        and current_user.organization_id is not None
+    ):
         query = query.filter(
             BatchMaterialLog.organization_id == current_user.organization_id
         )
@@ -1060,6 +1064,24 @@ def seed_lineage_dag(
     """
     data = LineageDagService.seed_lineage_dataset(db)
     return SeedLineageDagResponse(**data)
+
+
+@router.post(
+    "/seed-full-database",
+    status_code=status.HTTP_201_CREATED,
+)
+def seed_full_database(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    Nạp dữ liệu mẫu toàn diện cho cả 6 vai trò chuỗi cung ứng:
+    Sản phẩm, Thửa đất, Nông hộ NĐ 13, 13 lô hàng phả hệ 4 tầng (mã an toàn 8 ký tự S-08),
+    chuỗi băm SHA-256 thật, Bàn giao, Chuỗi lạnh và Thu hồi.
+    """
+    from app.services.database_seeder import run_full_database_seed
+
+    return run_full_database_seed(db, force_reset=True)
 
 
 @router.get("/{batch_id}/inspection-dossier", response_model=InspectionDossierResponse)

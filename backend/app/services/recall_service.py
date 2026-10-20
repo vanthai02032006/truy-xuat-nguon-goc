@@ -116,12 +116,26 @@ class RecallService:
         # - Cán bộ kiểm tra (Inspector)
         # - Quản trị hệ thống (System Admin)
         # - Hoặc Quản trị của tổ chức đang giữ lô (Admin / Manager thuộc cùng organization_id)
-        is_inspector = user.role == UserRole.INSPECTOR.value
-        is_system_admin = user.role == UserRole.SYSTEM_ADMIN.value
+        is_inspector = user.role in [UserRole.INSPECTOR.value, "inspector"]
+        is_system_admin = (
+            user.role in [UserRole.SYSTEM_ADMIN.value, "system_admin", UserRole.ADMIN.value, "admin"]
+            and user.organization_id is None
+        )
         is_holding_org_owner = (
             user.organization_id is not None
             and user.organization_id == source_batch.organization_id
-            and user.role in [UserRole.ADMIN.value, UserRole.SYSTEM_ADMIN.value]
+            and user.role in [
+                UserRole.FARM.value,
+                UserRole.COOP.value,
+                UserRole.DISTRIBUTOR.value,
+                "farm",
+                "coop",
+                "distributor",
+                "admin",
+                "farm_owner",
+                "owner",
+                UserRole.SYSTEM_ADMIN.value,
+            ]
         )
 
         if not (is_inspector or is_system_admin or is_holding_org_owner):

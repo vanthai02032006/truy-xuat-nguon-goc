@@ -11,7 +11,7 @@ from app.api.deps import (
 )
 from app.models.farming import FarmingLog, FieldIncident
 from app.models.land_plot import LandPlot
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.farming import (
     FarmingLogCreate,
     FarmingLogResponse,
@@ -33,7 +33,10 @@ def list_farming_logs(
 ):
     """Nhật ký hoạt động canh tác nông nghiệp hằng ngày."""
     query = db.query(FarmingLog)
-    if current_user.organization_id is not None:
+    if (
+        current_user.role not in [UserRole.INSPECTOR.value, UserRole.SYSTEM_ADMIN.value, "inspector", "system_admin", "admin"]
+        and current_user.organization_id is not None
+    ):
         query = query.filter(FarmingLog.organization_id == current_user.organization_id)
     if plot_id is not None:
         query = query.filter(FarmingLog.plot_id == plot_id)
@@ -91,7 +94,10 @@ def list_field_incidents(
 ):
     """Danh sách sự cố đồng ruộng (sâu bệnh hại, thời tiết bất thường, hỏng máy móc)."""
     query = db.query(FieldIncident)
-    if current_user.organization_id is not None:
+    if (
+        current_user.role not in [UserRole.INSPECTOR.value, UserRole.SYSTEM_ADMIN.value, "inspector", "system_admin", "admin"]
+        and current_user.organization_id is not None
+    ):
         query = query.filter(
             FieldIncident.organization_id == current_user.organization_id
         )

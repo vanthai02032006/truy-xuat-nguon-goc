@@ -181,21 +181,21 @@ class TestEpicE02SupplyChainRBAC:
     # =========================================================================
 
     def test_e02_all_seven_supply_chain_roles_are_supported(self):
-        """Kiểm tra hệ thống hỗ trợ đầy đủ 7 vai trò chuỗi cung ứng theo Epic E-02."""
+        """Kiểm tra hệ thống hỗ trợ đầy đủ các vai trò chuỗi cung ứng theo Epic E-02."""
         expected_roles = {
             "farm",  # 1. Vùng trồng (Farm)
-            "processing",  # 2. Hợp tác xã sơ chế (Processing Co-op)
+            "coop",  # 2. Hợp tác xã sơ chế (Co-op)
             "logistics",  # 3. Đơn vị vận chuyển lạnh (Logistics / Cold Chain Transporter)
-            "retailer",  # 4. Nhà phân phối / Bán lẻ (Distributor / Retailer)
+            "distributor",  # 4. Nhà phân phối / Bán lẻ (Distributor / Retailer)
             "inspector",  # 5. Cán bộ kiểm tra (Inspector)
             "system_admin",  # 6. Quản trị hệ thống (System Admin)
             "consumer",  # 7. Người tiêu dùng (Consumer - không cần đăng nhập)
         }
         assert expected_roles.issubset(SUPPLY_CHAIN_ROLES)
         assert UserRole.FARM.value == "farm"
-        assert UserRole.PROCESSING.value == "processing"
+        assert UserRole.COOP.value == "coop"
         assert UserRole.LOGISTICS.value == "logistics"
-        assert UserRole.RETAILER.value == "retailer"
+        assert UserRole.DISTRIBUTOR.value == "distributor"
         assert UserRole.INSPECTOR.value == "inspector"
         assert UserRole.SYSTEM_ADMIN.value == "system_admin"
         assert UserRole.CONSUMER.value == "consumer"

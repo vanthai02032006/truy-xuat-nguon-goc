@@ -12,7 +12,7 @@ from app.api.deps import (
     require_field_supervisor_or_above,
 )
 from app.models.material import Material, MaterialRequest
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.material import (
     MaterialCreate,
     MaterialRequestCreate,
@@ -33,7 +33,10 @@ def list_materials(
 ):
     """Lấy danh sách vật tư / kho của nông trại."""
     query = db.query(Material)
-    if current_user.organization_id is not None:
+    if (
+        current_user.role not in [UserRole.INSPECTOR.value, UserRole.SYSTEM_ADMIN.value, "inspector", "system_admin", "admin"]
+        and current_user.organization_id is not None
+    ):
         query = query.filter(Material.organization_id == current_user.organization_id)
     return query.offset(skip).limit(limit).all()
 
@@ -75,7 +78,10 @@ def list_material_requests(
 ):
     """Danh sách đề xuất cấp phát vật tư nông nghiệp."""
     query = db.query(MaterialRequest)
-    if current_user.organization_id is not None:
+    if (
+        current_user.role not in [UserRole.INSPECTOR.value, UserRole.SYSTEM_ADMIN.value, "inspector", "system_admin", "admin"]
+        and current_user.organization_id is not None
+    ):
         query = query.filter(
             MaterialRequest.organization_id == current_user.organization_id
         )
