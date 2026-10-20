@@ -10,5 +10,8 @@ echo "Dang chay database migration (alembic upgrade head)..."
 alembic upgrade head
 echo "Database migration thanh cong."
 
+echo "Kiem tra va nap du lieu mau (python -m app.services.database_seeder)..."
+python -m app.services.database_seeder || true
+
 echo "Dang khoi dong FastAPI uvicorn tren port 8000..."
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000

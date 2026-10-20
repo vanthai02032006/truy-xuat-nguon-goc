@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiFetch } from '../utils/api';
 
 export const ROLES_LIST = [
   {
@@ -133,9 +134,20 @@ export function AuthRoleProvider({ children }) {
         setCurrentUser(data);
         localStorage.setItem('app_access_token', data.access_token);
         localStorage.setItem('app_current_user', JSON.stringify(data));
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Không thể lấy token xác thực cho vai trò:', res.status, errData);
+        setToken(null);
+        setCurrentUser(null);
+        localStorage.removeItem('app_access_token');
+        localStorage.removeItem('app_current_user');
       }
     } catch (err) {
-      console.warn('Lỗi kết nối auth quick-role-token, sử dụng mock token:', err);
+      console.error('Lỗi kết nối auth quick-role-token:', err);
+      setToken(null);
+      setCurrentUser(null);
+      localStorage.removeItem('app_access_token');
+      localStorage.removeItem('app_current_user');
     } finally {
       setIsSwitching(false);
     }
@@ -164,6 +176,8 @@ export function AuthRoleProvider({ children }) {
     isSwitching,
     switchRole,
     getAuthHeaders,
+    authFetch: apiFetch,
+    apiFetch,
     canSplitMerge: activeRoleConfig.canSplitMerge,
     canOpenRecall: activeRoleConfig.canOpenRecall,
     isInspector: currentRole === 'inspector',

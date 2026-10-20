@@ -105,7 +105,7 @@ def generate_spa_html():
             <input 
               type="text" 
               id="topSearchBar"
-              placeholder="Nhập mã lô tra cứu (VD: BATCH-TOM-2601)..." 
+              placeholder="Nhập mã lô tra cứu (VD: VK89XPT2 hoặc mã bất kỳ trên danh sách)..." 
               onkeydown="if(event.key === 'Enter') handleQuickSearch(this.value)"
               class="w-full pl-9 pr-14 py-2 text-xs bg-slate-100/90 hover:bg-slate-100 border border-slate-200 rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
             />
@@ -248,6 +248,16 @@ def generate_spa_html():
               </div>
             </div>
           </div>
+
+          <!-- Nút Nạp Lại Dữ Liệu Thật (Seed Database) -->
+          <button 
+            id="seedDatabaseBtn" 
+            onclick="seedFullDatabase()" 
+            title="Nạp 13 lô hàng mẫu qua 4 tầng phả hệ & chuỗi hash vào cơ sở dữ liệu thật"
+            class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-2 rounded-2xl flex items-center gap-1.5 text-xs font-bold transition-all transform active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-database text-amber-600"></i>
+            <span class="hidden sm:inline">Nạp Dữ Liệu Thật (Seed)</span>
+          </button>
 
           <!-- Nút Đăng Nhập / Đổi Tài Khoản S-04 (T-08, T-09, T-10) -->
           <div class="flex items-center gap-1.5">
@@ -399,7 +409,7 @@ def generate_spa_html():
               <i class="fa-solid fa-boxes-stacked"></i>
             </div>
           </div>
-          <p class="text-2xl font-black text-slate-900 mt-2" id="kpiTotalBatches">4 Lô</p>
+          <p class="text-2xl font-black text-slate-900 mt-2" id="kpiTotalBatches">--</p>
           <p class="text-[11px] text-emerald-600 font-semibold mt-1">Đang lưu kho & vận chuyển</p>
         </div>
 
@@ -410,7 +420,7 @@ def generate_spa_html():
               <i class="fa-solid fa-map-location-dot"></i>
             </div>
           </div>
-          <p class="text-2xl font-black text-blue-700 mt-2" id="kpiTotalPlots">3 Thửa</p>
+          <p class="text-2xl font-black text-blue-700 mt-2" id="kpiTotalPlots">--</p>
           <p class="text-[11px] text-slate-500 mt-1">7,500 m2 diện tích hợp chuẩn</p>
         </div>
 
@@ -1815,8 +1825,8 @@ def generate_spa_html():
         <div class="flex items-center gap-2">
           <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-sm font-black"><i class="fa-solid fa-qrcode"></i></span>
           <div>
-            <h3 class="font-extrabold text-slate-900 text-base" id="modalBatchCode">BATCH-TOM-2601</h3>
-            <p class="text-[11px] text-emerald-600 font-semibold" id="modalBatchProduct">Cà Chua Beef Hữu Cơ Thắng Lợi</p>
+            <h3 class="font-extrabold text-slate-900 text-base" id="modalBatchCode">--</h3>
+            <p class="text-[11px] text-emerald-600 font-semibold" id="modalBatchProduct">--</p>
           </div>
         </div>
         <button onclick="closeModal('batchDetailModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -2385,145 +2395,57 @@ def generate_spa_html():
       }
     };
 
-    // Initial Supply Chain Seed Data
+    // Initial Supply Chain State (Bắt đầu với dữ liệu trống, tự động nạp từ API Backend thật)
     const defaultData = {
-      activeTab: "overview", // overview, batches, plots, materials_phi, handovers, traceability, public
+      activeTab: "overview",
       currentRole: "farm",
-
-      // S-06: Thửa đất vùng trồng (cô lập theo org_id)
-      plots: [
-        { id: 1, org_id: 1, name: "Thửa A1 - Nhà Màng Cà Chua Beef", area: 2500, unit: "m2", lat: "11.9404", lng: "108.4583", address: "Xã Đạ Sar, Lạc Dương, Lâm Đồng" },
-        { id: 2, org_id: 1, name: "Thửa B2 - Vườn Dâu Tây Hữu Cơ", area: 1800, unit: "m2", lat: "11.9421", lng: "108.4595", address: "Xã Đạ Sar, Lạc Dương, Lâm Đồng" },
-        { id: 3, org_id: 1, name: "Thửa C1 - Khu Dưa Lưới Huỳnh Long", area: 3200, unit: "m2", lat: "11.7821", lng: "108.5714", address: "Thôn Lạc Nghiệp, Đơn Dương, Lâm Đồng" }
-      ],
-
-      // S-08, S-14, E-02: Lô nông sản của các tổ chức độc lập trong chuỗi
-      batches: [
-        { code: "BATCH-TOM-2601", product: "Cà Chua Beef Hữu Cơ", org_id: 1, farm: "HTX Thắng Lợi", qty: 1200, initial_qty: 1200, remaining_qty: 1200, unit: "kg", status: "Đang lưu kho", temp: "4.2°C", cert: "GlobalGAP", plot: "Thửa A1" },
-        { code: "BATCH-BERRY-01", product: "Dâu Tây New Zealand", org_id: 1, farm: "HTX Thắng Lợi", qty: 450, initial_qty: 450, remaining_qty: 450, unit: "kg", status: "Đang lưu kho", temp: "3.8°C", cert: "VietGAP", plot: "Thửa B2" },
-        { code: "BATCH-MELON-02", product: "Dưa Lưới Sơ Chế Đóng Gói", org_id: 2, farm: "HTX Sơ Chế Đà Lạt Lành", qty: 2100, initial_qty: 2100, remaining_qty: 2100, unit: "kg", status: "Đang sơ chế", temp: "5.1°C", cert: "Organic EU", plot: "Xưởng Sơ Chế #1" },
-        { code: "BATCH-AVO-03", product: "Bơ Sáp 034 Chuỗi Lạnh", org_id: 3, farm: "Đội Xe Lạnh Việt Nhật", qty: 850, initial_qty: 850, remaining_qty: 850, unit: "kg", status: "Đang vận chuyển", temp: "3.5°C", cert: "VietGAP", plot: "Container 29C-8819" },
-        { code: "BATCH-GRAPE-04", product: "Nho Hạ Đen Quầy Kệ", org_id: 4, farm: "Chuỗi Siêu Thị BioMart", qty: 650, initial_qty: 650, remaining_qty: 650, unit: "kg", status: "Điểm bán lẻ", temp: "6.0°C", cert: "VietGAP", plot: "Quầy Kệ K12 BioMart" }
-      ],
-
-      // S-17, S-18, S-19: Bảng quan hệ phả hệ cha - con (SPLIT / MERGE)
-      batchRelations: [
-        // { parent_code: '...', child_code: '...', relation_type: 'SPLIT'|'MERGE', quantity: 200 }
-      ],
-
-      // S-62: Nhật ký vật tư & Thời gian cách ly thu hoạch (PHI)
-      materialLogs: [
-        {
-          id: 1,
-          batch_code: "BATCH-TOM-2601",
-          material_name: "Chế phẩm nấm Trichoderma ủ gốc",
-          category: "bio_pesticide",
-          dosage: "50ml / 20 lít nước",
-          applied_date: "2026-10-05",
-          isolation_days: 7,
-          safe_harvest_date: "2026-10-12",
-          applied_by: "Kỹ sư Trần Nam",
-          notes: "Phun bảo vệ bộ rễ chống nấm sau mưa"
-        },
-        {
-          id: 2,
-          batch_code: "BATCH-BERRY-01",
-          material_name: "Dầu khoáng sinh học Neem Oil",
-          category: "pesticide",
-          dosage: "100ml / bình 16L",
-          applied_date: "2026-10-10",
-          isolation_days: 10,
-          safe_harvest_date: "2026-10-20",
-          applied_by: "Nguyễn Văn Nông Nghiệp",
-          notes: "Phòng ngừa bọ trĩ lứa quả non"
-        },
-        {
-          id: 3,
-          batch_code: "BATCH-MELON-02",
-          material_name: "Chế phẩm sinh học phòng trừ sâu BT",
-          category: "pesticide",
-          dosage: "40ml / bình 16L",
-          applied_date: "2026-10-08",
-          isolation_days: 7,
-          safe_harvest_date: "2026-10-15",
-          applied_by: "Kỹ sư Trần Nam",
-          notes: "Xử lý sâu xanh ăn lá dưa"
-        },
-        {
-          id: 4,
-          batch_code: "BATCH-AVO-03",
-          material_name: "Phân bón hữu cơ vi sinh trùn quế",
-          category: "fertilizer",
-          dosage: "20kg / 1000m2",
-          applied_date: "2026-10-01",
-          isolation_days: 3,
-          safe_harvest_date: "2026-10-04",
-          applied_by: "Đội chăm sóc bơ",
-          notes: "Bón lót nuôi quả đợt cuối"
-        }
-      ],
-
-      // S-15, S-16: Bàn giao luân chuyển chuỗi cung ứng
-      handovers: [
-        {
-          id: 1,
-          batch_id: 2,
-          batch_code: "BATCH-BERRY-01",
-          from_org_id: 1,
-          from_org: "HTX Nông Nghiệp Thắng Lợi",
-          to_org_id: 2,
-          to_org: "HTX Sơ Chế Đà Lạt Lành",
-          status: "PENDING",
-          temp: "3.8°C",
-          reject_reason: null,
-          created_at: "2026-10-20 08:30"
-        },
-        {
-          id: 2,
-          batch_id: 1,
-          batch_code: "BATCH-TOM-2601",
-          from_org_id: 1,
-          from_org: "HTX Nông Nghiệp Thắng Lợi",
-          to_org_id: 2,
-          to_org: "HTX Sơ Chế Đà Lạt Lành",
-          status: "ACCEPTED",
-          temp: "4.2°C",
-          reject_reason: null,
-          created_at: "2026-10-19 14:15"
-        }
-      ],
-
-      // S-10, S-12: Sự kiện chuỗi Hash SHA-256
-      hashEvents: [
-        {
-          index: 1,
-          event_type: "HARVEST_RECORDED",
-          batch_code: "BATCH-TOM-2601",
-          org_name: "HTX Thắng Lợi",
-          prev_hash: "0000000000000000000000000000000000000000000000000000000000000000",
-          curr_hash: "a4f8c2b1e7930dc2f10b832145e6912389abcde0123456789abcdef012345678",
-          valid: true
-        },
-        {
-          index: 2,
-          event_type: "MATERIAL_APPLIED_PHI",
-          batch_code: "BATCH-TOM-2601",
-          org_name: "HTX Thắng Lợi",
-          prev_hash: "a4f8c2b1e7930dc2f10b832145e6912389abcde0123456789abcdef012345678",
-          curr_hash: "3b92c4f810e7d65a2981bc54e210fa7890123456789abcdef0123456789abcde",
-          valid: true
-        },
-        {
-          index: 3,
-          event_type: "COLD_CHAIN_HANDOVER",
-          batch_code: "BATCH-BERRY-01",
-          org_name: "Đội Vận Chuyển Lạnh Việt Nhật",
-          prev_hash: "3b92c4f810e7d65a2981bc54e210fa7890123456789abcdef0123456789abcde",
-          curr_hash: "8f7e6d5c4b3a210987654321fedcba0987654321abcdef0123456789abcdef01",
-          valid: true
-        }
-      ]
+      plots: [],
+      batches: [],
+      batchRelations: [],
+      materialLogs: [],
+      handovers: [],
+      hashEvents: [],
+      products: [],
+      recalls: []
     };
+
+    /**
+     * BỘ HÀM apiFetch DÙNG CHUNG CHO TOÀN BỘ GIAO DIỆN:
+     * - Tự động đọc access_token từ localStorage hoặc state.currentUser và gắn Authorization: Bearer <token>.
+     * - TUYỆT ĐỐI KHÔNG FALLBACK sang dữ liệu giả khi API lỗi.
+     * - Ném lỗi rõ ràng kèm HTTP code và detail để UI hiển thị thông báo.
+     */
+    async function apiFetch(url, options = {}) {
+      const token = (state.currentUser && state.currentUser.token) || localStorage.getItem("app_access_token");
+      const headers = {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      };
+      if (token && !headers["Authorization"]) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      let res;
+      try {
+        res = await fetch(url, { ...options, headers });
+      } catch (networkErr) {
+        throw new Error(`Lỗi kết nối mạng máy chủ: ${networkErr.message}`);
+      }
+
+      if (!res.ok) {
+        let errorDetail = `Lỗi máy chủ (${res.status}: ${res.statusText})`;
+        try {
+          const errData = await res.json();
+          errorDetail = errData.detail || errData.message || JSON.stringify(errData);
+        } catch(e) {}
+        const err = new Error(errorDetail);
+        err.status = res.status;
+        err.detail = errorDetail;
+        throw err;
+      }
+
+      return await res.json();
+    }
 
     // State Helper
     function getAppState() {
@@ -2531,11 +2453,12 @@ def generate_spa_html():
         const stored = localStorage.getItem(APP_STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (parsed && parsed.batches && parsed.batches.length > 0) return parsed;
+          if (parsed && typeof parsed === 'object') {
+            return { ...defaultData, ...parsed };
+          }
         }
       } catch(e) {}
-      localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(defaultData));
-      return defaultData;
+      return { ...defaultData };
     }
 
     function saveAppState(data) {
@@ -2543,6 +2466,153 @@ def generate_spa_html():
     }
 
     let state = getAppState();
+
+    /**
+     * HÀM NẠP TOÀN BỘ DỮ LIỆU THẬT TỪ CƠ SỞ DỮ LIỆU BACKEND
+     */
+    async function loadServerData() {
+      const roleKey = state.currentRole || "farm";
+      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
+      // 1. Tải danh sách lô hàng thật
+      try {
+        const rawBatches = await apiFetch("/api/v1/batches?limit=100");
+        state.batches = rawBatches.map(b => ({
+          code: b.batch_code,
+          batch_code: b.batch_code,
+          product: b.product_name,
+          product_name: b.product_name,
+          org_id: b.organization_id,
+          organization_id: b.organization_id,
+          farm: b.organization_name || (b.organization_id === 1 ? "HTX Thắng Lợi" : b.organization_id === 2 ? "HTX Sơ Chế Đà Lạt Lành" : b.organization_id === 3 ? "Đội Vận Chuyển Lạnh" : "Siêu Thị BioMart"),
+          qty: b.remaining_quantity !== undefined ? b.remaining_quantity : b.initial_quantity,
+          initial_qty: b.initial_quantity,
+          remaining_qty: b.remaining_quantity,
+          unit: b.unit || "kg",
+          status: b.status === "active" ? "Đang lưu kho" : (b.status || "Đang lưu kho"),
+          temp: "4.0°C",
+          cert: "VietGAP",
+          plot: b.land_plot_name || (b.land_plot_id ? `Thửa #${b.land_plot_id}` : "Thửa liên kết"),
+          land_plot_id: b.land_plot_id
+        }));
+      } catch(err) {
+        if (roleKey !== 'consumer') {
+          console.warn("Lỗi tải lô hàng:", err.message);
+        }
+        state.batches = [];
+      }
+
+      // 2. Tải danh sách thửa đất thật
+      try {
+        const rawPlots = await apiFetch("/api/v1/land-plots?limit=100");
+        state.plots = rawPlots.map(p => ({
+          id: p.id,
+          org_id: p.organization_id,
+          name: p.name,
+          area: p.area,
+          unit: p.unit || "m2",
+          lat: p.latitude,
+          lng: p.longitude,
+          address: p.address || "Lâm Đồng"
+        }));
+      } catch(err) {
+        state.plots = [];
+      }
+
+      // 3. Tải danh sách bàn giao thật
+      try {
+        const rawHandovers = await apiFetch("/api/v1/handovers?limit=100");
+        state.handovers = rawHandovers.map(h => ({
+          id: h.id,
+          batch_id: h.batch_id,
+          batch_code: h.batch_code || `Lô #${h.batch_id}`,
+          from_org_id: h.from_org_id,
+          from_org: h.from_org_name || `Tổ chức #${h.from_org_id}`,
+          to_org_id: h.to_org_id,
+          to_org: h.to_org_name || `Tổ chức #${h.to_org_id}`,
+          status: h.status,
+          temp: h.temperature || "4.0°C",
+          reject_reason: h.reject_reason,
+          created_at: h.created_at ? h.created_at.replace('T', ' ').substring(0, 16) : ''
+        }));
+      } catch(err) {
+        state.handovers = [];
+      }
+
+      // 4. Tải chuỗi sự kiện Hash SHA-256 thật
+      try {
+        const rawEvents = await apiFetch("/api/v1/chain-events?limit=100");
+        state.hashEvents = rawEvents.map((e, idx) => ({
+          index: idx + 1,
+          event_type: e.event_type,
+          batch_code: e.batch_code || `ID #${e.batch_id}`,
+          org_name: e.org_name || `Tổ chức #${e.organization_id}`,
+          prev_hash: e.previous_hash || '0'.repeat(64),
+          curr_hash: e.current_hash || '',
+          valid: true
+        }));
+      } catch(err) {
+        state.hashEvents = [];
+      }
+
+      // 5. Tải danh mục sản phẩm thật
+      try {
+        state.products = await apiFetch("/api/v1/products?limit=100");
+      } catch(err) {
+        state.products = [];
+      }
+
+      // 6. Tải danh sách thu hồi thật
+      try {
+        const rawRecalls = await apiFetch("/api/v1/recalls");
+        state.recalls = (rawRecalls.items || rawRecalls || []).map(r => ({
+          id: r.id,
+          recall_code: r.recall_code,
+          root_batch_code: r.root_batch_code,
+          reason: r.reason,
+          severity: r.severity,
+          status: r.status,
+          created_at: r.created_at ? r.created_at.replace('T', ' ').substring(0, 16) : ''
+        }));
+      } catch(err) {
+        state.recalls = [];
+      }
+
+      saveAppState(state);
+      renderOverviewTab();
+
+      // Cập nhật tab đang mở
+      if (state.activeTab === 'batches') renderBatchesTable();
+      else if (state.activeTab === 'plots') renderPlotsGrid();
+      else if (state.activeTab === 'materials_phi') renderMaterialsPhiTab();
+      else if (state.activeTab === 'handovers') renderHandoversTable();
+      else if (state.activeTab === 'recalls') renderRecallsTab();
+      else if (state.activeTab === 'traceability') renderTraceabilityTab();
+    }
+
+    /**
+     * NẠP DỮ LIỆU MẪU TOÀN DIỆN VÀO DB THẬT QUA ENDPOINT SEED
+     */
+    async function seedFullDatabase() {
+      const btn = document.getElementById("seedDatabaseBtn");
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-amber-600"></i> <span>Đang nạp DB...</span>';
+      }
+      try {
+        const res = await apiFetch("/api/v1/batches/seed-full-database", { method: "POST" });
+        showToast(res.message || "Đã nạp 13 lô hàng mẫu và chuỗi hash vào cơ sở dữ liệu thật!", "success");
+        await loadServerData();
+      } catch (err) {
+        console.error("Lỗi seed database:", err);
+        showToast("Không thể nạp dữ liệu mẫu: " + err.message, "error");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-database text-amber-600"></i> <span class="hidden sm:inline">Nạp Dữ Liệu Thật (Seed)</span>';
+        }
+      }
+    }
 
     /**
      * SUPPLY CHAIN ROLE & DROPDOWN MANAGEMENT (Epic E-02)
@@ -2619,7 +2689,7 @@ def generate_spa_html():
       }
     }
 
-    function selectSupplyChainRole(roleKey) {
+    async function selectSupplyChainRole(roleKey) {
       if (!SUPPLY_CHAIN_ROLES[roleKey]) return;
       state.currentRole = roleKey;
       saveAppState(state);
@@ -2630,12 +2700,44 @@ def generate_spa_html():
       updateRoleUI();
 
       if (roleKey === "consumer") {
+        state.currentUser = null;
+        localStorage.removeItem("app_access_token");
+        localStorage.removeItem("app_current_user");
+        updateAuthHeaderUI();
         switchNavTab("public");
         showToast("Đã chuyển sang vai trò Người Tiêu Dùng (Tra cứu công khai không cần đăng nhập)", "info");
-      } else {
-        switchNavTab(state.activeTab || "overview");
-        showToast(`Đã chuyển vai trò demo: ${SUPPLY_CHAIN_ROLES[roleKey].name}`, "success");
+        await loadServerData();
+        return;
       }
+
+      // Tự động gọi API lấy token thật của vai trò từ backend
+      try {
+        const res = await fetch(`/api/v1/auth/quick-role-token?role=${encodeURIComponent(roleKey)}`, {
+          method: "POST"
+        });
+        if (res.ok) {
+          const authData = await res.json();
+          state.currentUser = {
+            email: authData.user_email || authData.email,
+            role: authData.role,
+            organization_id: authData.organization_id,
+            full_name: authData.full_name,
+            token: authData.access_token
+          };
+          localStorage.setItem("app_access_token", authData.access_token);
+          localStorage.setItem("app_current_user", JSON.stringify(state.currentUser));
+          updateAuthHeaderUI();
+          showToast(`Đã xác thực vai trò thật: ${SUPPLY_CHAIN_ROLES[roleKey].name}`, "success");
+        } else {
+          showToast(`Không thể lấy token xác thực cho vai trò ${roleKey} (HTTP ${res.status})`, "error");
+        }
+      } catch (e) {
+        console.error("Lỗi lấy token vai trò:", e);
+        showToast("Lỗi kết nối máy chủ xác thực quick-role-token!", "error");
+      }
+
+      await loadServerData();
+      switchNavTab(state.activeTab || "overview");
     }
 
     /**
@@ -2826,6 +2928,8 @@ def generate_spa_html():
             token: data.access_token
           };
           state.currentRole = data.role;
+          localStorage.setItem("app_access_token", data.access_token);
+          localStorage.setItem("app_current_user", JSON.stringify(state.currentUser));
 
           // Chuyển hướng quay lại đúng trang cũ trước đó (returnUrl / returnTab)
           const targetTab = state.returnTab || 'overview';
@@ -2834,6 +2938,7 @@ def generate_spa_html():
 
           closeModal("loginModal");
           updateRoleUI();
+          await loadServerData();
           switchNavTab(targetTab);
           showToast(`Đăng nhập thành công! Chào mừng ${data.full_name || data.user_email}`, "success");
         } else {
@@ -2944,11 +3049,14 @@ def generate_spa_html():
       showToast(`Đã cập nhật trạng thái khóa của ${email}`, "info");
     }
 
-    function handleLogout() {
+    async function handleLogout() {
       state.currentUser = null;
       state.currentRole = "consumer";
+      localStorage.removeItem("app_access_token");
+      localStorage.removeItem("app_current_user");
       saveAppState(state);
       updateRoleUI();
+      await loadServerData();
       switchNavTab("public");
       showToast("Đã đăng xuất. Bạn đang ở chế độ Người Tiêu Dùng (Công Khai).", "info");
     }
@@ -3039,8 +3147,12 @@ def generate_spa_html():
      * RENDER OVERVIEW TAB
      */
     function renderOverviewTab() {
-      document.getElementById("kpiTotalBatches").innerText = `${state.batches.length} Lô`;
-      document.getElementById("kpiTotalPlots").innerText = `${state.plots.length} Thửa`;
+      const bCount = (state.batches || []).length;
+      const pCount = (state.plots || []).length;
+      const elB = document.getElementById("kpiTotalBatches");
+      const elP = document.getElementById("kpiTotalPlots");
+      if (elB) elB.innerText = `${bCount} Lô`;
+      if (elP) elP.innerText = `${pCount} Thửa`;
     }
 
     /**
@@ -3063,10 +3175,10 @@ def generate_spa_html():
 
       if (filterText) {
         const lower = filterText.toLowerCase();
-        list = list.filter(b => b.code.toLowerCase().includes(lower) || b.product.toLowerCase().includes(lower));
+        list = list.filter(b => (b.code || b.batch_code || '').toLowerCase().includes(lower) || (b.product || b.product_name || '').toLowerCase().includes(lower));
       }
       if (productFilter !== 'all') {
-        list = list.filter(b => b.product === productFilter);
+        list = list.filter(b => (b.product || b.product_name) === productFilter);
       }
 
       if (list.length === 0) {
@@ -3084,8 +3196,10 @@ def generate_spa_html():
       }
 
       tbody.innerHTML = list.map(b => {
+        const bCode = b.code || b.batch_code;
+        const bProduct = b.product || b.product_name;
         // PHI check status for this batch
-        const logs = state.materialLogs ? state.materialLogs.filter(m => m.batch_code === b.code) : [];
+        const logs = state.materialLogs ? state.materialLogs.filter(m => m.batch_code === bCode) : [];
         let phiBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">Chưa ghi nhận</span>';
         if (logs.length > 0) {
           phiBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check mr-1"></i> Đã cách ly an toàn</span>`;
@@ -3103,15 +3217,15 @@ def generate_spa_html():
             <td class="p-3.5 text-center">
               <input type="checkbox" 
                 class="batch-select-checkbox rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
-                data-code="${b.code}" 
-                data-product="${b.product}" 
+                data-code="${bCode}" 
+                data-product="${bProduct}" 
                 data-qty="${remQty}"
                 ${isDepleted ? 'disabled title="Lô đã hết số lượng"' : ''}
                 onchange="handleBatchSelectChange()"/>
             </td>
-            <td class="p-3.5 font-mono font-black text-emerald-800 text-xs">${b.code}</td>
-            <td class="p-3.5 font-bold text-slate-800">${b.product}</td>
-            <td class="p-3.5 text-slate-600 font-semibold">${b.plot || 'Thửa A1'}</td>
+            <td class="p-3.5 font-mono font-black text-emerald-800 text-xs">${bCode}</td>
+            <td class="p-3.5 font-bold text-slate-800">${bProduct}</td>
+            <td class="p-3.5 text-slate-600 font-semibold">${b.plot || (b.land_plot_id ? 'Thửa #' + b.land_plot_id : 'Chưa gán thửa')}</td>
             <td class="p-3.5">${qtyDisplay}</td>
             <td class="p-3.5">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${b.status === 'Đang vận chuyển' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
@@ -3196,7 +3310,7 @@ def generate_spa_html():
       `).join('');
     }
 
-    function deletePlotItem(id) {
+    async function deletePlotItem(id) {
       const roleKey = state.currentRole || "farm";
       const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
       if (cfg.isReadOnly) {
@@ -3204,11 +3318,17 @@ def generate_spa_html():
         return;
       }
 
-      if (confirm("Bạn có chắc chắn muốn xóa thửa đất này?")) {
-        state.plots = state.plots.filter(p => p.id !== id);
-        saveAppState(state);
-        renderPlotsGrid();
-        showToast("Đã xóa thửa đất thành công!", "success");
+      if (confirm("Bạn có chắc chắn muốn xóa thửa đất này khỏi cơ sở dữ liệu thật?")) {
+        try {
+          await apiFetch(`/api/v1/land-plots/${id}`, {
+            method: "DELETE"
+          });
+          await loadServerData();
+          showToast("Đã xóa thửa đất thành công trên DB thật!", "success");
+        } catch (err) {
+          console.error("Lỗi xóa thửa đất:", err);
+          showToast(`Lỗi xóa thửa đất: ${err.message}`, "error");
+        }
       }
     }
 
@@ -4567,28 +4687,52 @@ def generate_spa_html():
       const tbody = document.getElementById("hashEventsTableBody");
       if (!tbody) return;
 
-      tbody.innerHTML = state.hashEvents.map(e => `
-        <tr class="hover:bg-slate-50 transition-colors">
-          <td class="p-3 font-bold text-slate-500">#${e.index}</td>
-          <td class="p-3 font-sans font-bold text-slate-800">${e.event_type}</td>
-          <td class="p-3 text-emerald-800 font-bold">${e.batch_code}</td>
-          <td class="p-3 font-sans text-slate-600">${e.org_name}</td>
-          <td class="p-3 text-slate-400 text-[10px]" title="${e.prev_hash}">${e.prev_hash.slice(0, 16)}...</td>
-          <td class="p-3 text-emerald-700 text-[10px] font-bold" title="${e.curr_hash}">${e.curr_hash.slice(0, 16)}...</td>
-          <td class="p-3 text-right">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-              <i class="fa-solid fa-check"></i> Hợp Lệ
-            </span>
-          </td>
-        </tr>
-      `).join('');
+      if (!state.hashEvents || state.hashEvents.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="p-8 text-center text-slate-400">
+              <i class="fa-solid fa-link-slash text-3xl mb-2 text-slate-300"></i>
+              <p class="font-bold text-xs">Chưa có sự kiện băm SHA-256 nào trong cơ sở dữ liệu</p>
+              <p class="text-[11px] text-slate-400 mt-1">Bấm nút "Nạp Dữ Liệu Thật (Seed)" ở trên để tạo 13 lô và chuỗi hash mẫu</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = state.hashEvents.map(e => {
+        const pHash = e.prev_hash || e.previous_hash || '0'.repeat(64);
+        const cHash = e.curr_hash || e.current_hash || '';
+        return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-3 font-bold text-slate-500">#${e.index}</td>
+            <td class="p-3 font-sans font-bold text-slate-800">${e.event_type}</td>
+            <td class="p-3 text-emerald-800 font-bold">${e.batch_code}</td>
+            <td class="p-3 font-sans text-slate-600">${e.org_name}</td>
+            <td class="p-3 text-slate-400 text-[10px]" title="${pHash}">${pHash.slice(0, 16)}...</td>
+            <td class="p-3 text-emerald-700 text-[10px] font-bold" title="${cHash}">${cHash.slice(0, 16)}...</td>
+            <td class="p-3 text-right">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                <i class="fa-solid fa-check"></i> Hợp Lệ
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
-    function runHashIntegrityCheck() {
+    async function runHashIntegrityCheck() {
       showToast("Đang băm lại SHA-256 đối chiếu toàn bộ sự kiện...", "info");
-      setTimeout(() => {
-        showToast("Kiểm tra toàn vẹn thành công: 1000 sự kiện hoàn tất trong 0.08s (S-12)!", "success");
-      }, 500);
+      try {
+        const res = await apiFetch("/api/v1/chain-events/verify");
+        if (res.valid) {
+          showToast(`Kiểm tra toàn vẹn thành công: ${res.total_events || state.hashEvents.length} sự kiện hợp lệ 100% (S-12)!`, "success");
+        } else {
+          showToast(`CẢNH BÁO PHÁT HIỆN SỰ CỐ: ${res.message || 'Chuỗi hash bị can thiệp!'}`, "error");
+        }
+      } catch (err) {
+        showToast("Lỗi kiểm tra toàn vẹn: " + err.message, "error");
+      }
     }
 
     /**
@@ -4642,8 +4786,9 @@ def generate_spa_html():
 
     function simulateQrScan() {
       closeQrCameraScanner();
-      const sampleCode = "BATCH-TOM-2601";
-      document.getElementById('heroSearchInput').value = sampleCode;
+      const sampleCode = (state.batches && state.batches.length > 0) ? (state.batches[0].code || state.batches[0].batch_code) : "VK89XPT2";
+      const inp = document.getElementById('heroSearchInput');
+      if (inp) inp.value = sampleCode;
       showToast("Đã quét thành công mã QR: " + sampleCode, "success");
       handleQuickSearch(sampleCode);
     }
@@ -4652,8 +4797,11 @@ def generate_spa_html():
       const file = event.target.files[0];
       if (!file) return;
       closeQrCameraScanner();
-      const sampleCode = "BATCH-BERRY-01";
-      document.getElementById('heroSearchInput').value = sampleCode;
+      const sampleCode = (state.batches && state.batches.length > 1) 
+        ? (state.batches[1].code || state.batches[1].batch_code) 
+        : ((state.batches && state.batches.length > 0) ? (state.batches[0].code || state.batches[0].batch_code) : "VK89XPT2");
+      const inp = document.getElementById('heroSearchInput');
+      if (inp) inp.value = sampleCode;
       showToast("Đã nhận diện mã tem QR từ ảnh chụp: " + sampleCode, "success");
       handleQuickSearch(sampleCode);
     }
@@ -4665,59 +4813,28 @@ def generate_spa_html():
       }
       const cleanCode = code.trim();
 
-      // 1. Thử gọi API Backend công khai (S-48 / E-08)
+      // Gọi API Backend công khai (S-48 / E-08)
       try {
-        const resp = await fetch(`/api/v1/batches/public/${encodeURIComponent(cleanCode)}`);
+        let resp = await fetch(`/public/batches/${encodeURIComponent(cleanCode)}`);
+        if (!resp.ok && resp.status === 404) {
+          resp = await fetch(`/api/v1/batches/public/${encodeURIComponent(cleanCode)}`);
+        }
         if (resp.ok) {
           const apiData = await resp.json();
           renderPublicTraceModal(apiData);
           return;
         } else if (resp.status === 404) {
-          showToast(`Mã lô '${cleanCode}' không tồn tại hoặc chưa kích hoạt mã QR công khai.`, "error");
+          showToast(`Mã lô '${cleanCode}' không tồn tại trong cơ sở dữ liệu thật (HTTP 404).`, "error");
+          return;
+        } else {
+          showToast(`Lỗi khi tra cứu mã lô '${cleanCode}' (HTTP ${resp.status}).`, "error");
           return;
         }
       } catch (e) {
-        console.log("Fetch public trace API offline, checking local mock...", e);
-      }
-
-      // 2. Fallback dữ liệu mock nội bộ (chỉ trích xuất các trường công khai)
-      const b = state.batches.find(x => x.code.toLowerCase() === cleanCode.toLowerCase());
-      if (!b) {
-        showToast(`Không tìm thấy mã lô '${cleanCode}'. Vui lòng kiểm tra lại tem QR!`, "error");
+        console.error("Lỗi kết nối tra cứu mã lô:", e);
+        showToast(`Không thể kết nối máy chủ để tra cứu lô '${cleanCode}'.`, "error");
         return;
       }
-
-      const publicData = {
-        batch_code: b.code,
-        product_name: b.product,
-        farm_name: b.farm || "HTX Nông Nghiệp Thắng Lợi",
-        province: "Lâm Đồng",
-        harvest_date: "15/03/2026",
-        certification: b.cert || "VietGAP",
-        phi_message: "Đạt chuẩn an toàn thời gian cách ly thuốc BVTV (VietGAP)",
-        journey_milestones: [
-          {
-            stage: "Thu hoạch & Sơ chế",
-            description: `Thu hoạch tại vùng trồng ${b.farm || "HTX Thắng Lợi"}, làm sạch và đóng gói đạt chuẩn HACCP.`,
-            timestamp: "15/03/2026",
-            status: "completed"
-          },
-          {
-            stage: "Vận chuyển chuỗi lạnh",
-            description: "Vận chuyển phương tiện chuyên dụng bảo ôn kiểm soát nhiệt độ tự động 2°C - 6°C.",
-            timestamp: "16/03/2026",
-            status: "completed"
-          },
-          {
-            stage: "Phân phối bán lẻ",
-            description: "Tiếp nhận tại hệ thống bán lẻ uy tín, kiểm định bảo quản đạt chuẩn an toàn.",
-            timestamp: "17/03/2026",
-            status: "active"
-          }
-        ]
-      };
-
-      renderPublicTraceModal(publicData);
     }
 
     function renderPublicTraceModal(data) {
@@ -5159,56 +5276,18 @@ def generate_spa_html():
       if (notes === null) return;
 
       try {
-        const resp = await fetch(`/api/v1/recalls/${recallId}/confirm-isolation`, {
+        const resp = await apiFetch(`/api/v1/recalls/${recallId}/confirm-isolation`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${state.token || ""}`
-          },
           body: JSON.stringify({ notes: notes })
         });
 
-        if (resp.ok) {
-          const updated = await resp.json();
-          showToast("Xác nhận cô lập thành công! Tiến độ xử lý đã được ghi vào chuỗi Hash Chain.", "success");
-          displayRecallDetailModal(updated);
-          renderRecallsTab();
-          return;
-        } else {
-          const err = await resp.json();
-          showToast(err.detail || "Không thể xác nhận cô lập!", "error");
-        }
-      } catch (e) {
-        console.warn("API confirm isolation offline, using local mock:", e);
-      }
-
-      // Fallback local mock
-      const r = (state.recalls || []).find(x => x.id === recallId);
-      if (r) {
-        const roleKey = state.currentRole || "farm";
-        const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
-        const currentOrgId = cfg.orgId || 1;
-
-        const act = (r.organization_actions || []).find(a => a.organization_id === currentOrgId && a.status === 'PENDING') || r.organization_actions[0];
-        if (act) {
-          act.status = 'CONFIRMED_ISOLATED';
-          act.action_notes = notes;
-        }
-
-        const confirmed = r.organization_actions.filter(a => a.status === 'CONFIRMED_ISOLATED').length;
-        const total = r.organization_actions.length;
-        r.progress.confirmed_organizations = confirmed;
-        r.progress.progress_percentage = Math.round((confirmed / total) * 100);
-        r.progress.status_summary = `${confirmed}/${total} tổ chức đã xác nhận cô lập`;
-
-        if (confirmed === total) {
-          r.status = 'COMPLETED';
-        }
-
-        saveAppState(state);
-        showToast("Đã xác nhận cô lập phần hàng của tổ chức thành công!", "success");
-        displayRecallDetailModal(r);
+        showToast("Xác nhận cô lập thành công! Tiến độ xử lý đã được ghi vào chuỗi Hash Chain.", "success");
+        displayRecallDetailModal(resp);
+        await loadServerData();
         renderRecallsTab();
+      } catch (e) {
+        console.error("Lỗi xác nhận cô lập:", e);
+        showToast("Lỗi xác nhận cô lập: " + e.message, "error");
       }
     }
 
@@ -5259,7 +5338,7 @@ def generate_spa_html():
       });
     }
 
-    function saveBatchSubmit() {
+    async function saveBatchSubmit() {
       const roleKey = state.currentRole || "farm";
       const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
       if (cfg.isReadOnly) {
@@ -5277,49 +5356,41 @@ def generate_spa_html():
         return;
       }
 
-      state.batches.unshift({
-        code: code,
-        product: product,
-        org_id: cfg.orgId || 1,
-        farm: cfg.orgName || "HTX Thắng Lợi",
-        qty: qty,
-        status: "Đã thu hoạch",
-        temp: "4.5°C",
-        cert: "VietGAP",
-        plot: plot
-      });
+      try {
+        const payload = {
+          batch_code: code,
+          product_name: product,
+          initial_quantity: qty,
+          remaining_quantity: qty,
+          unit: "kg",
+          organization_id: cfg.orgId || 1
+        };
+        const res = await apiFetch("/api/v1/batches", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
 
-      // Add to Hash Chain (S-10)
-      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
-      state.hashEvents.push({
-        index: state.hashEvents.length + 1,
-        event_type: "BATCH_HARVEST_CREATED",
-        batch_code: code,
-        org_name: cfg.orgName || "HTX Thắng Lợi",
-        prev_hash: prevHash,
-        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15),
-        valid: true
-      });
+        lastCreatedBatchCode = res.batch_code || code;
+        const codeDisplay = document.getElementById("successBatchCodeDisplay");
+        if (codeDisplay) codeDisplay.innerText = lastCreatedBatchCode;
+        const prodDisplay = document.getElementById("successBatchProductName");
+        if (prodDisplay) prodDisplay.innerText = res.product_name || product;
+        const qtyDisplay = document.getElementById("successBatchQtyDisplay");
+        if (qtyDisplay) qtyDisplay.innerText = qty.toLocaleString('vi-VN') + " kg";
+        const plotDisplay = document.getElementById("successBatchPlotDisplay");
+        if (plotDisplay) plotDisplay.innerText = plot || "Thửa liên kết";
 
-      // Hiển thị mã lô với cỡ chữ lớn và độ tương phản cao trong modal thành công (S-08)
-      lastCreatedBatchCode = code;
-      const codeDisplay = document.getElementById("successBatchCodeDisplay");
-      if (codeDisplay) codeDisplay.innerText = code;
-      const prodDisplay = document.getElementById("successBatchProductName");
-      if (prodDisplay) prodDisplay.innerText = product;
-      const qtyDisplay = document.getElementById("successBatchQtyDisplay");
-      if (qtyDisplay) qtyDisplay.innerText = qty.toLocaleString('vi-VN') + " kg";
-      const plotDisplay = document.getElementById("successBatchPlotDisplay");
-      if (plotDisplay) plotDisplay.innerText = plot;
-
-      saveAppState(state);
-      closeModal("addBatchModal");
-      renderBatchesTable();
-      openModal("batchSuccessModal");
-      showToast(`Đã khởi tạo lô hàng ${code} thành công!`, "success");
+        await loadServerData();
+        closeModal("addBatchModal");
+        openModal("batchSuccessModal");
+        showToast(`Đã khởi tạo lô hàng ${lastCreatedBatchCode} thành công trên DB thật!`, "success");
+      } catch (err) {
+        console.error("Lỗi tạo lô hàng:", err);
+        showToast(`Không thể tạo lô hàng: ${err.message}`, "error");
+      }
     }
 
-    function savePlotSubmit() {
+    async function savePlotSubmit() {
       const roleKey = state.currentRole || "farm";
       const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
       if (cfg.isReadOnly) {
@@ -5330,8 +5401,8 @@ def generate_spa_html():
       const name = document.getElementById("plot_name").value.trim();
       const area = parseFloat(document.getElementById("plot_area").value);
       const unit = document.getElementById("plot_unit").value;
-      const lat = document.getElementById("plot_lat").value.trim();
-      const lng = document.getElementById("plot_lng").value.trim();
+      const lat = parseFloat(document.getElementById("plot_lat").value.trim()) || 11.9404;
+      const lng = parseFloat(document.getElementById("plot_lng").value.trim()) || 108.4583;
       const address = document.getElementById("plot_address").value.trim();
 
       if (!name || isNaN(area) || area <= 0) {
@@ -5339,21 +5410,28 @@ def generate_spa_html():
         return;
       }
 
-      state.plots.push({
-        id: Date.now(),
-        org_id: cfg.orgId || 1,
-        name: name,
-        area: area,
-        unit: unit,
-        lat: lat,
-        lng: lng,
-        address: address
-      });
+      try {
+        const payload = {
+          name: name,
+          area: area,
+          unit: unit || "m2",
+          latitude: lat,
+          longitude: lng,
+          address: address || "Lâm Đồng",
+          organization_id: cfg.orgId || 1
+        };
+        await apiFetch("/api/v1/land-plots", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
 
-      saveAppState(state);
-      closeModal("addPlotModal");
-      renderPlotsGrid();
-      showToast("Khai báo thửa đất mới thành công!", "success");
+        await loadServerData();
+        closeModal("addPlotModal");
+        showToast("Khai báo thửa đất mới thành công trên DB thật!", "success");
+      } catch (err) {
+        console.error("Lỗi tạo thửa đất:", err);
+        showToast(`Không thể khai báo thửa đất: ${err.message}`, "error");
+      }
     }
 
     function showToast(msg, type = "success") {
@@ -5382,9 +5460,15 @@ def generate_spa_html():
     }, 4000);
 
     // Initial Load
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       updateRoleUI();
-      switchNavTab(state.activeTab || 'overview');
+      const token = localStorage.getItem("app_access_token");
+      if (!token && state.currentRole && state.currentRole !== 'consumer') {
+        await selectSupplyChainRole(state.currentRole);
+      } else {
+        await loadServerData();
+        switchNavTab(state.activeTab || 'overview');
+      }
     });
   </script>
 

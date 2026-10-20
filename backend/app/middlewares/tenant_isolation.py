@@ -63,6 +63,8 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                     "/openapi.json",
                     "/api/v1/auth/login",
                     "/api/v1/batches/public/",
+                    "/api/v1/public/batches/",
+                    "/public/batches/",
                 )
             )
             or method == "OPTIONS"

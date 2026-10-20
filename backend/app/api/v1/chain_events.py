@@ -38,6 +38,38 @@ class SimulateTamperRequest(BaseModel):
     tamper_value: str | None = None
 
 
+@router.get("")
+@router.get("/")
+def list_chain_events(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    batch_id: int | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+):
+    """Lấy danh sách các mắt xích sự kiện băm SHA-256 từ cơ sở dữ liệu thật."""
+    from app.models.chain_event import ChainEvent
+
+    query = db.query(ChainEvent)
+    if batch_id:
+        query = query.filter(ChainEvent.batch_id == batch_id)
+    events = query.order_by(ChainEvent.id.desc()).limit(limit).all()
+    return [
+        {
+            "id": e.id,
+            "batch_id": e.batch_id,
+            "event_type": e.event_type,
+            "event_data": e.event_data,
+            "organization_id": e.organization_id,
+            "previous_hash": e.previous_hash,
+            "current_hash": e.current_hash,
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+            "batch_code": e.batch.batch_code if e.batch else None,
+            "org_name": e.organization.name if e.organization else f"Tổ chức #{e.organization_id}",
+        }
+        for e in events
+    ]
+
+
 @router.get("/verify")
 def verify_batch_chain(
     db: Annotated[Session, Depends(get_db)],

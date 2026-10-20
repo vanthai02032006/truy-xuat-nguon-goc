@@ -28,37 +28,19 @@ export default function ProductManagement() {
     setError(null);
     try {
       const queryParam = searchTerm ? `?q=${encodeURIComponent(searchTerm)}` : '';
-      const res = await fetch(`/api/v1/products${queryParam}`);
+      const res = await fetch(`/api/v1/products${queryParam}`, {
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) {
-        throw new Error(`Lỗi tải danh mục sản phẩm: ${res.statusText}`);
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || `Lỗi tải danh mục sản phẩm (${res.status}: ${res.statusText})`);
       }
       const data = await res.json();
       setProducts(data);
     } catch (err) {
-      // Dữ liệu mẫu ban đầu nếu backend chưa có dữ liệu
-      setProducts([
-        {
-          id: 1,
-          name: 'Dâu tây New Zealand Đà Lạt',
-          unit: 'kg',
-          description: 'Dâu tây chuẩn VietGAP trồng tại Đà Lạt, Lâm Đồng',
-          created_at: '2026-10-15T08:00:00Z',
-        },
-        {
-          id: 2,
-          name: 'Sầu riêng Ri6 sấy thăng hoa',
-          unit: 'thùng',
-          description: 'Sầu riêng xuất khẩu loại 1',
-          created_at: '2026-10-18T10:30:00Z',
-        },
-        {
-          id: 3,
-          name: 'Gạo sạch ST25 hữu cơ',
-          unit: 'tấn',
-          description: 'Gạo đạt giải nhì thế giới vụ mùa 2026',
-          created_at: '2026-10-20T14:15:00Z',
-        },
-      ]);
+      console.error('Lỗi khi tải sản phẩm:', err);
+      setError(err.message);
+      setProducts([]);
     } finally {
       setLoading(false);
     }

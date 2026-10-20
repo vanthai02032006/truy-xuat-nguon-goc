@@ -57,9 +57,13 @@ export default function EmergencyRecallManagement() {
         if (data.items?.length > 0 && !selectedRecallId) {
           setSelectedRecallId(data.items[0].id);
         }
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        setErrorMsg(errJson.detail || `Lỗi tải danh sách lệnh thu hồi (${res.status})`);
       }
     } catch (err) {
       console.error('Lỗi khi tải danh sách lệnh thu hồi:', err);
+      setErrorMsg(err.message);
     } finally {
       setLoading(false);
     }
@@ -73,6 +77,9 @@ export default function EmergencyRecallManagement() {
       if (res.ok) {
         const data = await res.json();
         setBatches(data);
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        console.error('Lỗi tải danh sách lô:', res.status, errJson);
       }
     } catch (err) {
       console.error('Lỗi khi tải danh sách lô:', err);
