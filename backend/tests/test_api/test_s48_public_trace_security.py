@@ -1,9 +1,10 @@
-from app.models.batch import Batch
-from app.models.land_plot import LandPlot
-from app.models.organization import Organization
 from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
+
+from app.models.batch import Batch
+from app.models.land_plot import LandPlot
+from app.models.organization import Organization
 
 
 def test_public_batch_trace_success(client: TestClient, db_session: Session):
@@ -103,9 +104,7 @@ def test_public_batch_trace_no_internal_data_leakage(
             assert key not in milestone
 
 
-def test_public_batch_trace_with_land_plot(
-    client: TestClient, db_session: Session
-):
+def test_public_batch_trace_with_land_plot(client: TestClient, db_session: Session):
     """
     Kiểm tra tra cứu lô hàng đã liên kết với thửa đất vùng trồng (Land Plot)
     thì hiển thị đúng tên vùng trồng và địa phương (tỉnh/thành).

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from app.core.security import create_access_token, get_password_hash
 from app.models.land_plot import LandPlot
 from app.models.user import User, UserRole

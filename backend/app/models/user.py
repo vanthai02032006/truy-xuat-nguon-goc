@@ -11,7 +11,9 @@ class UserRole(str, enum.Enum):
     # 7 Vai trò thuộc các tổ chức độc lập trong chuỗi cung ứng theo Epic E-02:
     FARM = "farm"  # Vùng trồng (Farm)
     PROCESSING = "processing"  # Hợp tác xã sơ chế (Processing Co-op)
-    LOGISTICS = "logistics"  # Đơn vị vận chuyển lạnh (Logistics / Cold Chain Transporter)
+    LOGISTICS = (
+        "logistics"  # Đơn vị vận chuyển lạnh (Logistics / Cold Chain Transporter)
+    )
     RETAILER = "retailer"  # Nhà phân phối / Bán lẻ (Distributor / Retailer)
     INSPECTOR = "inspector"  # Cán bộ kiểm tra (Inspector - Read-only toàn hệ thống)
     SYSTEM_ADMIN = "system_admin"  # Quản trị hệ thống (System Admin)

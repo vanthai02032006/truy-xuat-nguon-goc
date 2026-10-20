@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from app.core.security import create_access_token, get_password_hash
 from app.models.batch import Batch
 from app.models.land_plot import LandPlot
@@ -166,9 +167,7 @@ class TestStoryS62MaterialPHI:
         assert data["max_safe_harvest_date"] == "2026-10-29"
         assert "CẢNH BÁO: Chưa đủ thời gian cách ly an toàn" in data["message"]
 
-    def test_phi_check_compliant_when_on_or_after_safe_date(
-        self, client, test_setup
-    ):
+    def test_phi_check_compliant_when_on_or_after_safe_date(self, client, test_setup):
         """
         Kiểm tra thời gian cách ly: nếu ngày thu hoạch bằng hoặc sau ngày an toàn,
         hệ thống trả về ĐỦ ĐIỀU KIỆN AN TOÀN THU HOẠCH.
@@ -226,7 +225,10 @@ class TestStoryS62MaterialPHI:
         )
 
         assert response.status_code == 403
-        assert "Không có quyền truy cập dữ liệu của tổ chức khác" in response.json()["detail"]
+        assert (
+            "Không có quyền truy cập dữ liệu của tổ chức khác"
+            in response.json()["detail"]
+        )
 
     def test_inspector_can_view_materials_and_phi_check_read_only(
         self, client, test_setup
@@ -237,7 +239,9 @@ class TestStoryS62MaterialPHI:
         """
         inspector = test_setup["inspector"]
         batch = test_setup["batch1"]
-        headers = get_auth_headers(inspector.email, inspector.role, inspector.organization_id)
+        headers = get_auth_headers(
+            inspector.email, inspector.role, inspector.organization_id
+        )
 
         # 1. Đọc danh sách vật tư -> Thành công
         get_res = client.get(

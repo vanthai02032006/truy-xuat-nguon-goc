@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import pytest
+from fastapi import status
+from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
 from app.core.security import create_access_token, get_password_hash
 from app.models.batch import Batch
 from app.models.organization import Organization
 from app.models.security_log import SecurityLog
 from app.models.user import SUPPLY_CHAIN_ROLES, User, UserRole
-from fastapi import status
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
 
 def get_auth_headers(user_email: str, role: str, org_id: int | None) -> dict[str, str]:
@@ -33,10 +34,16 @@ class TestEpicE02SupplyChainRBAC:
     def supply_chain_seed(self, db_session: Session):
         """Khởi tạo 4 tổ chức độc lập trong chuỗi cung ứng và các tài khoản tương ứng."""
         # 1. Bốn tổ chức độc lập thuộc chuỗi cung ứng
-        org_farm = Organization(id=10, name="Vùng Trồng Nông Trại Xanh", code="FARM-NTX")
+        org_farm = Organization(
+            id=10, name="Vùng Trồng Nông Trại Xanh", code="FARM-NTX"
+        )
         org_coop = Organization(id=20, name="HTX Sơ Chế Bảo Lộc", code="COOP-BL")
-        org_logistics = Organization(id=30, name="Công Ty Vận Tải Lạnh Express", code="LOG-EXP")
-        org_retailer = Organization(id=40, name="Hệ Thống Bán Lẻ BioMart", code="RET-BIO")
+        org_logistics = Organization(
+            id=30, name="Công Ty Vận Tải Lạnh Express", code="LOG-EXP"
+        )
+        org_retailer = Organization(
+            id=40, name="Hệ Thống Bán Lẻ BioMart", code="RET-BIO"
+        )
         db_session.add_all([org_farm, org_coop, org_logistics, org_retailer])
         db_session.flush()
 
@@ -96,14 +103,16 @@ class TestEpicE02SupplyChainRBAC:
             is_active=True,
         )
 
-        db_session.add_all([
-            user_farm,
-            user_coop,
-            user_logistics,
-            user_retailer,
-            user_inspector,
-            user_sysadmin,
-        ])
+        db_session.add_all(
+            [
+                user_farm,
+                user_coop,
+                user_logistics,
+                user_retailer,
+                user_inspector,
+                user_sysadmin,
+            ]
+        )
         db_session.flush()
 
         # 3. Các lô hàng thuộc quyền quản lý của từng tổ chức
@@ -138,13 +147,15 @@ class TestEpicE02SupplyChainRBAC:
             organization_id=org_retailer.id,
         )
 
-        db_session.add_all([
-            batch_farm_1,
-            batch_farm_2,
-            batch_coop_1,
-            batch_logistics_1,
-            batch_retailer_1,
-        ])
+        db_session.add_all(
+            [
+                batch_farm_1,
+                batch_farm_2,
+                batch_coop_1,
+                batch_logistics_1,
+                batch_retailer_1,
+            ]
+        )
         db_session.commit()
 
         return {
@@ -273,7 +284,9 @@ class TestEpicE02SupplyChainRBAC:
 
         res = client.get(f"/api/v1/batches/{target_batch_id}", headers=headers_farm)
         assert res.status_code == status.HTTP_403_FORBIDDEN
-        assert "Không có quyền truy cập dữ liệu của tổ chức khác" in res.json()["detail"]
+        assert (
+            "Không có quyền truy cập dữ liệu của tổ chức khác" in res.json()["detail"]
+        )
 
         # Kiểm tra bảng SecurityLog xem đã ghi nhận vi phạm an ninh chưa
         sec_log = (

@@ -53,4 +53,3 @@ class PublicBatchTraceResponse(BaseModel):
     phi_message: str = "Đạt chuẩn an toàn thời gian cách ly thuốc BVTV (VietGAP)"
 
     model_config = ConfigDict(from_attributes=True)
-

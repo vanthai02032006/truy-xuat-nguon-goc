@@ -100,7 +100,11 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
         client_ip = request.client.host if request.client else "unknown"
 
         # 4. Kiểm tra Cán bộ kiểm tra (Inspector) cố tình tạo mới lô hàng
-        if path == "/api/v1/batches" and method == "POST" and user_role == UserRole.INSPECTOR.value:
+        if (
+            path == "/api/v1/batches"
+            and method == "POST"
+            and user_role == UserRole.INSPECTOR.value
+        ):
             db, should_close = _get_db_session()
             try:
                 user_obj = UserRepository.get_by_email(db, user_email)
@@ -125,7 +129,9 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
 
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
-                content={"detail": "Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc)."},
+                content={
+                    "detail": "Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc)."
+                },
             )
 
         # 5. Kiểm tra tài nguyên Lô hàng cụ thể: /api/v1/batches/{batch_id}...
@@ -173,7 +179,12 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                             return await call_next(request)
 
                         # 5.2 Trường hợp là Quản trị hệ thống (System Admin)
-                        if user_role in [UserRole.SYSTEM_ADMIN.value, UserRole.ADMIN.value, "system_admin", "admin"]:
+                        if user_role in [
+                            UserRole.SYSTEM_ADMIN.value,
+                            UserRole.ADMIN.value,
+                            "system_admin",
+                            "admin",
+                        ]:
                             return await call_next(request)
 
                         # 5.3 Trường hợp là thành viên chuỗi cung ứng (Farm, Processing, Logistics, Retailer,...)
@@ -197,7 +208,9 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                             )
                             return JSONResponse(
                                 status_code=status.HTTP_403_FORBIDDEN,
-                                content={"detail": "Không có quyền truy cập dữ liệu của tổ chức khác."},
+                                content={
+                                    "detail": "Không có quyền truy cập dữ liệu của tổ chức khác."
+                                },
                             )
                 finally:
                     if should_close:
@@ -247,7 +260,12 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                             return await call_next(request)
 
                         # 6.2 Quản trị hệ thống
-                        if user_role in [UserRole.SYSTEM_ADMIN.value, UserRole.ADMIN.value, "system_admin", "admin"]:
+                        if user_role in [
+                            UserRole.SYSTEM_ADMIN.value,
+                            UserRole.ADMIN.value,
+                            "system_admin",
+                            "admin",
+                        ]:
                             return await call_next(request)
 
                         # 6.3 Người dùng tổ chức khác
@@ -271,7 +289,9 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                             )
                             return JSONResponse(
                                 status_code=status.HTTP_403_FORBIDDEN,
-                                content={"detail": "Không có quyền truy cập dữ liệu thửa đất của tổ chức khác."},
+                                content={
+                                    "detail": "Không có quyền truy cập dữ liệu thửa đất của tổ chức khác."
+                                },
                             )
                 finally:
                     if should_close:

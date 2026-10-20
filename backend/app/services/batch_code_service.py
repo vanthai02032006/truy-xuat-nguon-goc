@@ -50,9 +50,7 @@ def generate_unique_batch_code(db: Session, max_retries: int = 20) -> str:
     for _ in range(max_retries):
         code = generate_secure_batch_code(DEFAULT_CODE_LENGTH)
         # Kiểm tra sự tồn tại trong database
-        exists = (
-            db.query(Batch.id).filter(Batch.batch_code == code).first() is not None
-        )
+        exists = db.query(Batch.id).filter(Batch.batch_code == code).first() is not None
         if not exists:
             return code
 
