@@ -55,7 +55,9 @@ def list_chain_events(
     - Ngăn chặn hoàn toàn rò rỉ dữ liệu giữa các tổ chức không liên quan.
     """
     from collections import deque
+
     from sqlalchemy import and_, func, or_
+
     from app.models.batch_relation import BatchRelation
     from app.models.chain_event import ChainEvent
     from app.models.handover import Handover, HandoverStatus
