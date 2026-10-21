@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class HandoverBase(BaseModel):
-    batch_id: int
+    batch_id: int | str
     to_org_id: int
     temperature: str | float | None = None
     notes: str | None = None

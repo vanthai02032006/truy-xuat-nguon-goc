@@ -17,6 +17,16 @@ class BatchRepository:
         return db.query(Batch).filter(Batch.batch_code == batch_code).first()
 
     @staticmethod
+    def get_by_id_or_code(db: Session, identifier: str | int) -> Batch | None:
+        """Lấy thông tin lô hàng theo ID hoặc theo mã lô."""
+        raw = str(identifier).strip()
+        if raw.isdigit():
+            b = db.query(Batch).filter(Batch.id == int(raw)).first()
+            if b:
+                return b
+        return db.query(Batch).filter(Batch.batch_code == raw).first()
+
+    @staticmethod
     def list_batches(
         db: Session,
         organization_id: int | None = None,

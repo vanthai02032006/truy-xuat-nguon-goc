@@ -12,6 +12,7 @@ from app.models.chain_event import ChainEvent
 from app.models.handover import Handover, HandoverStatus
 from app.models.organization import Organization
 from app.models.user import User, UserRole
+from app.repositories.batch_repository import BatchRepository
 from app.repositories.security_log_repository import SecurityLogRepository
 from app.schemas.handover import (
     ChainEventResponse,
@@ -80,7 +81,7 @@ def create_handover(
             detail="Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc).",
         )
 
-    batch = db.query(Batch).filter(Batch.id == payload.batch_id).first()
+    batch = BatchRepository.get_by_id_or_code(db, payload.batch_id)
     if not batch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

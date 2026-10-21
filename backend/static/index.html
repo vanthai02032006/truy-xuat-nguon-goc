@@ -2683,7 +2683,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
      * Loại bỏ hoàn toàn Farm ERP (P&L, lương, chấm công, sâu bệnh, đề xuất vật tư)
      * Tập trung: S-06, S-08, S-09, S-10, S-12, S-13, S-14, S-15, S-16, S-62
      */
-    const APP_STORAGE_KEY = "nsl_supplychain_state_v6";
+    const APP_STORAGE_KEY = "nsl_supplychain_state_v7";
 
     // 7 Chuỗi Cung Ứng Roles Configuration (Epic E-02 & User Story S-04)
     const SUPPLY_CHAIN_ROLES = {
@@ -2862,13 +2862,13 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         const rawBatches = await apiFetch("/api/v1/batches?limit=100");
         state.batches = rawBatches.map(b => ({
           id: b.id,
-          code: b.batch_code,
-          batch_code: b.batch_code,
+          code: b.batch_code || b.code || (b.id ? `LÔ#${b.id}` : 'CHƯA_CÓ_MÃ'),
+          batch_code: b.batch_code || b.code,
           product: b.product_name,
           product_name: b.product_name,
           org_id: b.organization_id,
           organization_id: b.organization_id,
-          farm: b.organization_name || (b.organization_id === 1 ? "HTX Thắng Lợi" : b.organization_id === 2 ? "HTX Sơ Chế Đà Lạt Lành" : b.organization_id === 3 ? "Đội Vận Chuyển Lạnh" : "Siêu Thị BioMart"),
+          farm: b.organization_name || (b.organization_id === 10 ? "HTX Nông Nghiệp Thắng Lợi" : b.organization_id === 20 ? "HTX Sơ Chế Bảo Lộc" : b.organization_id === 30 ? "Công Ty Vận Tải Lạnh Express" : b.organization_id === 40 ? "Hệ Thống Bán Lẻ BioMart" : `Tổ chức #${b.organization_id}`),
           qty: b.remaining_quantity !== undefined ? b.remaining_quantity : b.initial_quantity,
           initial_qty: b.initial_quantity,
           remaining_qty: b.remaining_quantity,
@@ -2949,10 +2949,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       // 6. Tải danh sách thu hồi thật
       try {
         const rawRecalls = await apiFetch("/api/v1/recalls");
-        state.recalls = (rawRecalls.items || rawRecalls || []).map(r => ({
+        state.recalls = (rawRecalls.items || rawRecalls.recalls || rawRecalls || []).map(r => ({
           id: r.id,
           recall_code: r.recall_code,
-          root_batch_code: r.root_batch_code,
+          root_batch_code: r.source_batch_code || r.root_batch_code || (r.source_batch_id ? `Lô #${r.source_batch_id}` : 'N/A'),
           reason: r.reason,
           severity: r.severity,
           status: r.status,
@@ -3133,13 +3133,30 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
-      // Tự động gọi API lấy token thật của vai trò từ backend
+      // Tự động gọi API lấy token thật của vai trò từ backend (thử quick-role-token hoặc fallback login)
       try {
+        let authData = null;
         const res = await fetch(`/api/v1/auth/quick-role-token?role=${encodeURIComponent(roleKey)}`, {
           method: "POST"
         });
         if (res.ok) {
-          const authData = await res.json();
+          authData = await res.json();
+        } else {
+          // Fallback sang login chuẩn bằng email & mật khẩu demo
+          const cfg = SUPPLY_CHAIN_ROLES[roleKey];
+          if (cfg && cfg.email) {
+            const loginRes = await fetch("/api/v1/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: cfg.email, password: cfg.samplePassword || "pass123" })
+            });
+            if (loginRes.ok) {
+              authData = await loginRes.json();
+            }
+          }
+        }
+
+        if (authData && authData.access_token) {
           state.currentUser = {
             email: authData.user_email || authData.email,
             role: authData.role,
@@ -3152,11 +3169,11 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           updateAuthHeaderUI();
           showToast(`Đã xác thực vai trò thật: ${SUPPLY_CHAIN_ROLES[roleKey].name}`, "success");
         } else {
-          showToast(`Không thể lấy token xác thực cho vai trò ${roleKey} (HTTP ${res.status})`, "error");
+          showToast(`Không thể lấy token xác thực cho vai trò ${roleKey}`, "error");
         }
       } catch (e) {
         console.error("Lỗi lấy token vai trò:", e);
-        showToast("Lỗi kết nối máy chủ xác thực quick-role-token!", "error");
+        showToast("Lỗi kết nối máy chủ xác thực tài khoản!", "error");
       }
 
       await loadServerData();
@@ -3998,11 +4015,17 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         if (myBatches.length === 0) {
           hoBatchSel.innerHTML = '<option value="">(Không có lô hàng khả dụng để bàn giao)</option>';
         } else {
-          hoBatchSel.innerHTML = myBatches.map(b => `
-            <option value="${b.code}" ${b.code === currentDetailBatchCode ? 'selected' : ''}>
-              ${b.code} - ${b.product} (${b.status || 'Sẵn sàng'} - còn ${b.remaining_qty !== undefined ? b.remaining_qty : b.qty} kg)
+          hoBatchSel.innerHTML = myBatches.map(b => {
+            const bCode = b.code || b.batch_code || (b.id ? `ID#${b.id}` : 'CHƯA_CÓ_MÃ');
+            const bProduct = b.product || b.product_name || 'Nông sản';
+            const bStatus = b.status || 'Sẵn sàng';
+            const bRem = b.remaining_qty !== undefined ? b.remaining_qty : (b.qty !== undefined ? b.qty : (b.remaining_quantity || 0));
+            return `
+            <option value="${bCode}" ${bCode === currentDetailBatchCode ? 'selected' : ''}>
+              ${bCode} - ${bProduct} (${bStatus} - còn ${bRem} kg)
             </option>
-          `).join('');
+          `;
+          }).join('');
         }
       }
 
@@ -4010,15 +4033,24 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const hoTargetSel = document.getElementById("ho_target_org_id");
       if (hoTargetSel) {
         const candidateOrgs = [
-          { id: 1, name: "HTX Nông Nghiệp Thắng Lợi (Vùng Trồng)" },
-          { id: 2, name: "HTX Sơ Chế Đà Lạt Lành (Sơ Chế)" },
-          { id: 3, name: "Đội Vận Chuyển Lạnh Việt Nhật (Logistics)" },
-          { id: 4, name: "Chuỗi Siêu Thị BioMart (Phân Phối / Bán Lẻ)" }
+          { id: 10, name: "HTX Nông Nghiệp Thắng Lợi (Vùng Trồng)" },
+          { id: 20, name: "HTX Sơ Chế Bảo Lộc (Sơ Chế)" },
+          { id: 30, name: "Công Ty Vận Tải Lạnh Express (Logistics)" },
+          { id: 40, name: "Hệ Thống Bán Lẻ BioMart (Phân Phối / Bán Lẻ)" }
         ].filter(org => org.id !== currentOrgId);
 
         hoTargetSel.innerHTML = candidateOrgs.map(org => `
           <option value="${org.id}">${org.name}</option>
         `).join('');
+
+        // Tự động tải danh sách ứng viên từ API thật nếu có
+        apiFetch("/api/v1/handovers/candidate-orgs").then(serverOrgs => {
+          if (Array.isArray(serverOrgs) && serverOrgs.length > 0) {
+            hoTargetSel.innerHTML = serverOrgs.map(org => `
+              <option value="${org.id}">${org.name} (${org.code || ''})</option>
+            `).join('');
+          }
+        }).catch(() => {});
       }
 
       // 3. RENDER BẢNG "DANH SÁCH CHỜ TÔI XÁC NHẬN" (INCOMING HANDOVERS CHO BÊN NHẬN)
@@ -4198,10 +4230,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
 
       const orgMap = {
-        1: "HTX Nông Nghiệp Thắng Lợi (Vùng Trồng)",
-        2: "HTX Sơ Chế Đà Lạt Lành (Sơ Chế)",
-        3: "Đội Vận Chuyển Lạnh Việt Nhật (Logistics)",
-        4: "Chuỗi Siêu Thị BioMart (Phân Phối / Bán Lẻ)"
+        10: "HTX Nông Nghiệp Thắng Lợi (Vùng Trồng)",
+        20: "HTX Sơ Chế Bảo Lộc (Sơ Chế)",
+        30: "Công Ty Vận Tải Lạnh Express (Logistics)",
+        40: "Hệ Thống Bán Lẻ BioMart (Phân Phối / Bán Lẻ)"
       };
 
       if (cfg.orgId === targetOrgId) {
@@ -4210,30 +4242,28 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
 
       // TIÊU CHÍ S-15: Chặn không cho tạo lệnh bàn giao thứ hai khi đang có lệnh chờ
-      const pendingExists = state.handovers.find(h => h.batch_code.toLowerCase() === code.toLowerCase() && h.status === 'PENDING');
+      const pendingExists = state.handovers.find(h => (h.batch_code || '').toLowerCase() === code.toLowerCase() && h.status === 'PENDING');
       if (pendingExists) {
         showToast(`CHẶN BÀN GIAO (S-15): Lô ${code} đang có một lệnh bàn giao chờ xác nhận!`, "error");
         return;
       }
 
       // S-29: Kiểm tra nếu lô đã tiêu thụ hết / bán hết hoặc số lượng khả dụng <= 0
-      const batchObj = state.batches.find(b => b.code.toLowerCase() === code.toLowerCase());
+      const batchObj = state.batches.find(b => (b.code || b.batch_code || '').toLowerCase() === code.toLowerCase());
       if (batchObj) {
         const st = (batchObj.status || "").toLowerCase();
-        const rem = batchObj.remaining_qty !== undefined ? batchObj.remaining_qty : batchObj.qty;
+        const rem = batchObj.remaining_qty !== undefined ? batchObj.remaining_qty : (batchObj.qty !== undefined ? batchObj.qty : 0);
         if (["consumed", "sold_out"].includes(st) || rem <= 0) {
           showToast("Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao (S-29).", "error");
           return;
         }
       }
 
-      // Gọi API Backend nếu khả dụng
+      // Gọi API Backend với Bearer Token
       try {
-        const batchObj = state.batches.find(b => b.code.toLowerCase() === code.toLowerCase());
-        const batchId = batchObj ? (batchObj.id || 1) : 1;
-        const resp = await fetch("/api/v1/handovers", {
+        const batchId = batchObj ? (batchObj.id || batchObj.batch_code || code) : code;
+        await apiFetch("/api/v1/handovers", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             batch_id: batchId,
             to_org_id: targetOrgId,
@@ -4241,56 +4271,16 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             notes: notes
           })
         });
-        if (resp.status === 400) {
-          const errData = await resp.json();
-          showToast(`Lỗi: ${errData.detail || 'Không thể tạo lệnh bàn giao'}`, "error");
-          return;
-        }
+        await loadServerData();
+        closeModal("handoverModal");
+        renderHandoversTable();
+        renderBatchesTable();
+        showToast(`Đã tạo lệnh bàn giao lô ${code} tới ${orgMap[targetOrgId] || `Tổ chức #${targetOrgId}`}. Lô đang ở trạng thái Chờ xác nhận (S-15)!`, "success");
+        return;
       } catch (e) {
-        console.log("Backend API not reachable, updating local simulation state...", e);
+        console.warn("Lỗi gọi API bàn giao:", e);
+        showToast(`Lỗi tạo lệnh bàn giao: ${e.message}`, "error");
       }
-
-      // Cập nhật State cục bộ:
-      // Lô chuyển sang trạng thái "chờ xác nhận", tổ chức A vẫn tạm thời giữ quyền sở hữu
-      const newHandover = {
-        id: Date.now(),
-        batch_id: 1,
-        batch_code: code,
-        from_org_id: cfg.orgId || 1,
-        from_org: cfg.orgName || "HTX Thắng Lợi",
-        to_org_id: targetOrgId,
-        to_org: orgMap[targetOrgId] || `Tổ chức #${targetOrgId}`,
-        status: "PENDING",
-        temp: `${tempVal}°C`,
-        reject_reason: null,
-        created_at: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-      };
-
-      state.handovers.unshift(newHandover);
-
-      // Cập nhật trạng thái lô hàng thành "Chờ xác nhận"
-      const batchItem = state.batches.find(b => b.code.toLowerCase() === code.toLowerCase());
-      if (batchItem) {
-        batchItem.status = "Chờ xác nhận";
-      }
-
-      // Nối sự kiện vào Chuỗi Hash SHA-256 (Append-Only Event Ledger)
-      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
-      state.hashEvents.push({
-        index: state.hashEvents.length + 1,
-        event_type: "HANDOVER_PENDING_CREATED",
-        batch_code: code,
-        org_name: cfg.orgName || "HTX Thắng Lợi",
-        prev_hash: prevHash,
-        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-        valid: true
-      });
-
-      saveAppState(state);
-      closeModal("handoverModal");
-      renderHandoversTable();
-      renderBatchesTable();
-      showToast(`Đã tạo lệnh bàn giao lô ${code} tới ${orgMap[targetOrgId]}. Lô đang ở trạng thái Chờ xác nhận (S-15)!`, "success");
     }
 
     /**
@@ -4609,67 +4599,32 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         totalQty += val;
       }
 
-      // Khóa và thực hiện gộp (Deadlock Prevention: sắp xếp theo ID / Code)
-      sourceBatches.sort((a, b) => a.code.localeCompare(b.code));
-
-      // Sinh mã lô gộp mới (8 ký tự ngẫu nhiên an toàn)
-      const newMergedCode = generateRandomBatchCode();
-
-      // Cập nhật số lượng các lô mẹ
-      sourceBatches.forEach(src => {
-        const parent = state.batches.find(b => b.code === src.code);
-        if (parent) {
-          if (parent.remaining_qty === undefined) parent.remaining_qty = parent.qty;
-          parent.remaining_qty = Math.max(0, parent.remaining_qty - src.quantity);
-          // Ghi nhận quan hệ phả hệ
-          if (!state.batchRelations) state.batchRelations = [];
-          state.batchRelations.push({
-            parent_code: src.code,
-            child_code: newMergedCode,
-            relation_type: 'MERGE',
-            quantity: src.quantity,
+      try {
+        const sourcesPayload = sourceBatches.map(s => {
+          const b = state.batches.find(item => item.code === s.code || item.batch_code === s.code);
+          return {
+            batch_id: b ? b.id : parseInt(s.code),
+            quantity: s.quantity
+          };
+        });
+        const mergeRes = await apiFetch("/api/v1/batches/merge", {
+          method: "POST",
+          body: JSON.stringify({
+            sources: sourcesPayload,
             notes: notes
-          });
-        }
-      });
-
-      // Tạo lô mới
-      const roleKey = state.currentRole || "farm";
-      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
-      const newBatch = {
-        code: newMergedCode,
-        product: productName,
-        org_id: cfg.orgId !== null ? cfg.orgId : 1,
-        farm: cfg.orgName,
-        qty: totalQty,
-        initial_qty: totalQty,
-        remaining_qty: totalQty,
-        unit: "kg",
-        status: "Đang lưu kho",
-        temp: "4.0°C",
-        cert: "VietGAP",
-        plot: `Gộp từ ${sourceBatches.length} lô`
-      };
-      state.batches.unshift(newBatch);
-
-      // Ghi sự kiện chuỗi băm Hash SHA-256
-      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
-      state.hashEvents.push({
-        index: state.hashEvents.length + 1,
-        event_type: "BATCH_MERGE_CREATED",
-        batch_code: newMergedCode,
-        org_name: cfg.orgName,
-        prev_hash: prevHash,
-        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-        valid: true
-      });
-
-      saveAppState(state);
-      closeModal('mergeBatchModal');
-      renderBatchesTable();
-      renderTraceabilityTab();
-
-      showToast(`GỘP LÔ THÀNH CÔNG (S-19)! Mã lô mới: ${newMergedCode} (${totalQty} kg)`, "success");
+          })
+        });
+        await loadServerData();
+        closeModal('mergeBatchModal');
+        renderBatchesTable();
+        renderTraceabilityTab();
+        const newCode = (mergeRes && mergeRes.merged_batch && mergeRes.merged_batch.batch_code) || "MỚI";
+        showToast(`GỘP LÔ THÀNH CÔNG (S-19)! Mã lô mới: ${newCode} (${totalQty} kg)`, "success");
+        return;
+      } catch (e) {
+        console.warn("Lỗi API gộp lô:", e);
+        showToast(`Lỗi gộp lô: ${e.message}`, "error");
+      }
     }
 
     // 4. Mở Modal Tách Lô (S-17)
@@ -4839,62 +4794,25 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
-      // Trừ khối lượng còn lại của lô mẹ
-      batch.remaining_qty = Math.max(0, remQty - sum);
-
-      // Tạo các lô con kế thừa sản phẩm và thửa từ lô mẹ
-      const createdChildCodes = [];
-      children.forEach(c => {
-        const childCode = generateRandomBatchCode();
-        createdChildCodes.push(childCode);
-
-        state.batches.unshift({
-          code: childCode,
-          product: batch.product,
-          org_id: batch.org_id,
-          farm: batch.farm,
-          qty: c.quantity,
-          initial_qty: c.quantity,
-          remaining_qty: c.quantity,
-          unit: batch.unit || "kg",
-          status: "Đang lưu kho",
-          temp: batch.temp || "4.0°C",
-          cert: batch.cert || "VietGAP",
-          plot: batch.plot || "Thửa gốc kế thừa"
+      try {
+        await apiFetch(`/api/v1/batches/${encodeURIComponent(parentCode)}/split`, {
+          method: "POST",
+          body: JSON.stringify({
+            splits: children.map(c => ({ quantity: c.quantity, notes: c.notes })),
+            notes: `Tách lô từ ${parentCode}`
+          })
         });
-
-        // Ghi quan hệ phả hệ SPLIT
-        if (!state.batchRelations) state.batchRelations = [];
-        state.batchRelations.push({
-          parent_code: parentCode,
-          child_code: childCode,
-          relation_type: 'SPLIT',
-          quantity: c.quantity,
-          notes: c.notes
-        });
-      });
-
-      // Ghi chuỗi hash
-      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
-      state.hashEvents.push({
-        index: state.hashEvents.length + 1,
-        event_type: "BATCH_SPLIT_CREATED",
-        batch_code: parentCode,
-        org_name: batch.farm,
-        prev_hash: prevHash,
-        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-        valid: true
-      });
-
-      saveAppState(state);
-      closeModal('splitBatchModal');
-      renderBatchesTable();
-      renderTraceabilityTab();
-
-      // Cập nhật lại modal chi tiết lô mẹ
-      handleQuickSearch(parentCode);
-
-      showToast(`TÁCH LÔ THÀNH CÔNG (S-17)! Đã tạo ${createdChildCodes.length} lô con (${createdChildCodes.join(', ')})`, "success");
+        await loadServerData();
+        closeModal('splitBatchModal');
+        renderBatchesTable();
+        renderTraceabilityTab();
+        handleQuickSearch(parentCode);
+        showToast(`TÁCH LÔ THÀNH CÔNG (S-17)! Đã tạo ${children.length} lô con từ lô mẹ ${parentCode}`, "success");
+        return;
+      } catch (e) {
+        console.warn("Lỗi API tách lô:", e);
+        showToast(`Lỗi tách lô: ${e.message}`, "error");
+      }
     }
 
     // 6. Dựng Đồ Thị / Sơ Đồ Cây Phả Hệ DAG Trực Quan Gọi 3 API Thật Trên Máy Chủ (S-21, S-26, S-27, S-28)
@@ -4917,32 +4835,34 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           apiFetch(`/api/v1/batches/${encodeURIComponent(batchCode)}/dag-graph`)
         ]);
 
-        const originsData = originsRes.status === 'fulfilled' ? originsRes.value : { root_origins: [] };
+        const originsData = originsRes.status === 'fulfilled' ? originsRes.value : { roots: [], root_origins: [] };
         const descendantsData = descendantsRes.status === 'fulfilled' ? descendantsRes.value : { descendants: [] };
         const dagData = dagRes.status === 'fulfilled' ? dagRes.value : { nodes: [], edges: [] };
 
-        const roots = (originsData.root_origins || []).map(r => ({
-          code: r.origin_batch_code,
+        const rawRoots = originsData.roots || originsData.root_origins || [];
+        const roots = rawRoots.map(r => ({
+          code: r.batch_code || r.origin_batch_code || (r.id ? `ID#${r.id}` : 'GỐC'),
           product: r.product_name,
-          farm: r.organization_name || "Vùng trồng HTX",
+          farm: r.farm_name || r.organization_name || "Vùng trồng HTX",
           plot: r.land_plot_name || "Thửa liên kết",
           remQty: r.remaining_quantity !== undefined ? r.remaining_quantity : r.initial_quantity,
-          depth: r.depth || 0,
+          depth: r.generation_depth !== undefined ? r.generation_depth : (r.depth || 0),
           path: r.path || []
         }));
 
-        const descendantsList = (descendantsData.descendants || []).map(d => ({
-          code: d.descendant_batch_code,
+        const rawDesc = descendantsData.descendants || [];
+        const descendantsList = rawDesc.map(d => ({
+          code: d.batch_code || d.descendant_batch_code || (d.id ? `ID#${d.id}` : 'CON'),
           product: d.product_name,
-          generation: d.generation || `F${d.depth || 1}`,
+          generation: d.generation || ('F' + (d.generation_level || d.depth || 1)),
           relation_type: d.relation_type || 'SPLIT',
-          quantity: d.initial_quantity,
-          holding_org: d.organization_name || "Tổ chức chuỗi",
-          location: "Kho bảo quản",
+          quantity: d.quantity_transferred !== undefined ? d.quantity_transferred : d.initial_quantity,
+          holding_org: (d.holding_organization && d.holding_organization.name) || d.organization_name || "Tổ chức chuỗi",
+          location: d.current_location || "Kho bảo quản",
           remaining_qty: d.remaining_quantity,
           status: d.status,
           is_depleted: d.is_depleted,
-          depth: d.depth || 1
+          depth: d.generation_level || d.depth || 1
         }));
 
         const isIsolated = roots.length <= 1 && descendantsList.length === 0 && (roots.length === 0 || roots[0].code === batchCode);
@@ -4953,7 +4873,13 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             : `Phả hệ DAG Server: ${roots.length} gốc, ${descendantsList.length} hậu duệ (${(dagData.edges || []).length} liên kết)`;
         }
 
-        const curRemQty = currentBatch ? (currentBatch.remaining_qty !== undefined ? currentBatch.remaining_qty : currentBatch.qty) : 0;
+        const focusInfo = (dagData && dagData.focus_batch) || currentBatch || {};
+        const curProduct = focusInfo.product_name || focusInfo.product || (currentBatch && (currentBatch.product || currentBatch.product_name)) || 'Nông sản chuỗi lạnh';
+        const curRemQty = focusInfo.remaining_quantity !== undefined ? focusInfo.remaining_quantity : (currentBatch ? (currentBatch.remaining_qty !== undefined ? currentBatch.remaining_qty : currentBatch.qty) : 0);
+        const curHoldingOrg = focusInfo.holding_org_name || (currentBatch ? currentBatch.farm : 'HTX Quản lý');
+        const curLocation = focusInfo.location || (currentBatch ? (currentBatch.plot || 'Kho phân phối') : 'Kho trung tâm');
+        const curTemp = (currentBatch && currentBatch.temp) || "4.0°C";
+        const curStatus = focusInfo.status || (currentBatch && currentBatch.status) || 'Lưu kho';
         const curIsDepleted = curRemQty <= 0;
 
         container.innerHTML = `
@@ -5009,7 +4935,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
               <div class="space-y-1.5 bg-white p-3 rounded-xl border border-emerald-300">
                 <div class="text-center pb-2 border-b border-slate-100">
                   <span class="font-mono font-black text-emerald-950 text-sm tracking-wider">${batchCode}</span>
-                  <p class="font-bold text-xs text-slate-800 mt-0.5">${currentBatch ? currentBatch.product : 'Nông sản chuỗi lạnh'}</p>
+                  <p class="font-bold text-xs text-slate-800 mt-0.5">${curProduct}</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
@@ -5022,14 +4948,14 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
                   </div>
                   <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
                     <span class="text-slate-400 block text-[9px] uppercase font-bold">Chuỗi lạnh</span>
-                    <span class="font-bold text-blue-700 text-xs">${currentBatch ? currentBatch.temp : '4.0°C'}</span>
-                    <span class="text-[9px] text-slate-500 block">${currentBatch ? currentBatch.status : 'Lưu kho'}</span>
+                    <span class="font-bold text-blue-700 text-xs">${curTemp}</span>
+                    <span class="text-[9px] text-slate-500 block">${curStatus}</span>
                   </div>
                 </div>
 
                 <div class="text-[10px] text-slate-600 space-y-1 pt-1">
-                  <div><i class="fa-solid fa-building mr-1 text-slate-400"></i><strong>Đơn vị giữ:</strong> ${currentBatch ? currentBatch.farm : 'HTX Quản lý'}</div>
-                  <div><i class="fa-solid fa-map-location-dot mr-1 text-slate-400"></i><strong>Vị trí:</strong> ${currentBatch ? (currentBatch.plot || 'Kho phân phối') : 'Kho trung tâm'}</div>
+                  <div><i class="fa-solid fa-building mr-1 text-slate-400"></i><strong>Đơn vị giữ:</strong> ${curHoldingOrg}</div>
+                  <div><i class="fa-solid fa-map-location-dot mr-1 text-slate-400"></i><strong>Vị trí:</strong> ${curLocation}</div>
                 </div>
               </div>
 
@@ -6323,13 +6249,8 @@ Thửa Thủy Canh Công Nghệ B2,1800,m2,11.9420,108.4600,Đà Lạt Lâm Đ�
       let recallsList = state.recalls || [];
 
       try {
-        const resp = await fetch("/api/v1/recalls", {
-          headers: { "Authorization": `Bearer ${state.token || ""}` }
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data && data.items) recallsList = data.items;
-        }
+        const data = await apiFetch("/api/v1/recalls");
+        if (data && data.items) recallsList = data.items;
       } catch (e) {
         console.log("Recalls API fetch fallback:", e);
       }
