@@ -204,10 +204,22 @@ async def import_products_csv(
     unit_map = {
         "kg": "kg",
         "kilogram": "kg",
+        "kilo": "kg",
         "tấn": "tấn",
         "tan": "tấn",
         "thùng": "thùng",
         "thung": "thùng",
+        "hộp": "thùng",
+        "hop": "thùng",
+        "túi": "kg",
+        "tui": "kg",
+        "gói": "kg",
+        "goi": "kg",
+        "bịch": "kg",
+        "bich": "kg",
+        "chai": "thùng",
+        "lọ": "thùng",
+        "lo": "thùng",
     }
 
     for idx, row in enumerate(reader, start=2):
@@ -239,11 +251,6 @@ async def import_products_csv(
             skipped += 1
             continue
 
-        existing = ProductRepository.get_by_name(db, name)
-        if existing:
-            skipped += 1
-            continue
-
         extra_parts = []
         if variety and variety not in desc:
             extra_parts.append(f"Giống: {variety}")
@@ -255,6 +262,14 @@ async def import_products_csv(
             extra_parts.append(desc)
         final_desc = " | ".join(extra_parts) if extra_parts else (desc if desc else None)
 
+        existing = ProductRepository.get_by_name(db, name)
+        if existing:
+            existing.unit = unit
+            if final_desc:
+                existing.description = final_desc
+            imported += 1
+            continue
+
         new_prod = Product(
             name=name,
             unit=unit,
@@ -263,7 +278,15 @@ async def import_products_csv(
         db.add(new_prod)
         imported += 1
 
-    db.commit()
+    try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Lỗi khi lưu sản phẩm vào CSDL: {exc!s}",
+        ) from exc
+
     return ProductCsvImportResponse(
         imported_count=imported,
         skipped_count=skipped,
