@@ -104,12 +104,14 @@ class RecallService:
                 detail="Lý do thu hồi bắt buộc phải có ít nhất 20 ký tự mô tả cụ thể sự cố vi phạm an toàn thực phẩm!",
             )
 
-        # 2. Tìm lô hàng nguồn
-        source_batch = db.query(Batch).filter(Batch.id == req_batch_id).first()
+        # 2. Tìm lô hàng nguồn (chấp nhận cả ID số nguyên hoặc mã định danh lô hàng)
+        from app.repositories.batch_repository import BatchRepository
+
+        source_batch = BatchRepository.get_by_id_or_code(db, req_batch_id)
         if not source_batch:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Không tìm thấy lô hàng với ID #{req_batch_id}",
+                detail=f"Không tìm thấy lô hàng với ID hoặc mã '{req_batch_id}'",
             )
 
         # 3. Phân quyền (S-33):

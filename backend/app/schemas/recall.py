@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class RecallCreateRequest(BaseModel):
-    batch_id: int = Field(..., description="ID của lô hàng phát hiện sự cố cần thu hồi")
+    batch_id: int | str = Field(..., description="ID hoặc Mã của lô hàng phát hiện sự cố cần thu hồi")
     reason: str = Field(
         ...,
         min_length=20,

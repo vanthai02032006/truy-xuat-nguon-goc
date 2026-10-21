@@ -622,9 +622,19 @@ def merge_batches(
             detail="Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc).",
         )
 
-    # 1. Tránh deadlock: Sắp xếp các batch_id theo thứ tự tăng dần cố định
-    sorted_sources = sorted(payload.sources, key=lambda s: s.batch_id)
-    sorted_ids = [s.batch_id for s in sorted_sources]
+    # 1. Chuẩn hóa và giải quyết mã lô hoặc ID của tất cả các lô nguồn
+    for s in payload.sources:
+        b = _resolve_batch_by_id_or_code(db, s.batch_id)
+        if not b:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy lô hàng: '{s.batch_id}'.",
+            )
+        s.batch_id = b.id
+
+    # Tránh deadlock: Sắp xếp các batch_id theo thứ tự tăng dần cố định
+    sorted_sources = sorted(payload.sources, key=lambda s: int(s.batch_id))
+    sorted_ids = [int(s.batch_id) for s in sorted_sources]
 
     if len(set(sorted_ids)) != len(sorted_ids):
         raise HTTPException(
@@ -917,7 +927,7 @@ def split_batch(
 
 @router.get("/{batch_id}/lineage", response_model=BatchLineageResponse)
 def get_batch_lineage(
-    batch_id: int,
+    batch_id: int | str,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
@@ -926,11 +936,11 @@ def get_batch_lineage(
     - Các lô cha/mẹ tạo nên lô này (qua split hoặc merge).
     - Các lô con được sinh ra từ lô này (qua split hoặc merge).
     """
-    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    batch = _resolve_batch_by_id_or_code(db, batch_id)
     if not batch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Lô hàng #{batch_id} không tồn tại.",
+            detail=f"Lô hàng '{batch_id}' không tồn tại.",
         )
 
     is_admin_or_inspector = current_user.role in [
@@ -1397,7 +1407,7 @@ def seed_full_database(
 
 @router.get("/{batch_id}/inspection-dossier", response_model=InspectionDossierResponse)
 def get_batch_inspection_dossier(
-    batch_id: int,
+    batch_id: int | str,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
@@ -1409,11 +1419,11 @@ def get_batch_inspection_dossier(
       Kết quả kiểm tra toàn vẹn chuỗi Hash SHA-256 tại thời điểm xuất và Terminal Hash.
     """
     # Quyền truy cập: Cán bộ kiểm tra và Admin xem được mọi lô; các bên khác chỉ xem lô thuộc tổ chức mình
-    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    batch = _resolve_batch_by_id_or_code(db, batch_id)
     if not batch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Lô hàng #{batch_id} không tồn tại.",
+            detail=f"Lô hàng '{batch_id}' không tồn tại.",
         )
 
     is_admin_or_inspector = current_user.role in [

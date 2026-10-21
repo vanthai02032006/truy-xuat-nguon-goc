@@ -2683,7 +2683,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
      * Loại bỏ hoàn toàn Farm ERP (P&L, lương, chấm công, sâu bệnh, đề xuất vật tư)
      * Tập trung: S-06, S-08, S-09, S-10, S-12, S-13, S-14, S-15, S-16, S-62
      */
-    const APP_STORAGE_KEY = "nsl_supplychain_state_v7";
+    const APP_STORAGE_KEY = "nsl_supplychain_state_v8";
 
     // 7 Chuỗi Cung Ứng Roles Configuration (Epic E-02 & User Story S-04)
     const SUPPLY_CHAIN_ROLES = {
@@ -4298,46 +4298,24 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const h = state.handovers.find(x => x.id === id);
       if (!h) return;
 
-      // Gọi API Backend nếu khả dụng
+      // Gọi API Backend
       try {
-        const resp = await fetch(`/api/v1/handovers/${id}/accept`, {
+        await apiFetch(`/api/v1/handovers/${id}/accept`, {
           method: "POST"
         });
-        if (resp.status === 403) {
+        await loadServerData();
+        renderHandoversTable();
+        renderBatchesTable();
+        showToast(`ĐÃ XÁC NHẬN THÀNH CÔNG! Quyền giữ lô ${h.batch_code} đã chính thức chuyển sang ${h.to_org} (S-16).`, "success");
+        return;
+      } catch (err) {
+        if (err.status === 403 || (err.message && err.message.includes("403"))) {
           showToast("Chỉ bên nhận mới có quyền xác nhận bàn giao này!", "error");
           return;
         }
-      } catch (e) {
-        console.log("Backend API not reachable, updating local simulation state...", e);
+        showToast("Lỗi xác nhận bàn giao: " + err.message, "error");
+        return;
       }
-
-      // 1. Đổi trạng thái Handover sang ACCEPTED
-      h.status = 'ACCEPTED';
-
-      // 2. Chuyển quyền giữ lô (batches.organization_id) sang tổ chức B
-      const batchItem = state.batches.find(b => b.code.toLowerCase() === h.batch_code.toLowerCase());
-      if (batchItem) {
-        batchItem.org_id = h.to_org_id;
-        batchItem.farm = h.to_org;
-        batchItem.status = "Đang lưu kho";
-      }
-
-      // 3. Ghi sự kiện xác nhận vào chuỗi hash SHA-256 trong cùng giao dịch
-      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
-      state.hashEvents.push({
-        index: state.hashEvents.length + 1,
-        event_type: "HANDOVER_ACCEPTED_CUSTODY_TRANSFERRED",
-        batch_code: h.batch_code,
-        org_name: h.to_org,
-        prev_hash: prevHash,
-        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-        valid: true
-      });
-
-      saveAppState(state);
-      renderHandoversTable();
-      renderBatchesTable();
-      showToast(`ĐÃ XÁC NHẬN THÀNH CÔNG! Quyền giữ lô ${h.batch_code} đã chính thức chuyển sang ${h.to_org} (S-16).`, "success");
     }
 
     /**
@@ -4407,49 +4385,22 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
-      // Gọi API Backend nếu khả dụng
+      // Gọi API Backend
       try {
-        const resp = await fetch(`/api/v1/handovers/${h.id}/reject`, {
+        await apiFetch(`/api/v1/handovers/${h.id}/reject`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reject_reason: reason })
         });
-        if (resp.status === 400 || resp.status === 422) {
-          const errData = await resp.json();
-          showToast(`Lỗi: ${errData.detail || 'Lý do từ chối không hợp lệ'}`, "error");
-          return;
-        }
-      } catch (e) {
-        console.log("Backend API not reachable, updating local simulation state...", e);
+        closeModal("rejectHandoverModal");
+        await loadServerData();
+        renderHandoversTable();
+        renderBatchesTable();
+        showToast("Đã từ chối bàn giao lô hàng thành công!", "success");
+        return;
+      } catch (err) {
+        showToast(`Lỗi: ${err.message || 'Lý do từ chối không hợp lệ'}`, "error");
+        return;
       }
-
-      // 1. Cập nhật trạng thái Handover sang REJECTED
-      h.status = 'REJECTED';
-      h.reject_reason = reason;
-
-      // 2. Lô vẫn thuộc quyền giữ của bên A (giữ nguyên batch.org_id)
-      const batchItem = state.batches.find(b => b.code.toLowerCase() === h.batch_code.toLowerCase());
-      if (batchItem) {
-        batchItem.status = "Bị từ chối tiếp nhận";
-      }
-
-      // 3. Ghi nhận sự kiện từ chối kèm lý do vào chuỗi hash SHA-256
-      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
-      state.hashEvents.push({
-        index: state.hashEvents.length + 1,
-        event_type: "HANDOVER_REJECTED",
-        batch_code: h.batch_code,
-        org_name: h.to_org,
-        prev_hash: prevHash,
-        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-        valid: true
-      });
-
-      saveAppState(state);
-      closeModal("rejectHandoverModal");
-      renderHandoversTable();
-      renderBatchesTable();
-      showToast(`ĐÃ TỪ CHỐI BÀN GIAO (S-16): Lô ${h.batch_code} vẫn thuộc quyền giữ của ${h.from_org}. Đã ghi nhận lý do vào chuỗi hash!`, "info");
     }
 
     /**
@@ -6139,32 +6090,24 @@ Thửa Thủy Canh Công Nghệ B2,1800,m2,11.9420,108.4600,Đà Lạt Lâm Đ�
 
       // Gọi API Backend
       try {
-        const resp = await fetch("/api/v1/recalls", {
+        const recallData = await apiFetch("/api/v1/recalls", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${state.token || ""}`
-          },
           body: JSON.stringify({
-            batch_id: b.id || 1,
+            batch_id: b.id || b.batch_code || b.code,
             reason: reason,
             severity: severity
           })
         });
 
-        if (resp.ok) {
-          const recallData = await resp.json();
-          closeModal("openRecallModal");
-          showToast(`Kích hoạt thành công lệnh thu hồi #${recallData.recall_code}!`, "success");
-          displayRecallDetailModal(recallData);
-          renderRecallsTab();
-          return;
-        } else {
-          const errJson = await resp.json();
-          showToast(errJson.detail || "Không thể kích hoạt lệnh thu hồi!", "error");
-        }
+        closeModal("openRecallModal");
+        showToast(`Kích hoạt thành công lệnh thu hồi #${recallData.recall_code}!`, "success");
+        await loadServerData();
+        displayRecallDetailModal(recallData);
+        renderRecallsTab();
+        return;
       } catch (err) {
-        console.warn("API recall trigger error, running local state fallback:", err);
+        showToast(err.message || "Không thể kích hoạt lệnh thu hồi!", "error");
+        return;
       }
 
       // Local mock fallback nếu API offline
@@ -6329,11 +6272,8 @@ Thửa Thủy Canh Công Nghệ B2,1800,m2,11.9420,108.4600,Đà Lạt Lâm Đ�
     async function viewRecallDetail(recallId) {
       currentViewingRecallId = recallId;
       try {
-        const resp = await fetch(`/api/v1/recalls/${recallId}`, {
-          headers: { "Authorization": `Bearer ${state.token || ""}` }
-        });
-        if (resp.ok) {
-          const detail = await resp.json();
+        const detail = await apiFetch(`/api/v1/recalls/${recallId}`);
+        if (detail) {
           displayRecallDetailModal(detail);
           return;
         }
