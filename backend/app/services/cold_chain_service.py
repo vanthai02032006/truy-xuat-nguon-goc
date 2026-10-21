@@ -60,11 +60,11 @@ class ColdChainService:
         User Story S-40: Tạo Chuyến vận chuyển gồm: Mã chuyến, Mã thùng lạnh/xe lạnh, Danh sách các lô hàng đang chở.
         """
         role_lower = str(user.role).lower()
-        allowed_roles = ["transporter", "logistics", "admin", "system_admin"]
+        allowed_roles = ["transporter", "logistics", "carrier", "admin", "system_admin"]
         if role_lower not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Chỉ Đơn vị vận chuyển lạnh (Transporter/Logistics) hoặc Quản trị hệ thống mới có quyền tạo Chuyến vận chuyển.",
+                detail="Chỉ Đơn vị vận chuyển lạnh (Transporter/Carrier/Logistics) hoặc Quản trị hệ thống mới có quyền tạo Chuyến vận chuyển.",
             )
 
         carrier_org_id = payload.carrier_org_id or user.organization_id
@@ -165,13 +165,40 @@ class ColdChainService:
         skip: int = 0,
         limit: int = 50,
     ) -> list[TransportTripResponse]:
-        """Lấy danh sách các chuyến vận chuyển chuỗi lạnh."""
+        """Lấy danh sách các chuyến vận chuyển chuỗi lạnh (S-40)."""
         query = db.query(TransportTrip)
         role_lower = str(user.role).lower()
+        is_admin_or_inspector = role_lower in ("system_admin", "admin", "inspector")
 
-        # Nếu user là đơn vị vận chuyển: chỉ xem các chuyến của tổ chức mình
-        if role_lower in ("transporter", "logistics") and user.organization_id:
-            query = query.filter(TransportTrip.carrier_org_id == user.organization_id)
+        # 1. Quản trị hệ thống & Cán bộ kiểm tra: Xem toàn bộ chuyến xe trong chuỗi cung ứng
+        if is_admin_or_inspector:
+            pass
+        elif role_lower in ("carrier", "transporter", "logistics"):
+            # 2. Đơn vị vận chuyển lạnh: CHỈ xem các chuyến do chính tổ chức mình phụ trách
+            if user.organization_id:
+                query = query.filter(TransportTrip.carrier_org_id == user.organization_id)
+            else:
+                query = query.filter(TransportTrip.id == -1)
+        else:
+            # 3. Nông hộ, HTX, Nhà phân phối:
+            # Không trực tiếp phụ trách chuyến xe nên chỉ thấy chuyến xe nếu có lô hàng của mình trên chuyến xe đó
+            if user.organization_id:
+                org_batch_ids = [
+                    b_id
+                    for (b_id,) in db.query(Batch.id)
+                    .filter(Batch.organization_id == user.organization_id)
+                    .all()
+                ]
+                if org_batch_ids:
+                    query = (
+                        query.join(TripBatch, TripBatch.trip_id == TransportTrip.id)
+                        .filter(TripBatch.batch_id.in_(org_batch_ids))
+                        .distinct()
+                    )
+                else:
+                    query = query.filter(TransportTrip.id == -1)
+            else:
+                query = query.filter(TransportTrip.id == -1)
 
         if status_filter:
             query = query.filter(TransportTrip.status == status_filter)
@@ -214,7 +241,9 @@ class ColdChainService:
         return results
 
     @classmethod
-    def get_trip_detail(cls, db: Session, trip_id: int) -> TransportTripDetailResponse:
+    def get_trip_detail(
+        cls, db: Session, trip_id: int, user: User | None = None
+    ) -> TransportTripDetailResponse:
         """Xem chi tiết chuyến xe, gồm các lô hàng, danh sách vi phạm và telemetry gần nhất."""
         trip = db.query(TransportTrip).filter(TransportTrip.id == trip_id).first()
         if not trip:
@@ -222,6 +251,25 @@ class ColdChainService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Không tìm thấy chuyến xe với ID {trip_id}.",
             )
+
+        if user:
+            role_lower = str(user.role).lower()
+            if role_lower not in ("system_admin", "admin", "inspector"):
+                if role_lower in ("carrier", "transporter", "logistics"):
+                    if trip.carrier_org_id != user.organization_id:
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Bạn không có quyền xem chi tiết chuyến xe của đơn vị vận chuyển khác.",
+                        )
+                else:
+                    trip_batch_org_ids = {
+                        tb.batch.organization_id for tb in trip.trip_batches if tb.batch
+                    }
+                    if user.organization_id not in trip_batch_org_ids:
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Bạn không có quyền xem thông tin chuyến xe này.",
+                        )
 
         carrier_name = trip.carrier_organization.name if trip.carrier_organization else None
         batch_items = [
@@ -567,6 +615,19 @@ class ColdChainService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Không tìm thấy chuyến xe với ID {trip_id}.",
             )
+
+        if user:
+            role_lower = str(user.role).lower()
+            if role_lower not in ("carrier", "transporter", "logistics", "admin", "system_admin"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Chỉ Đơn vị vận chuyển hoặc Quản trị hệ thống mới có quyền chạy mô phỏng cảm biến IoT.",
+                )
+            if role_lower in ("carrier", "transporter", "logistics") and trip.carrier_org_id != user.organization_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Bạn không có quyền can thiệp vào chuyến xe của đơn vị vận chuyển khác.",
+                )
 
         if reset_previous_telemetry:
             # Xóa các bản ghi telemetry và vi phạm cũ của chuyến để quan sát kịch bản độc lập

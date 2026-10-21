@@ -7,11 +7,13 @@ import BatchLineageDAG from './pages/BatchLineageDAG';
 import EmergencyRecallManagement from './pages/EmergencyRecallManagement';
 import ColdChainMonitoring from './pages/ColdChainMonitoring';
 import FarmerPrivacyManagement from './pages/FarmerPrivacyManagement';
+import SystemAuditLogs from './pages/SystemAuditLogs';
 import InspectionDossierModal from './components/InspectionDossierModal';
 import {
   Boxes,
   Hash,
   Network,
+  Shield,
   ShieldAlert,
   ChevronDown,
   Building2,
@@ -198,6 +200,21 @@ function MainApp() {
               <Hash className="w-4 h-4" />
               ⛓️ Chuỗi Hash & T-30 (S-10 - S-12)
             </button>
+
+            {/* S-31: Nhật Ký Hệ Thống - Chỉ Quản trị viên */}
+            {['system_admin', 'admin'].includes(currentRole) && (
+              <button
+                onClick={() => setActiveTab('audit')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                  activeTab === 'audit'
+                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                🛡️ Nhật Ký Hệ Thống (S-31)
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -210,6 +227,7 @@ function MainApp() {
         {activeTab === 'farmer_privacy' && <FarmerPrivacyManagement />}
         {activeTab === 'products' && <ProductManagement />}
         {activeTab === 'chain' && <ChainIntegrityCheck />}
+        {activeTab === 'audit' && <SystemAuditLogs onRedirectHome={() => setActiveTab('dag')} />}
       </main>
 
       {/* Quick Global Inspection Dossier Modal */}

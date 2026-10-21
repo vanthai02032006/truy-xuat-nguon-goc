@@ -1063,10 +1063,10 @@ def generate_spa_html():
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
-          <button onclick="openCreateTripModal()" class="px-4 py-2.5 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
+          <button id="btnCreateColdTrip" onclick="openCreateTripModal()" class="px-4 py-2.5 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
             <i class="fa-solid fa-truck-ramp-box"></i> Tạo Chuyến Xe Lạnh (S-40)
           </button>
-          <button onclick="openSimulateTelemetryModal()" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
+          <button id="btnSimulateTelemetryCold" onclick="openSimulateTelemetryModal()" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
             <i class="fa-solid fa-temperature-arrow-up"></i> Giả Lập Cảm Biến (S-41, S-43)
           </button>
         </div>
@@ -3054,13 +3054,42 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         }
       }
 
-      // User Story S-31: Hiển thị tab Nhật Ký Hệ Thống (Audit Logs) cho Quản Trị Viên (System Admin)
+      // User Story S-31 & Yêu cầu 4: Hiển thị tab Nhật Ký Hệ Thống và nút Nạp Dữ Liệu Thật (Seed) CHỈ cho Quản Trị Viên (System Admin / Admin)
+      const isAdmin = ["system_admin", "admin"].includes(roleKey) || (state.currentUser && ["system_admin", "admin"].includes(state.currentUser.role));
       const tabAudit = document.getElementById("tabBtn_audit");
       if (tabAudit) {
-        if (roleKey === "system_admin" || (state.currentUser && state.currentUser.role === "system_admin")) {
+        if (isAdmin) {
           tabAudit.classList.remove("hidden");
         } else {
           tabAudit.classList.add("hidden");
+        }
+      }
+
+      const seedBtn = document.getElementById("seedDatabaseBtn");
+      if (seedBtn) {
+        if (isAdmin) {
+          seedBtn.classList.remove("hidden");
+        } else {
+          seedBtn.classList.add("hidden");
+        }
+      }
+
+      // Yêu cầu 3: Nút Tạo Chuyến Xe Lạnh & Giả Lập Cảm Biến chỉ hiển thị cho Đơn Vị Vận Chuyển (Carrier / Logistics) hoặc Quản Trị Viên
+      const isCarrierOrAdmin = ["carrier", "transporter", "logistics", "admin", "system_admin"].includes(roleKey) || (state.currentUser && ["carrier", "transporter", "logistics", "admin", "system_admin"].includes(state.currentUser.role));
+      const btnCreateCold = document.getElementById("btnCreateColdTrip");
+      const btnSimCold = document.getElementById("btnSimulateTelemetryCold");
+      if (btnCreateCold) {
+        if (isCarrierOrAdmin) {
+          btnCreateCold.classList.remove("hidden");
+        } else {
+          btnCreateCold.classList.add("hidden");
+        }
+      }
+      if (btnSimCold) {
+        if (isCarrierOrAdmin) {
+          btnSimCold.classList.remove("hidden");
+        } else {
+          btnSimCold.classList.add("hidden");
         }
       }
     }
@@ -3507,6 +3536,17 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
+      // Guard S-31 & Yêu cầu 4: Chặn truy cập trực tiếp tab Nhật Ký Hệ Thống nếu không phải Admin
+      if (tabId === 'audit') {
+        const roleKey = state.currentRole || 'farm';
+        const isAdmin = ["system_admin", "admin"].includes(roleKey) || (state.currentUser && ["system_admin", "admin"].includes(state.currentUser.role));
+        if (!isAdmin) {
+          showToast("Bạn không có quyền truy cập Nhật Ký Hệ Thống (S-31). Vui lòng đăng nhập tài khoản Quản trị viên.", "error");
+          switchNavTab('overview');
+          return;
+        }
+      }
+
       state.activeTab = tabId;
       saveAppState(state);
 
@@ -3948,15 +3988,26 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       // 1. Cập nhật dropdown chọn Lô bàn giao: chỉ hiển thị các lô do tổ chức mình sở hữu
       const hoBatchSel = document.getElementById("ho_batch_code");
       if (hoBatchSel) {
-        let myBatches = state.batches;
+        let myBatches = state.batches || [];
         if (!cfg.canAccessAllOrgs && currentOrgId !== null) {
           myBatches = myBatches.filter(b => b.org_id === currentOrgId);
         }
-        hoBatchSel.innerHTML = myBatches.map(b => `
-          <option value="${b.code}" ${b.code === currentDetailBatchCode ? 'selected' : ''}>
-            ${b.code} - ${b.product} (${b.status || 'Sẵn sàng'})
-          </option>
-        `).join('');
+        // S-29: Loại bỏ các lô đã bán hết / tiêu thụ (consumed / sold_out) hoặc số lượng còn lại <= 0
+        myBatches = myBatches.filter(b => {
+          const st = (b.status || "").toLowerCase();
+          const rem = b.remaining_qty !== undefined ? b.remaining_qty : b.qty;
+          return !["consumed", "sold_out"].includes(st) && rem > 0;
+        });
+
+        if (myBatches.length === 0) {
+          hoBatchSel.innerHTML = '<option value="">(Không có lô hàng khả dụng để bàn giao)</option>';
+        } else {
+          hoBatchSel.innerHTML = myBatches.map(b => `
+            <option value="${b.code}" ${b.code === currentDetailBatchCode ? 'selected' : ''}>
+              ${b.code} - ${b.product} (${b.status || 'Sẵn sàng'} - còn ${b.remaining_qty !== undefined ? b.remaining_qty : b.qty} kg)
+            </option>
+          `).join('');
+        }
       }
 
       // 2. Cập nhật dropdown chọn Tổ chức nhận: loại trừ tổ chức của chính mình
@@ -4108,6 +4159,16 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
+      // S-29: Kiểm tra nếu lô đã tiêu thụ hết / bán hết hoặc số lượng khả dụng <= 0
+      if (targetBatch) {
+        const st = (targetBatch.status || "").toLowerCase();
+        const rem = targetBatch.remaining_qty !== undefined ? targetBatch.remaining_qty : targetBatch.qty;
+        if (["consumed", "sold_out"].includes(st) || rem <= 0) {
+          showToast("Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao (S-29).", "error");
+          return;
+        }
+      }
+
       // Đóng modal chi tiết lô và chuyển mã vào modal bàn giao
       closeModal("batchDetailModal");
       renderHandoversTable();
@@ -4157,6 +4218,17 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       if (pendingExists) {
         showToast(`CHẶN BÀN GIAO (S-15): Lô ${code} đang có một lệnh bàn giao chờ xác nhận!`, "error");
         return;
+      }
+
+      // S-29: Kiểm tra nếu lô đã tiêu thụ hết / bán hết hoặc số lượng khả dụng <= 0
+      const batchObj = state.batches.find(b => b.code.toLowerCase() === code.toLowerCase());
+      if (batchObj) {
+        const st = (batchObj.status || "").toLowerCase();
+        const rem = batchObj.remaining_qty !== undefined ? batchObj.remaining_qty : batchObj.qty;
+        if (["consumed", "sold_out"].includes(st) || rem <= 0) {
+          showToast("Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao (S-29).", "error");
+          return;
+        }
       }
 
       // Gọi API Backend nếu khả dụng
@@ -5050,6 +5122,9 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         const trips = await apiFetch("/api/v1/cold-chain/trips");
         coldChainTripsCache = trips || [];
 
+        const roleKey = state.currentRole || "farm";
+        const isCarrierOrAdmin = ["carrier", "transporter", "logistics", "admin", "system_admin"].includes(roleKey) || (state.currentUser && ["carrier", "transporter", "logistics", "admin", "system_admin"].includes(state.currentUser.role));
+
         let activeCount = 0;
         let totalViolations = 0;
         let tempSum = 0;
@@ -5141,9 +5216,11 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
                   <button onclick="openTripDetailModal(${t.id})" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer" title="Xem chi tiết & đồ thị">
                     <i class="fa-solid fa-chart-line"></i> Giám Sát
                   </button>
-                  <button onclick="openSimulateTelemetryModal(${t.id})" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer" title="Gửi telemetry thử nghiệm">
-                    <i class="fa-solid fa-satellite-dish"></i> Gửi IoT
-                  </button>
+                  ${isCarrierOrAdmin ? `
+                    <button onclick="openSimulateTelemetryModal(${t.id})" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer" title="Gửi telemetry thử nghiệm">
+                      <i class="fa-solid fa-satellite-dish"></i> Gửi IoT
+                    </button>
+                  ` : ''}
                 </div>
               </td>
             </tr>
@@ -5979,20 +6056,32 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const roleKey = state.currentRole || "farm";
       const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
 
-      // Điều khiển hiển thị nút Bàn Giao (S-15): Ẩn nếu là Consumer hoặc Inspector
+      const foundBatch = state.batches.find(b => b.code === data.batch_code);
+      const remQty = foundBatch ? (foundBatch.remaining_qty !== undefined ? foundBatch.remaining_qty : foundBatch.qty) : (data.remaining_quantity !== undefined ? data.remaining_quantity : (data.qty || 0));
+      const bStatus = (data.status || (foundBatch && foundBatch.status) || "").toLowerCase();
+      const isConsumedOrEmpty = ["consumed", "sold_out"].includes(bStatus) || remQty <= 0;
+
+      // Điều khiển hiển thị nút Bàn Giao (S-15): Ẩn nếu là Consumer/Inspector; Vô hiệu hóa kèm tooltip nếu đã bán hết (S-29)
       const hoBtn = document.getElementById("modalBtnHandover");
       if (hoBtn) {
         if (roleKey === "consumer" || cfg.isReadOnly) {
           hoBtn.classList.add("hidden");
-        } else {
+        } else if (isConsumedOrEmpty) {
           hoBtn.classList.remove("hidden");
+          hoBtn.disabled = true;
+          hoBtn.classList.add("opacity-50", "cursor-not-allowed", "bg-slate-400");
+          hoBtn.classList.remove("bg-emerald-600", "hover:bg-emerald-700");
+          hoBtn.title = "Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao (S-29).";
+        } else {
+          hoBtn.classList.remove("hidden", "opacity-50", "cursor-not-allowed", "bg-slate-400");
+          hoBtn.classList.add("bg-emerald-600", "hover:bg-emerald-700");
+          hoBtn.disabled = false;
+          hoBtn.title = "Bàn giao lô hàng sang đơn vị khác (S-15)";
         }
       }
 
       // Điều khiển hiển thị nút Tách Lô (S-17): Ẩn nếu là Consumer/Inspector hoặc hết khối lượng
       const splitBtn = document.getElementById("modalBtnSplit");
-      const foundBatch = state.batches.find(b => b.code === data.batch_code);
-      const remQty = foundBatch ? (foundBatch.remaining_qty !== undefined ? foundBatch.remaining_qty : foundBatch.qty) : 0;
       if (splitBtn) {
         if (roleKey === "consumer" || cfg.isReadOnly || remQty <= 0) {
           splitBtn.classList.add("hidden");

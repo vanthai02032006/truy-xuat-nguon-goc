@@ -124,6 +124,16 @@ def create_handover(
             detail=f"Lô hàng #{batch.batch_code} đang nằm trong Lệnh thu hồi khẩn cấp (S-38), nghiêm cấm bàn giao luân chuyển!",
         )
 
+    # S-29: Chặn tạo phiếu bàn giao nếu lô hàng đã tiêu thụ hết (bán hết / remaining_quantity <= 0)
+    batch_status = str(batch.status).lower() if batch.status else ""
+    if batch_status in ("consumed", "sold_out") or (
+        batch.remaining_quantity is not None and batch.remaining_quantity <= 0
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao.",
+        )
+
     # 2. Không cho phép tự bàn giao cho chính mình
     if payload.to_org_id == current_user.organization_id:
         raise HTTPException(

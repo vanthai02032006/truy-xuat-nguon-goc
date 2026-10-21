@@ -39,7 +39,7 @@ export default function ColdChainMonitoring() {
   const [createLoading, setCreateLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const isLogisticsOrAdmin = ['logistics', 'admin', 'system_admin'].includes(currentRole);
+  const isLogisticsOrAdmin = ['carrier', 'logistics', 'transporter', 'admin', 'system_admin'].includes(currentRole);
 
   useEffect(() => {
     fetchTrips();
@@ -377,7 +377,8 @@ export default function ColdChainMonitoring() {
                 </div>
               </div>
 
-              {/* 5-Scenario Sensor Simulator Tool (S-42) */}
+              {/* 5-Scenario Sensor Simulator Tool (S-42) - Chỉ hiển thị cho Carrier / Admin */}
+              {isLogisticsOrAdmin && (
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -480,6 +481,7 @@ export default function ColdChainMonitoring() {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Recorded Violations & Handover Warning Demonstration (S-45) */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
