@@ -5787,15 +5787,14 @@ Thửa Thủy Canh Công Nghệ B2,1800,m2,11.9420,108.4600,Đà Lạt Lâm Đ�
       const endpoint = currentCsvType === 'products' ? '/api/v1/products/import-csv' : '/api/v1/land-plots/import-csv';
 
       try {
-        const formData = new FormData();
-        const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-        formData.append("file", blob, currentCsvType + "_import.csv");
-
         const token = (state.currentUser && state.currentUser.token) || localStorage.getItem("app_access_token");
         const res = await fetch(endpoint, {
           method: "POST",
-          headers: token ? { "Authorization": `Bearer ${token}` } : {},
-          body: formData
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ csv_content: content })
         });
 
         const data = await res.json();
@@ -5804,20 +5803,29 @@ Thửa Thủy Canh Công Nghệ B2,1800,m2,11.9420,108.4600,Đà Lạt Lâm Đ�
             resBox.className = "p-3 rounded-2xl border bg-emerald-50 border-emerald-200 text-emerald-900 text-xs space-y-1 block";
             msgEl.innerText = `Nhập thành công ${data.imported_count || 0} bản ghi (S-32)!`;
             detEl.innerHTML = `
-              <div>• Tổng số dòng hợp lệ: ${data.imported_count || 0}</div>
-              <div>• Cảnh báo: ${(data.warnings || []).length}</div>
+              <div>• Tổng số dòng nhập thành công: ${data.imported_count || 0}</div>
+              <div>• Bỏ qua / Trùng lặp: ${data.skipped_count || 0}</div>
+              ${(data.errors && data.errors.length) ? data.errors.map(err => `<div class="text-amber-700">• ${err}</div>`).join('') : ''}
             `;
           }
           await loadServerData();
           if (currentCsvType === 'land_plots') renderPlotsGrid();
           showToast(`Nhập thành công ${data.imported_count || 0} bản ghi từ file CSV!`, "success");
         } else {
+          let errorText = "Lỗi khi xử lý file CSV";
+          if (typeof data.detail === "string") {
+            errorText = data.detail;
+          } else if (Array.isArray(data.detail)) {
+            errorText = data.detail.map(d => (d.msg || JSON.stringify(d))).join("; ");
+          } else if (data.detail && typeof data.detail === "object") {
+            errorText = data.detail.msg || JSON.stringify(data.detail);
+          }
           if (resBox) {
             resBox.className = "p-3 rounded-2xl border bg-rose-50 border-rose-200 text-rose-900 text-xs space-y-1 block";
-            msgEl.innerText = data.detail || "Lỗi khi xử lý file CSV";
+            msgEl.innerText = errorText;
             detEl.innerHTML = (data.errors || []).map(err => `<div>• ${err}</div>`).join('');
           }
-          showToast(data.detail || "Lỗi nhập CSV", "error");
+          showToast(errorText, "error");
         }
       } catch (err) {
         showToast("Lỗi mạng khi upload CSV: " + err.message, "error");
