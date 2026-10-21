@@ -5729,6 +5729,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const lblProd = document.getElementById("labelCsvProducts");
       const lblPlot = document.getElementById("labelCsvLandPlots");
       const preview = document.getElementById("csvTemplatePreview");
+      const resBox = document.getElementById("csvImportResultBox");
+      if (resBox) resBox.className = "hidden";
 
       if (type === 'products') {
         if (lblProd) lblProd.className = "p-3 border-2 border-emerald-500 rounded-2xl bg-emerald-50/50 flex items-center gap-2 cursor-pointer transition-all hover:bg-emerald-50";
@@ -5770,8 +5772,35 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const detEl = document.getElementById("csvImportResultDetails");
       const btn = document.getElementById("btnSubmitCsvImport");
 
+      if (resBox) {
+        resBox.className = "hidden";
+        if (msgEl) msgEl.innerText = "";
+        if (detEl) detEl.innerHTML = "";
+      }
+
       if (!content) {
         showToast("Vui lòng dán nội dung CSV hoặc chọn file CSV!", "error");
+        return;
+      }
+
+      // Tự động kiểm tra nếu người dùng chọn nhầm tab dữ liệu
+      const lower = content.toLowerCase();
+      if (currentCsvType === 'land_plots' && (lower.includes("default_unit") || lower.includes("variety") || lower.includes("sp-"))) {
+        if (resBox) {
+          resBox.className = "p-3 rounded-2xl border bg-amber-50 border-amber-200 text-amber-900 text-xs space-y-1 block";
+          if (msgEl) msgEl.innerText = "Cảnh báo: Dữ liệu bạn vừa tải lên là Danh Mục Sản Phẩm!";
+          if (detEl) detEl.innerHTML = "<div>Vui lòng chọn loại <b>'Danh Mục Sản Phẩm'</b> ở trên để nhập đúng dữ liệu này.</div>";
+        }
+        showToast("Tệp CSV là danh mục sản phẩm, vui lòng chọn đúng loại dữ liệu!", "warning");
+        return;
+      }
+      if (currentCsvType === 'products' && (lower.includes("cadastral") || lower.includes("tọa độ") || (lower.includes("latitude") && lower.includes("longitude")))) {
+        if (resBox) {
+          resBox.className = "p-3 rounded-2xl border bg-amber-50 border-amber-200 text-amber-900 text-xs space-y-1 block";
+          if (msgEl) msgEl.innerText = "Cảnh báo: Dữ liệu bạn vừa tải lên là Thửa Đất Canh Tác!";
+          if (detEl) detEl.innerHTML = "<div>Vui lòng chọn loại <b>'Thửa Đất Canh Tác'</b> ở trên để nhập đúng dữ liệu này.</div>";
+        }
+        showToast("Tệp CSV là thửa đất, vui lòng chọn đúng loại dữ liệu!", "warning");
         return;
       }
 
@@ -5793,7 +5822,13 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           body: JSON.stringify({ csv_content: content })
         });
 
-        const data = await res.json();
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (e) {
+          data = { detail: "Máy chủ trả về phản hồi không hợp lệ (HTTP " + res.status + ")" };
+        }
+
         if (res.ok) {
           if (resBox) {
             resBox.className = "p-3 rounded-2xl border bg-emerald-50 border-emerald-200 text-emerald-900 text-xs space-y-1 block";
@@ -5824,6 +5859,11 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           showToast(errorText, "error");
         }
       } catch (err) {
+        if (resBox) {
+          resBox.className = "p-3 rounded-2xl border bg-rose-50 border-rose-200 text-rose-900 text-xs space-y-1 block";
+          if (msgEl) msgEl.innerText = "Lỗi kết nối khi gửi dữ liệu CSV";
+          if (detEl) detEl.innerHTML = `<div>• ${err.message}</div>`;
+        }
         showToast("Lỗi mạng khi upload CSV: " + err.message, "error");
       } finally {
         if (btn) {
