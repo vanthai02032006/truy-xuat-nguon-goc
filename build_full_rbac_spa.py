@@ -164,7 +164,7 @@ def generate_spa_html():
                   <div class="flex-1 text-xs">
                     <div class="flex items-center justify-between">
                       <span class="font-bold text-slate-800">1. Vùng Trồng (Farm)</span>
-                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-emerald-100 text-emerald-800">Org #1</span>
+                      <span class="text-[9px] font-bold px-1.5 rounded-full bg-emerald-100 text-emerald-800">Org #10</span>
                     </div>
                     <p class="text-[11px] text-slate-500 font-medium">HTX Thắng Lợi - Quản lý thửa & thu hoạch</p>
                   </div>
@@ -402,17 +402,11 @@ def generate_spa_html():
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
-          <button onclick="openModal('addBatchModal')" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
+          <button id="btnOverviewAddBatch" onclick="handleAddBatchClick()" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
             <i class="fa-solid fa-plus-circle"></i> Khởi Tạo Lô Thu Hoạch
           </button>
-          <button onclick="openModal('recordBatchMaterialModal')" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
+          <button id="btnOverviewAddMaterial" onclick="handleAddMaterialClick()" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
             <i class="fa-solid fa-spray-can"></i> Ghi Nhận Vật Tư (S-62)
-          </button>
-          <button 
-            id="modalBtnRecall" 
-            onclick="openRecallModalForCurrentBatch()" 
-            class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
-            <i class="fa-solid fa-triangle-exclamation"></i> Thu Hồi Khẩn Cấp (S-33)
           </button>
         </div>
       </div>
@@ -549,10 +543,10 @@ def generate_spa_html():
           <p class="text-xs text-slate-500 mt-1">Mã lô ngẫu nhiên đủ dài, tìm kiếm không phân biệt hoa thường, phân trang 20 lô/trang</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button onclick="openCsvImportModal('products')" class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
+          <button id="btnCsvBatches" onclick="openCsvImportModal('products')" class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
             <i class="fa-solid fa-file-csv"></i> Nhập CSV (S-32)
           </button>
-          <button onclick="openOrganizationLocationsModal()" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
+          <button id="btnOrgLocations" onclick="openOrganizationLocationsModal()" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
             <i class="fa-solid fa-store"></i> Điểm Bán / Kho (S-30)
           </button>
           <button id="btnOpenMergeModal" onclick="openMergeModalForSelected()" class="hidden px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-all">
@@ -740,7 +734,7 @@ def generate_spa_html():
           <h2 class="text-2xl font-black text-slate-900 mt-1">Bàn Giao Lô Hàng Giữa Các Tổ Chức Độc Lập</h2>
           <p class="text-xs text-slate-500 mt-1">Chặn bàn giao lần hai khi đang chờ duyệt. Bên nhận xác nhận chuyển quyền hoặc từ chối kèm lý do (tối thiểu 10 ký tự) trong cùng giao dịch.</p>
         </div>
-        <button onclick="openModal('handoverModal')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
+        <button id="btnCreateHandover" onclick="openModal('handoverModal')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
           <i class="fa-solid fa-truck-moving"></i> Tạo Phiếu Bàn Giao Mới
         </button>
       </div>
@@ -2817,6 +2811,39 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     SUPPLY_CHAIN_ROLES.retailer = SUPPLY_CHAIN_ROLES.distributor;
     SUPPLY_CHAIN_ROLES.admin = SUPPLY_CHAIN_ROLES.system_admin;
 
+    // Ma trận phân quyền các thẻ điều hướng theo từng vai trò chuỗi cung ứng (Epic E-02):
+    const ROLE_TABS = {
+      // 1. Vùng Trồng: Canh tác, thửa đất, vật tư PHI, lô thu hoạch, bàn giao, thu hồi, chuỗi lạnh, toàn vẹn hash, tra cứu công khai
+      farm: ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain', 'traceability', 'public'],
+
+      // 2. HTX Sơ Chế: Lô hàng (sơ chế, tách/gộp, đóng gói), bàn giao, thu hồi, chuỗi lạnh, toàn vẹn hash, tra cứu công khai
+      // (Ẩn: Thửa đất - không có đất; Vật tư & PHI - không phun thuốc tại ruộng; Nhật ký hệ thống - chỉ Admin)
+      coop: ['overview', 'batches', 'handovers', 'recalls', 'cold_chain', 'traceability', 'public'],
+
+      // 3. Vận Chuyển Lạnh: Chuỗi lạnh IoT, bàn giao xe lạnh, các lô đang chở, thu hồi, toàn vẹn hash, tra cứu công khai
+      // (Ẩn: Thửa đất; Vật tư & PHI; Nhật ký hệ thống)
+      logistics: ['overview', 'cold_chain', 'handovers', 'batches', 'recalls', 'traceability', 'public'],
+
+      // 4. Nhà Phân Phối / Bán Lẻ: Lô hàng, bàn giao, thu hồi, chuỗi lạnh, toàn vẹn hash, tra cứu công khai
+      // (Ẩn: Thửa đất - siêu thị không có ruộng đất; Vật tư & PHI - siêu thị không dùng thuốc BVTV; Nhật ký hệ thống - chỉ Admin)
+      distributor: ['overview', 'batches', 'handovers', 'recalls', 'cold_chain', 'traceability', 'public'],
+
+      // 5. Cán Bộ Kiểm Tra: Xem toàn chuỗi (Read-only) gồm thửa đất, vật tư PHI, lô hàng, bàn giao, chuỗi lạnh, mở lệnh thu hồi (S-33), xuất hồ sơ kiểm tra (S-52), toàn vẹn hash, tra cứu công khai
+      // (Ẩn: Nhật ký hệ thống audit - bảo mật quản trị)
+      inspector: ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain', 'traceability', 'public'],
+
+      // 6. Quản Trị Hệ Thống: Toàn quyền mọi tab
+      system_admin: ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain', 'traceability', 'audit', 'public'],
+
+      // 7. Người Tiêu Dùng: Tra cứu công khai và kiểm tra toàn vẹn Hash SHA-256
+      consumer: ['overview', 'public', 'traceability']
+    };
+    ROLE_TABS.processing = ROLE_TABS.coop;
+    ROLE_TABS.carrier = ROLE_TABS.logistics;
+    ROLE_TABS.transporter = ROLE_TABS.logistics;
+    ROLE_TABS.retailer = ROLE_TABS.distributor;
+    ROLE_TABS.admin = ROLE_TABS.system_admin;
+
     // Initial Supply Chain State (Bắt đầu với dữ liệu trống, tự động nạp từ API Backend thật)
     const defaultData = {
       activeTab: "overview",
@@ -3054,9 +3081,20 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
     });
 
+    function getActiveRole() {
+      let r = (state.currentUser && state.currentUser.role) ? state.currentUser.role : (state.currentRole || "farm");
+      if (!r) r = "farm";
+      r = r.toLowerCase();
+      if (r === "admin" || r === "sysadmin") return "system_admin";
+      if (r === "retailer") return "distributor";
+      if (r === "processing") return "coop";
+      if (r === "carrier" || r === "transporter") return "logistics";
+      return r;
+    }
+
     function updateRoleUI() {
-      const roleKey = state.currentRole || "farm";
-      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      const activeRole = getActiveRole();
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES[state.currentRole] || SUPPLY_CHAIN_ROLES.farm;
 
       const iconBox = document.getElementById("currentRoleIconBox");
       const icon = document.getElementById("currentRoleIcon");
@@ -3070,7 +3108,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       if (title) title.innerText = cfg.name;
       if (badge) {
         badge.innerText = cfg.badge;
-        if (roleKey === "inspector") {
+        if (activeRole === "inspector") {
           badge.className = "text-[9px] font-black px-1.5 py-0.2 rounded-full bg-purple-100 text-purple-800 border border-purple-200";
         } else {
           badge.className = "text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200";
@@ -3083,50 +3121,109 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
       // Hiển thị hoặc ẩn banner Cán Bộ Kiểm Tra (Epic E-02: Inspector Read-Only)
       if (inspectorBanner) {
-        if (roleKey === "inspector") {
+        if (activeRole === "inspector") {
           inspectorBanner.classList.remove("hidden");
         } else {
           inspectorBanner.classList.add("hidden");
         }
       }
 
-      // User Story S-31 & Yêu cầu 4: Hiển thị tab Nhật Ký Hệ Thống và nút Nạp Dữ Liệu Thật (Seed) CHỈ cho Quản Trị Viên (System Admin / Admin)
-      const isAdmin = ["system_admin", "admin"].includes(roleKey) || (state.currentUser && ["system_admin", "admin"].includes(state.currentUser.role));
-      const tabAudit = document.getElementById("tabBtn_audit");
-      if (tabAudit) {
-        if (isAdmin) {
-          tabAudit.classList.remove("hidden");
-        } else {
-          tabAudit.classList.add("hidden");
+      // MA TRẬN PHÂN QUYỀN HIỂN THỊ CÁC TAB ĐIỀU HƯỚNG (ROLE_TABS)
+      const allowedTabs = ROLE_TABS[activeRole] || ROLE_TABS.farm;
+      const allTabs = ['overview', 'batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain', 'traceability', 'audit', 'public'];
+      allTabs.forEach(t => {
+        const tabBtn = document.getElementById(`tabBtn_${t}`);
+        if (tabBtn) {
+          if (allowedTabs.includes(t)) {
+            tabBtn.classList.remove("hidden");
+          } else {
+            tabBtn.classList.add("hidden");
+          }
         }
+      });
+
+      // Nếu tab đang chọn không thuộc các tab được phép của vai trò hiện tại, tự động chuyển về overview hoặc tab đầu tiên được phép
+      if (state.activeTab && !allowedTabs.includes(state.activeTab)) {
+        state.activeTab = allowedTabs.includes('overview') ? 'overview' : allowedTabs[0];
+        saveAppState(state);
       }
 
+      // MA TRẬN PHÂN QUYỀN CÁC NÚT HÀNH ĐỘNG (ACTION BUTTONS) THEO VAI TRÒ
+      const isAdmin = (activeRole === "system_admin");
+      const isFarmOrAdmin = (activeRole === "farm" || activeRole === "system_admin");
+      const isCarrierOrAdmin = (activeRole === "logistics" || activeRole === "system_admin");
+      const isReadOnly = (activeRole === "inspector") || Boolean(cfg.isReadOnly);
+      const isConsumer = (activeRole === "consumer");
+
+      // 1. Nút Nạp Dữ Liệu Thật (Seed) - CHỈ dành cho Quản Trị Hệ Thống
       const seedBtn = document.getElementById("seedDatabaseBtn");
       if (seedBtn) {
-        if (isAdmin) {
-          seedBtn.classList.remove("hidden");
-        } else {
-          seedBtn.classList.add("hidden");
-        }
+        if (isAdmin) seedBtn.classList.remove("hidden");
+        else seedBtn.classList.add("hidden");
       }
 
-      // Yêu cầu 3: Nút Tạo Chuyến Xe Lạnh & Giả Lập Cảm Biến chỉ hiển thị cho Đơn Vị Vận Chuyển (Carrier / Logistics) hoặc Quản Trị Viên
-      const isCarrierOrAdmin = ["carrier", "transporter", "logistics", "admin", "system_admin"].includes(roleKey) || (state.currentUser && ["carrier", "transporter", "logistics", "admin", "system_admin"].includes(state.currentUser.role));
+      // 2. Nút Khởi tạo lô thu hoạch trên Overview & Batches - CHỈ Vùng Trồng & Admin
+      const btnOverviewAddBatch = document.getElementById("btnOverviewAddBatch");
+      const addBatchBtn = document.getElementById("addBatchBtn");
+      if (btnOverviewAddBatch) {
+        if (isFarmOrAdmin && !isReadOnly) btnOverviewAddBatch.classList.remove("hidden");
+        else btnOverviewAddBatch.classList.add("hidden");
+      }
+      if (addBatchBtn) {
+        if (isFarmOrAdmin && !isReadOnly) addBatchBtn.classList.remove("hidden");
+        else addBatchBtn.classList.add("hidden");
+      }
+
+      // 3. Nút Ghi nhận vật tư & phân thuốc trên Overview & Vật Tư PHI - CHỈ Vùng Trồng & Admin
+      const btnOverviewAddMaterial = document.getElementById("btnOverviewAddMaterial");
+      const addMaterialBtn = document.getElementById("addMaterialBtn");
+      if (btnOverviewAddMaterial) {
+        if (isFarmOrAdmin && !isReadOnly) btnOverviewAddMaterial.classList.remove("hidden");
+        else btnOverviewAddMaterial.classList.add("hidden");
+      }
+      if (addMaterialBtn) {
+        if (isFarmOrAdmin && !isReadOnly) addMaterialBtn.classList.remove("hidden");
+        else addMaterialBtn.classList.add("hidden");
+      }
+
+      // 4. Nút Khai báo thửa đất mới - CHỈ Vùng Trồng & Admin
+      const addPlotBtn = document.getElementById("addPlotBtn");
+      if (addPlotBtn) {
+        if (isFarmOrAdmin && !isReadOnly) addPlotBtn.classList.remove("hidden");
+        else addPlotBtn.classList.add("hidden");
+      }
+
+      // 5. Nút Nhập CSV Lô Hàng (S-32) - CHỈ Vùng Trồng, HTX Sơ Chế & Admin
+      const btnCsvBatches = document.getElementById("btnCsvBatches");
+      if (btnCsvBatches) {
+        if ((isFarmOrAdmin || activeRole === "coop") && !isReadOnly) btnCsvBatches.classList.remove("hidden");
+        else btnCsvBatches.classList.add("hidden");
+      }
+
+      // 6. Nút Điểm Bán / Kho (S-30) - Các đơn vị chuỗi (ẩn với Consumer & Inspector)
+      const btnOrgLocations = document.getElementById("btnOrgLocations");
+      if (btnOrgLocations) {
+        if (!isConsumer && !isReadOnly) btnOrgLocations.classList.remove("hidden");
+        else btnOrgLocations.classList.add("hidden");
+      }
+
+      // 7. Nút Bàn Giao Mới - Các bên tham gia luân chuyển (ẩn với Consumer & Inspector)
+      const btnCreateHandover = document.getElementById("btnCreateHandover");
+      if (btnCreateHandover) {
+        if (!isConsumer && !isReadOnly) btnCreateHandover.classList.remove("hidden");
+        else btnCreateHandover.classList.add("hidden");
+      }
+
+      // 8. Nút Chuỗi Lạnh IoT - CHỈ Carrier / Logistics & Admin
       const btnCreateCold = document.getElementById("btnCreateColdTrip");
       const btnSimCold = document.getElementById("btnSimulateTelemetryCold");
       if (btnCreateCold) {
-        if (isCarrierOrAdmin) {
-          btnCreateCold.classList.remove("hidden");
-        } else {
-          btnCreateCold.classList.add("hidden");
-        }
+        if (isCarrierOrAdmin && !isReadOnly) btnCreateCold.classList.remove("hidden");
+        else btnCreateCold.classList.add("hidden");
       }
       if (btnSimCold) {
-        if (isCarrierOrAdmin) {
-          btnSimCold.classList.remove("hidden");
-        } else {
-          btnSimCold.classList.add("hidden");
-        }
+        if (isCarrierOrAdmin && !isReadOnly) btnSimCold.classList.remove("hidden");
+        else btnSimCold.classList.add("hidden");
       }
     }
 
@@ -3155,18 +3252,18 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     async function selectSupplyChainRole(roleKey) {
       if (!SUPPLY_CHAIN_ROLES[roleKey]) return;
       state.currentRole = roleKey;
+      state.currentUser = null; // Xóa ngay session user cũ để không rò rỉ quyền
+      localStorage.removeItem("app_access_token");
+      localStorage.removeItem("app_current_user");
       saveAppState(state);
 
       const menu = document.getElementById("roleDropdownMenu");
       if (menu) menu.classList.add("hidden");
 
+      updateAuthHeaderUI();
       updateRoleUI();
 
       if (roleKey === "consumer") {
-        state.currentUser = null;
-        localStorage.removeItem("app_access_token");
-        localStorage.removeItem("app_current_user");
-        updateAuthHeaderUI();
         switchNavTab("public");
         showToast("Đã chuyển sang vai trò Người Tiêu Dùng (Tra cứu công khai không cần đăng nhập)", "info");
         await loadServerData();
@@ -3206,7 +3303,9 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           };
           localStorage.setItem("app_access_token", authData.access_token);
           localStorage.setItem("app_current_user", JSON.stringify(state.currentUser));
+          saveAppState(state);
           updateAuthHeaderUI();
+          updateRoleUI();
           showToast(`Đã xác thực vai trò thật: ${SUPPLY_CHAIN_ROLES[roleKey].name}`, "success");
         } else {
           showToast(`Không thể lấy token xác thực cho vai trò ${roleKey}`, "error");
@@ -3557,30 +3656,42 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
      * ACTION GUARDS FOR INSPECTOR READ-ONLY (Epic E-02 Criterion 3)
      */
     function handleAddBatchClick() {
-      const roleKey = state.currentRole || "farm";
-      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
-      if (cfg.isReadOnly) {
+      const activeRole = getActiveRole();
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly || activeRole === "inspector") {
         showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi ghi đã bị chặn và ghi log an ninh.", "error");
+        return;
+      }
+      if (!["farm", "system_admin"].includes(activeRole)) {
+        showToast(`Chỉ Tổ chức Vùng Trồng (Farm) hoặc Quản Trị Viên mới có quyền khởi tạo lô thu hoạch! (${cfg.name} không có quyền)`, "warning");
         return;
       }
       openModal('addBatchModal');
     }
 
     function handleAddPlotClick() {
-      const roleKey = state.currentRole || "farm";
-      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
-      if (cfg.isReadOnly) {
+      const activeRole = getActiveRole();
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly || activeRole === "inspector") {
         showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi ghi đã bị chặn và ghi log an ninh.", "error");
+        return;
+      }
+      if (!["farm", "system_admin"].includes(activeRole)) {
+        showToast(`Chỉ Tổ chức Vùng Trồng (Farm) mới có quyền quản lý và khai báo thửa đất canh tác!`, "warning");
         return;
       }
       openModal('addPlotModal');
     }
 
     function handleAddMaterialClick() {
-      const roleKey = state.currentRole || "farm";
-      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
-      if (cfg.isReadOnly) {
+      const activeRole = getActiveRole();
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly || activeRole === "inspector") {
         showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi ghi đã bị chặn và ghi log an ninh.", "error");
+        return;
+      }
+      if (!["farm", "system_admin"].includes(activeRole)) {
+        showToast(`Chỉ Tổ chức Vùng Trồng (Farm) mới có nhật ký sử dụng vật tư & phân thuốc nông nghiệp!`, "warning");
         return;
       }
       openModal('recordBatchMaterialModal');
@@ -3590,6 +3701,9 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
      * NAVIGATION TAB SWITCHER
      */
     function switchNavTab(tabId) {
+      const activeRole = getActiveRole();
+      const allowedTabs = ROLE_TABS[activeRole] || ROLE_TABS.farm;
+
       // Guard S-04 & T-09: Giả sử chưa đăng nhập mà mở trang nội bộ, đưa về form đăng nhập
       const internalTabs = ['batches', 'plots', 'materials_phi', 'handovers', 'recalls', 'cold_chain', 'audit'];
       const isConsumer = !state.currentUser && (!state.currentRole || state.currentRole === 'consumer');
@@ -3601,15 +3715,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
-      // Guard S-31 & Yêu cầu 4: Chặn truy cập trực tiếp tab Nhật Ký Hệ Thống nếu không phải Admin
-      if (tabId === 'audit') {
-        const roleKey = state.currentRole || 'farm';
-        const isAdmin = ["system_admin", "admin"].includes(roleKey) || (state.currentUser && ["system_admin", "admin"].includes(state.currentUser.role));
-        if (!isAdmin) {
-          showToast("Bạn không có quyền truy cập Nhật Ký Hệ Thống (S-31). Vui lòng đăng nhập tài khoản Quản trị viên.", "error");
-          switchNavTab('overview');
-          return;
-        }
+      // Guard RBAC: Kiểm tra xem tab có được phép đối với vai trò hiện tại không
+      if (!allowedTabs.includes(tabId)) {
+        showToast(`Vai trò ${SUPPLY_CHAIN_ROLES[activeRole]?.name || activeRole} không có quyền truy cập tab này!`, "error");
+        tabId = allowedTabs.includes('overview') ? 'overview' : allowedTabs[0];
       }
 
       state.activeTab = tabId;
@@ -4473,6 +4582,13 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
       if (!mergeBtn) return;
 
+      const activeRole = getActiveRole();
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly || activeRole === "consumer" || activeRole === "inspector") {
+        mergeBtn.classList.add('hidden');
+        return;
+      }
+
       if (selectedBoxes.length >= 2) {
         mergeBtn.classList.remove('hidden');
         // Kiểm tra xem có cùng loại sản phẩm không
@@ -4499,6 +4615,13 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
     // 2. Mở Modal Gộp Lô (S-19)
     function openMergeModalForSelected() {
+      const activeRole = getActiveRole();
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES.farm;
+      if (cfg.isReadOnly || activeRole === "inspector") {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Không thể thực hiện gộp lô.", "error");
+        return;
+      }
+
       const selectedBoxes = Array.from(document.querySelectorAll('.batch-select-checkbox:checked'));
       if (selectedBoxes.length < 2) {
         showToast("Vui lòng chọn ít nhất 2 lô nông sản để gộp!", "warning");
@@ -4657,10 +4780,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         };
       }
 
-      const roleKey = state.currentRole || "farm";
-      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
-      if (roleKey === "consumer" || cfg.isReadOnly) {
-        showToast("Vai trò của bạn chỉ có quyền tra cứu, không được phép tách lô!", "error");
+      const activeRole = getActiveRole();
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES.farm;
+      if (activeRole === "consumer" || activeRole === "inspector" || cfg.isReadOnly) {
+        showToast("HTTP 403 Forbidden: Cán bộ kiểm tra hoặc người tiêu dùng không có quyền tách lô!", "error");
         return;
       }
 
