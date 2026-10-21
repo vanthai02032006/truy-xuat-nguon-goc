@@ -17,6 +17,9 @@ def generate_spa_html():
   <!-- FontAwesome 6 CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   
+  <!-- Chart.js CDN for Cold Chain IoT & Telemetry Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <!-- Tailwind CSS Play CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -1358,34 +1361,67 @@ def generate_spa_html():
   <!-- MODAL: CHI TIẾT CHUYẾN XE & LỊCH SỬ VI PHẠM (S-43, S-45) -->
   <!-- ======================================================== -->
   <div id="tripDetailModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-200 p-6 space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div class="flex items-center gap-2">
-          <span class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center text-sm font-black"><i class="fa-solid fa-snowflake"></i></span>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-cyan-100 text-cyan-800 flex items-center justify-center text-lg font-black shadow-inner">
+            <i class="fa-solid fa-snowflake"></i>
+          </div>
           <div>
-            <h3 class="font-extrabold text-slate-900 text-base" id="detailTripCode">TRIP-CODE</h3>
-            <p class="text-[11px] text-cyan-700 font-semibold" id="detailVehicleCode">REEFER-VEHICLE</p>
+            <div class="flex items-center gap-2">
+              <h3 class="font-extrabold text-slate-900 text-base" id="detailTripCode">TRIP-CODE</h3>
+              <span id="detailTripStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">Đang di chuyển</span>
+            </div>
+            <p class="text-[11px] text-cyan-700 font-semibold mt-0.5" id="detailVehicleCode">REEFER-VEHICLE</p>
           </div>
         </div>
-        <button onclick="closeModal('tripDetailModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <button onclick="closeModal('tripDetailModal')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
       </div>
 
       <div class="space-y-4 text-xs">
         <!-- Thông tin chuyến xe -->
         <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div><p class="text-slate-400 uppercase text-[10px]">Tài Xế</p><p class="font-bold text-slate-800" id="detailTripDriver">...</p></div>
-          <div><p class="text-slate-400 uppercase text-[10px]">Đơn Vị Vận Chuyển</p><p class="font-bold text-slate-800" id="detailTripCarrier">...</p></div>
-          <div><p class="text-slate-400 uppercase text-[10px]">Dải Nhiệt Độ Chuẩn</p><p class="font-bold text-cyan-700" id="detailTripTempRange">2°C - 8°C</p></div>
-          <div><p class="text-slate-400 uppercase text-[10px]">Trạng Thái</p><p class="font-bold text-emerald-600" id="detailTripStatus">IN_TRANSIT</p></div>
+          <div><p class="text-slate-400 uppercase text-[10px] font-bold">Tài Xế Phụ Trách</p><p class="font-bold text-slate-800 mt-0.5" id="detailTripDriver">...</p></div>
+          <div><p class="text-slate-400 uppercase text-[10px] font-bold">Đơn Vị Vận Chuyển</p><p class="font-bold text-slate-800 mt-0.5" id="detailTripCarrier">...</p></div>
+          <div><p class="text-slate-400 uppercase text-[10px] font-bold">Dải Nhiệt Độ Chuẩn</p><p class="font-bold text-cyan-700 mt-0.5 font-mono" id="detailTripTempRange">2°C - 8°C</p></div>
+          <div><p class="text-slate-400 uppercase text-[10px] font-bold">Trạng Thái Chuyến</p><p class="font-bold text-emerald-600 mt-0.5" id="detailTripStatus">IN_TRANSIT</p></div>
         </div>
 
         <!-- Danh sách lô hàng đang chở -->
         <div class="border border-slate-200 rounded-2xl p-4 bg-white space-y-2">
           <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
-            <i class="fa-solid fa-boxes-stacked text-blue-600"></i> Danh Sách Lô Hàng Đang Chở (S-40):
+            <i class="fa-solid fa-boxes-stacked text-blue-600"></i> Danh Sách Lô Hàng Đang Chở (User Story S-40):
           </p>
-          <div id="detailTripBatchesList" class="flex flex-wrap gap-2">
+          <div id="detailTripBatchesList" class="flex flex-wrap gap-2 pt-1">
             <!-- Dynamic badges -->
+          </div>
+        </div>
+
+        <!-- ĐỒ THỊ GIÁM SÁT NHIỆT ĐỘ CẢM BIẾN IOT (USER STORY S-41, S-43) -->
+        <div class="border border-slate-200 rounded-2xl p-4 bg-white space-y-3 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
+                <i class="fa-solid fa-chart-line text-cyan-600"></i> Đồ Thị Cảm Biến Nhiệt Độ IoT Theo Thời Gian Thực (S-41, S-43):
+              </p>
+              <p class="text-[10px] text-slate-500 mt-0.5">Phát hiện sốc nhiệt độ trễ 30 phút & cơ chế gộp gap 5 phút</p>
+            </div>
+            <span id="detailTempStatusBadge" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i> Đạt chuẩn dải 2°C - 8°C
+            </span>
+          </div>
+
+          <div class="relative w-full h-56 bg-slate-50/70 p-2.5 rounded-2xl border border-slate-100">
+            <canvas id="tripTelemetryChart"></canvas>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-center gap-4 text-[10px] text-slate-500 font-medium pt-1">
+            <span class="flex items-center gap-1.5"><span class="w-3.5 h-0.5 bg-rose-500 inline-block border-b-2 border-dashed border-rose-500"></span> Ngưỡng trần (8.0°C)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3.5 h-0.5 bg-blue-500 inline-block border-b-2 border-dashed border-blue-500"></span> Ngưỡng sàn (2.0°C)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-600 inline-block"></span> Dữ liệu IoT chuẩn</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block"></span> Vi phạm nhiệt độ</span>
           </div>
         </div>
 
@@ -1395,17 +1431,17 @@ def generate_spa_html():
             <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
               <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Các Lần Vi Phạm Chuỗi Lạnh Liên Tục &gt; 30 Phút (S-43):
             </p>
-            <span id="detailViolationsCountBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">0 Vi phạm</span>
+            <span id="detailViolationsCountBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">0 Vi phạm</span>
           </div>
           <div id="detailTripViolationsContainer" class="space-y-2">
             <!-- Dynamic violation cards -->
           </div>
         </div>
 
-        <!-- 20 điểm đo gần nhất -->
+        <!-- Danh sách điểm đo gần nhất -->
         <div class="border border-slate-200 rounded-2xl p-4 bg-white space-y-2">
           <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
-            <i class="fa-solid fa-chart-line text-teal-600"></i> Các Điểm Đo Cảm Biến Telemetry Gần Nhất (S-41):
+            <i class="fa-solid fa-list-check text-teal-600"></i> Danh Sách Điểm Đo Cảm Biến Telemetry Gần Nhất (S-41):
           </p>
           <div id="detailTripTelemetryContainer" class="max-h-36 overflow-y-auto space-y-1 font-mono text-[11px]">
             <!-- Dynamic telemetry readings -->
@@ -5039,14 +5075,14 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     async function renderColdChainTab() {
       const tbody = document.getElementById("coldChainTripsTableBody");
       const kpiActive = document.getElementById("kpiActiveTrips");
-      const kpiTelemetry = document.getElementById("kpiTotalTelemetry");
-      const kpiViolations = document.getElementById("kpiColdViolations");
-      const kpiAvg = document.getElementById("kpiAvgTemp");
+      const kpiBatches = document.getElementById("kpiCarriedBatches");
+      const kpiViolations = document.getElementById("kpiColdChainViolations");
+      const kpiTelemetry = document.getElementById("kpiTelemetryReadings");
 
       if (tbody) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="8" class="p-8 text-center text-slate-400">
+            <td colspan="9" class="p-8 text-center text-slate-400">
               <i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-500 mb-2"></i>
               <p class="font-semibold text-xs">Đang nạp dữ liệu chuyến xe lạnh và cảm biến từ máy chủ...</p>
             </td>
@@ -5063,29 +5099,29 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
         let activeCount = 0;
         let totalViolations = 0;
-        let tempSum = 0;
-        let tempCount = 0;
+        let totalBatches = 0;
+        let totalReadings = 0;
 
         trips.forEach(t => {
           if (t.status === "IN_TRANSIT") activeCount++;
-          if (t.violation_count) totalViolations += t.violation_count;
-          if (t.current_temperature !== null && t.current_temperature !== undefined) {
-            tempSum += t.current_temperature;
-            tempCount++;
-          }
+          const vCount = t.violations_count !== undefined ? t.violations_count : (t.violation_count || 0);
+          totalViolations += vCount;
+          const rCount = t.readings_count !== undefined ? t.readings_count : ((t.recent_telemetry || []).length || (t.telemetry || []).length || 0);
+          totalReadings += rCount;
+          totalBatches += (t.batches || []).length;
         });
 
         if (kpiActive) kpiActive.innerText = `${activeCount} Xe`;
-        if (kpiViolations) kpiViolations.innerText = `${totalViolations} Lần`;
-        if (kpiAvg) kpiAvg.innerText = tempCount > 0 ? `${(tempSum / tempCount).toFixed(1)}°C` : "4.0°C";
-        if (kpiTelemetry) kpiTelemetry.innerText = `${trips.length * 24} Điểm`;
+        if (kpiBatches) kpiBatches.innerText = `${totalBatches} Lô`;
+        if (kpiViolations) kpiViolations.innerText = `${totalViolations} Đợt`;
+        if (kpiTelemetry) kpiTelemetry.innerText = `${totalReadings} Điểm`;
 
         if (!tbody) return;
 
         if (trips.length === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="8" class="p-8 text-center text-slate-400">
+              <td colspan="9" class="p-8 text-center text-slate-400">
                 <i class="fa-solid fa-truck-ramp-box text-3xl mb-2 text-slate-300"></i>
                 <p class="font-bold text-xs text-slate-600">Chưa có chuyến vận chuyển lạnh nào trong hệ thống.</p>
                 <p class="text-[11px] text-slate-400 mt-1">Bấm nút "Tạo Chuyến Xe Lạnh (S-40)" ở trên để bắt đầu hành trình mới.</p>
@@ -5096,23 +5132,23 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         }
 
         tbody.innerHTML = trips.map(t => {
-          const vCount = t.violation_count || 0;
+          const vCount = t.violations_count !== undefined ? t.violations_count : (t.violation_count || 0);
           const statusBadge = t.status === "IN_TRANSIT"
-            ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 w-max"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Đang di chuyển</span>'
-            : '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 w-max"><i class="fa-solid fa-check"></i> Hoàn thành</span>';
+            ? '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1.5 w-max"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Đang di chuyển</span>'
+            : '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 w-max"><i class="fa-solid fa-check text-emerald-600"></i> Hoàn thành</span>';
 
           const violationBadge = vCount > 0
-            ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${vCount} Vi phạm (&gt;30p)</span>`
-            : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-shield-check mr-1"></i>0 Vi phạm</span>';
+            ? `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1 justify-center"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i>${vCount} Vi phạm (&gt;30p)</span>`
+            : '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 justify-center"><i class="fa-solid fa-shield-check text-emerald-600"></i>0 Vi phạm</span>';
 
           const batchesBadges = (t.batches || []).map(b => `
-            <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] font-bold border border-slate-200">
+            <span class="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-900 font-mono text-[10px] font-bold border border-blue-200 shadow-xs" title="${b.product_name || ''}">
               ${b.batch_code || b}
             </span>
           `).join(' ');
 
           const currTempDisplay = t.current_temperature !== null && t.current_temperature !== undefined 
-            ? `<span class="font-mono font-bold text-xs ${t.current_temperature > t.max_temperature ? 'text-rose-600' : 'text-cyan-700'}">${t.current_temperature.toFixed(1)}°C</span>` 
+            ? `<span class="font-mono font-bold text-xs ${t.current_temperature > t.max_temperature ? 'text-rose-600 font-black' : 'text-cyan-700'}">${t.current_temperature.toFixed(1)}°C</span>` 
             : '<span class="text-slate-400 text-[11px]">Chưa có dữ liệu</span>';
 
           return `
@@ -5122,18 +5158,25 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
                 <div class="text-[10px] text-slate-400 mt-0.5">${t.created_at ? t.created_at.replace('T', ' ').substring(0, 16) : ''}</div>
               </td>
               <td class="p-3.5">
-                <div class="font-bold text-slate-800 text-xs">${t.driver_name || 'Tài xế công ty'}</div>
-                <div class="text-[10px] text-slate-500 font-mono">${t.license_plate || t.vehicle_code || 'Xe chuyên dụng'}</div>
+                <div class="font-bold text-slate-900 text-xs font-mono">${t.license_plate || t.vehicle_code || 'Xe chuyên dụng'}</div>
+                <div class="text-[10px] text-slate-500">Thùng lạnh Thermo King</div>
               </td>
               <td class="p-3.5">
-                <div class="text-slate-700 text-xs flex items-center gap-1 font-medium">
+                <div class="font-bold text-slate-900 text-xs">${t.carrier_org_name || t.carrier_name || 'Đội Vận Tải Lạnh'}</div>
+                <div class="text-slate-500 text-[10px] flex items-center gap-1 font-medium mt-0.5">
                   <span>${t.origin_location || 'Lâm Đồng'}</span>
-                  <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
-                  <span class="font-bold text-slate-900">${t.destination_location || 'TP.HCM'}</span>
+                  <i class="fa-solid fa-arrow-right text-[9px] text-slate-400"></i>
+                  <span class="font-bold text-slate-800">${t.destination_location || 'TP.HCM'}</span>
                 </div>
               </td>
               <td class="p-3.5">
-                <div class="font-mono font-bold text-xs text-slate-700">${t.min_temperature}°C ~ ${t.max_temperature}°C</div>
+                <div class="font-bold text-slate-800 text-xs flex items-center gap-1">
+                  <i class="fa-solid fa-user text-slate-400 text-[10px]"></i>
+                  <span>${t.driver_name || 'Lê Vận Tải'}</span>
+                </div>
+              </td>
+              <td class="p-3.5">
+                <div class="font-mono font-bold text-xs text-cyan-800">${t.min_temperature}°C ~ ${t.max_temperature}°C</div>
                 <div class="text-[10px] text-slate-500 mt-0.5">Hiện tại: ${currTempDisplay}</div>
               </td>
               <td class="p-3.5">
@@ -5149,8 +5192,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
               </td>
               <td class="p-3.5 text-right whitespace-nowrap">
                 <div class="flex items-center justify-end gap-1.5">
-                  <button onclick="openTripDetailModal(${t.id})" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer" title="Xem chi tiết & đồ thị">
-                    <i class="fa-solid fa-chart-line"></i> Giám Sát
+                  <button onclick="openTripDetailModal(${t.id})" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer" title="Xem chi tiết & đồ thị">
+                    <i class="fa-solid fa-chart-line text-cyan-400"></i> Giám Sát
                   </button>
                   ${isCarrierOrAdmin ? `
                     <button onclick="openSimulateTelemetryModal(${t.id})" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer" title="Gửi telemetry thử nghiệm">
@@ -5168,7 +5211,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         if (tbody) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="8" class="p-8 text-center text-rose-500">
+              <td colspan="9" class="p-8 text-center text-rose-500">
                 <i class="fa-solid fa-circle-exclamation text-2xl mb-1"></i>
                 <p class="font-bold text-xs">Không thể tải dữ liệu chuỗi lạnh: ${err.message}</p>
               </td>
@@ -5367,6 +5410,140 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
     }
 
+    let currentTripChart = null;
+
+    function renderTripTelemetryChart(trip, telemetry) {
+      const canvas = document.getElementById("tripTelemetryChart");
+      const tempBadge = document.getElementById("detailTempStatusBadge");
+      if (!canvas) return;
+
+      if (currentTripChart) {
+        currentTripChart.destroy();
+        currentTripChart = null;
+      }
+
+      const minLimit = typeof trip.min_temperature === 'number' ? trip.min_temperature : 2.0;
+      const maxLimit = typeof trip.max_temperature === 'number' ? trip.max_temperature : 8.0;
+
+      if (!telemetry || telemetry.length === 0) {
+        if (tempBadge) {
+          tempBadge.innerHTML = '<i class="fa-solid fa-circle-info text-slate-400"></i> Chưa có dữ liệu cảm biến IoT';
+          tempBadge.className = "px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1";
+        }
+        return;
+      }
+
+      const sorted = [...telemetry].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const labels = sorted.map(t => {
+        const d = new Date(t.timestamp);
+        return isNaN(d.getTime()) ? t.timestamp : d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      });
+      const dataPoints = sorted.map(t => parseFloat(t.temperature));
+
+      const hasViolation = dataPoints.some(temp => temp > maxLimit || temp < minLimit);
+      if (tempBadge) {
+        if (hasViolation) {
+          tempBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Phát hiện vi phạm dải bảo quản (>30p)';
+          tempBadge.className = "px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1 animate-pulse";
+        } else {
+          tempBadge.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> Đạt chuẩn bảo quản (${minLimit}°C ~ ${maxLimit}°C)`;
+          tempBadge.className = "px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1";
+        }
+      }
+
+      const pointColors = dataPoints.map(temp => (temp > maxLimit || temp < minLimit) ? '#e11d48' : '#0891b2');
+      const pointRadius = dataPoints.map(temp => (temp > maxLimit || temp < minLimit) ? 6 : 4);
+
+      if (typeof Chart === 'undefined') {
+        console.warn("Chart.js chưa sẵn sàng");
+        return;
+      }
+
+      const ctx = canvas.getContext("2d");
+      currentTripChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Nhiệt Độ Cảm Biến (°C)',
+              data: dataPoints,
+              borderColor: '#0284c7',
+              backgroundColor: 'rgba(2, 132, 199, 0.08)',
+              borderWidth: 2.5,
+              tension: 0.3,
+              fill: true,
+              pointBackgroundColor: pointColors,
+              pointBorderColor: '#ffffff',
+              pointBorderWidth: 1.5,
+              pointRadius: pointRadius,
+              pointHoverRadius: 7
+            },
+            {
+              label: `Ngưỡng Trần Max (${maxLimit}°C)`,
+              data: Array(labels.length).fill(maxLimit),
+              borderColor: '#f43f5e',
+              borderWidth: 1.5,
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false
+            },
+            {
+              label: `Ngưỡng Sàn Min (${minLimit}°C)`,
+              data: Array(labels.length).fill(minLimit),
+              borderColor: '#3b82f6',
+              borderWidth: 1.5,
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw;
+                  let note = '';
+                  if (val > maxLimit) note = ' ⚠️ VƯỢT TRẦN NHIỆT ĐỘ!';
+                  else if (val < minLimit) note = ' ❄️ DƯỚI SÀN NHIỆT ĐỘ!';
+                  else note = ' ✅ ĐẠT CHUẨN';
+                  return ` ${context.dataset.label}: ${val}°C${note}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              suggestedMin: Math.min(0, minLimit - 2),
+              suggestedMax: Math.max(12, maxLimit + 4),
+              ticks: {
+                callback: val => val + '°C',
+                font: { size: 10 }
+              },
+              grid: {
+                color: '#f1f5f9'
+              }
+            },
+            x: {
+              ticks: {
+                font: { size: 10 }
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+    }
+
     async function openTripDetailModal(tripId) {
       openModal("tripDetailModal");
       const codeEl = document.getElementById("detailTripCode");
@@ -5375,6 +5552,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const carrierEl = document.getElementById("detailTripCarrier");
       const rangeEl = document.getElementById("detailTripTempRange");
       const statusEl = document.getElementById("detailTripStatus");
+      const statusBadge = document.getElementById("detailTripStatusBadge");
       const batchesEl = document.getElementById("detailTripBatchesList");
       const vBadge = document.getElementById("detailViolationsCountBadge");
       const vContainer = document.getElementById("detailTripViolationsContainer");
@@ -5385,19 +5563,29 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       try {
         const trip = await apiFetch(`/api/v1/cold-chain/trips/${tripId}`);
         if (codeEl) codeEl.innerText = trip.trip_code;
-        if (vehEl) vehEl.innerText = trip.license_plate || trip.vehicle_code || "Xe lạnh";
-        if (driverEl) driverEl.innerText = trip.driver_name || "Nguyễn Văn Lái Xe";
-        if (carrierEl) carrierEl.innerText = trip.carrier_name || "Đội Vận Chuyển Lạnh";
+        if (vehEl) vehEl.innerText = trip.license_plate || trip.vehicle_code || "Xe lạnh chuyên dụng";
+        if (driverEl) driverEl.innerText = trip.driver_name || "Lê Vận Tải";
+        if (carrierEl) carrierEl.innerText = trip.carrier_org_name || trip.carrier_name || "Công Ty Vận Tải Lạnh Express";
         if (rangeEl) rangeEl.innerText = `${trip.min_temperature}°C ~ ${trip.max_temperature}°C`;
-        if (statusEl) statusEl.innerText = trip.status;
+        
+        const isTransit = trip.status === "IN_TRANSIT";
+        if (statusEl) statusEl.innerText = isTransit ? "Đang di chuyển" : (trip.status === "COMPLETED" ? "Đã hoàn thành" : trip.status);
+        if (statusBadge) {
+          statusBadge.innerText = isTransit ? "Đang di chuyển" : "Hoàn thành";
+          statusBadge.className = isTransit 
+            ? "px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300"
+            : "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200";
+        }
 
         // Render batches
         if (batchesEl) {
           batchesEl.innerHTML = (trip.batches || []).map(b => `
-            <span class="px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 font-mono font-bold text-xs flex items-center gap-1.5">
-              <i class="fa-solid fa-box text-blue-600"></i> ${b.batch_code || b}
+            <span class="px-2.5 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 font-mono font-bold text-xs flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-box text-blue-600"></i>
+              <span>${b.batch_code || b}</span>
+              ${b.product_name ? `<span class="text-blue-700 font-sans font-normal text-[11px]">(${b.product_name})</span>` : ''}
             </span>
-          `).join('') || '<span class="text-slate-400">Không có lô</span>';
+          `).join('') || '<span class="text-slate-400">Không có lô nào</span>';
         }
 
         // Render violations
@@ -5405,37 +5593,62 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         if (vBadge) vBadge.innerText = `${violations.length} Vi phạm`;
         if (vContainer) {
           if (violations.length === 0) {
-            vContainer.innerHTML = '<div class="p-3 bg-white rounded-xl text-center text-slate-400 text-[11px]"><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Không có vi phạm chuỗi lạnh liên tục nào.</div>';
+            vContainer.innerHTML = '<div class="p-3 bg-white rounded-xl text-center text-slate-400 text-[11px]"><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Không có vi phạm chuỗi lạnh liên tục nào. Nhiệt độ duy trì an toàn.</div>';
           } else {
-            vContainer.innerHTML = violations.map(v => `
-              <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1 text-xs">
-                <div class="flex items-center justify-between font-bold text-rose-900">
-                  <span class="flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Vi phạm từ ${v.start_time ? v.start_time.replace('T', ' ').substring(11, 16) : ''} đến ${v.end_time ? v.end_time.replace('T', ' ').substring(11, 16) : ''}</span>
-                  <span class="px-2 py-0.5 rounded bg-rose-200 text-rose-950 font-mono text-[10px] font-black">${v.duration_minutes || 35} phút</span>
+            vContainer.innerHTML = violations.map(v => {
+              const sTime = v.started_at || v.start_time || '';
+              const eTime = v.ended_at || v.end_time || '';
+              const sFormatted = sTime ? sTime.replace('T', ' ').substring(11, 16) : '';
+              const eFormatted = eTime ? eTime.replace('T', ' ').substring(11, 16) : '';
+              return `
+                <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1 text-xs">
+                  <div class="flex items-center justify-between font-bold text-rose-900">
+                    <span class="flex items-center gap-1">
+                      <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
+                      Vi phạm nhiệt độ ${sFormatted ? `từ ${sFormatted}` : ''} ${eFormatted ? `đến ${eFormatted}` : ''}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-rose-200 text-rose-950 font-mono text-[10px] font-black">${v.duration_minutes || 35} phút</span>
+                  </div>
+                  <div class="text-[11px] text-slate-600">
+                    Nhiệt độ đỉnh: <strong class="text-rose-700 font-mono">${v.peak_temperature || 15.5}°C</strong> (Vượt trần quy định ${trip.max_temperature}°C)
+                  </div>
+                  <div class="text-[10px] text-slate-500 font-mono flex items-center gap-1 mt-1">
+                    <i class="fa-solid fa-lock text-emerald-600"></i> Đã tự động khóa hash SHA-256 và thông báo cho mọi bên sở hữu lô hàng (S-45)
+                  </div>
                 </div>
-                <div class="text-[11px] text-slate-600">Nhiệt độ đỉnh: <strong class="text-rose-700">${v.peak_temperature || 13.5}°C</strong> (Vượt trần ${trip.max_temperature}°C)</div>
-                <div class="text-[10px] text-slate-400 font-mono">Đã tự động khóa hash và thông báo cho mọi bên sở hữu lô hàng (S-45)</div>
-              </div>
-            `).join('');
+              `;
+            }).join('');
           }
         }
 
-        // Render recent telemetry
+        // Render telemetry
+        const telemetry = trip.recent_telemetry || trip.telemetry || [];
         if (telemContainer) {
-          const telemetry = trip.telemetry || [];
           if (telemetry.length === 0) {
             telemContainer.innerHTML = '<p class="text-slate-400 p-2 text-center text-[11px]">Chưa có dữ liệu đo cảm biến nào.</p>';
           } else {
-            telemContainer.innerHTML = telemetry.map(t => `
-              <div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-50 border border-slate-100 text-[10px]">
-                <span class="text-slate-500 font-mono">${t.timestamp ? t.timestamp.replace('T', ' ').substring(0, 19) : ''}</span>
-                <span class="font-bold font-mono ${t.temperature > trip.max_temperature ? 'text-rose-600 font-black' : 'text-cyan-700'}">${t.temperature.toFixed(1)}°C</span>
-              </div>
-            `).join('');
+            telemContainer.innerHTML = telemetry.slice().reverse().map(t => {
+              const isOver = t.temperature > trip.max_temperature;
+              const isUnder = t.temperature < trip.min_temperature;
+              const isViolating = isOver || isUnder;
+              return `
+                <div class="flex items-center justify-between p-2 rounded-xl ${isViolating ? 'bg-rose-50 border border-rose-200' : 'bg-slate-50 border border-slate-100'} text-[11px]">
+                  <span class="text-slate-600 font-mono flex items-center gap-1.5">
+                    <i class="fa-solid ${isViolating ? 'fa-triangle-exclamation text-rose-500' : 'fa-circle-check text-teal-500'} text-[10px]"></i>
+                    ${t.timestamp ? t.timestamp.replace('T', ' ').substring(0, 19) : ''}
+                  </span>
+                  <span class="font-bold font-mono ${isViolating ? 'text-rose-600 font-black' : 'text-cyan-700'}">${t.temperature.toFixed(1)}°C</span>
+                </div>
+              `;
+            }).join('');
           }
         }
 
+        // Render Chart
+        renderTripTelemetryChart(trip, telemetry);
+
       } catch (err) {
+        console.error("Lỗi tải chi tiết chuyến xe:", err);
         showToast("Không thể tải chi tiết chuyến xe: " + err.message, "error");
       }
     }

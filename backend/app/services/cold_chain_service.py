@@ -9,6 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.batch import Batch
+from app.models.chain_event import ChainEvent
 from app.models.cold_chain import (
     ColdChainViolation,
     TemperatureTelemetry,
@@ -17,8 +18,10 @@ from app.models.cold_chain import (
     TripStatus,
     ViolationType,
 )
+from app.models.handover import Handover
 from app.models.organization import Organization
 from app.models.user import User
+from app.services.batch_access_service import can_view_batch
 from app.schemas.cold_chain import (
     ColdChainViolationItem,
     ScenarioSimulationResponse,
@@ -181,14 +184,34 @@ class ColdChainService:
                 query = query.filter(TransportTrip.id == -1)
         else:
             # 3. Nông hộ, HTX, Nhà phân phối:
-            # Không trực tiếp phụ trách chuyến xe nên chỉ thấy chuyến xe nếu có lô hàng của mình trên chuyến xe đó
+            # Không trực tiếp phụ trách chuyến xe nên thấy chuyến xe nếu có lô hàng liên quan đến tổ chức của mình
             if user.organization_id:
-                org_batch_ids = [
+                org_batch_ids = {
                     b_id
                     for (b_id,) in db.query(Batch.id)
                     .filter(Batch.organization_id == user.organization_id)
                     .all()
-                ]
+                }
+                # Lấy thêm các lô hàng qua Handover (from_org_id hoặc to_org_id)
+                handover_batch_ids = {
+                    h_b_id
+                    for (h_b_id,) in db.query(Handover.batch_id)
+                    .filter(
+                        (Handover.from_org_id == user.organization_id)
+                        | (Handover.to_org_id == user.organization_id)
+                    )
+                    .all()
+                }
+                org_batch_ids.update(handover_batch_ids)
+                # Lấy thêm các lô hàng có ChainEvent của tổ chức này
+                event_batch_ids = {
+                    e_b_id
+                    for (e_b_id,) in db.query(ChainEvent.batch_id)
+                    .filter(ChainEvent.organization_id == user.organization_id)
+                    .all()
+                }
+                org_batch_ids.update(event_batch_ids)
+
                 if org_batch_ids:
                     query = (
                         query.join(TripBatch, TripBatch.trip_id == TransportTrip.id)
@@ -224,8 +247,10 @@ class ColdChainService:
                     id=t.id,
                     trip_code=t.trip_code,
                     vehicle_code=t.vehicle_code,
+                    license_plate=t.vehicle_code,
                     carrier_org_id=t.carrier_org_id,
                     carrier_org_name=carrier_name,
+                    carrier_name=carrier_name,
                     driver_name=t.driver_name,
                     min_temperature=t.min_temperature,
                     max_temperature=t.max_temperature,
@@ -235,6 +260,7 @@ class ColdChainService:
                     created_at=t.created_at,
                     batches=batch_items,
                     violations_count=v_count,
+                    violation_count=v_count,
                     readings_count=r_count,
                 )
             )
@@ -265,11 +291,25 @@ class ColdChainService:
                     trip_batch_org_ids = {
                         tb.batch.organization_id for tb in trip.trip_batches if tb.batch
                     }
-                    if user.organization_id not in trip_batch_org_ids:
-                        raise HTTPException(
-                            status_code=status.HTTP_403_FORBIDDEN,
-                            detail="Bạn không có quyền xem thông tin chuyến xe này.",
-                        )
+                    related_org_ids = set(trip_batch_org_ids)
+                    for tb in trip.trip_batches:
+                        if tb.batch:
+                            for h in tb.batch.handovers:
+                                if h.from_org_id:
+                                    related_org_ids.add(h.from_org_id)
+                                if h.to_org_id:
+                                    related_org_ids.add(h.to_org_id)
+                    if user.organization_id and user.organization_id not in related_org_ids:
+                        has_access = False
+                        for tb in trip.trip_batches:
+                            if tb.batch and can_view_batch(user.organization_id, tb.batch, db, user.role)[0]:
+                                has_access = True
+                                break
+                        if not has_access:
+                            raise HTTPException(
+                                status_code=status.HTTP_403_FORBIDDEN,
+                                detail="Bạn không có quyền xem thông tin chuyến xe này.",
+                            )
 
         carrier_name = trip.carrier_organization.name if trip.carrier_organization else None
         batch_items = [
@@ -288,6 +328,8 @@ class ColdChainService:
                 trip_id=v.trip_id,
                 started_at=v.started_at,
                 ended_at=v.ended_at,
+                start_time=v.started_at,
+                end_time=v.ended_at,
                 duration_minutes=v.duration_minutes,
                 peak_temperature=v.peak_temperature,
                 threshold=v.threshold,
@@ -308,8 +350,10 @@ class ColdChainService:
             id=trip.id,
             trip_code=trip.trip_code,
             vehicle_code=trip.vehicle_code,
+            license_plate=trip.vehicle_code,
             carrier_org_id=trip.carrier_org_id,
             carrier_org_name=carrier_name,
+            carrier_name=carrier_name,
             driver_name=trip.driver_name,
             min_temperature=trip.min_temperature,
             max_temperature=trip.max_temperature,
@@ -319,9 +363,11 @@ class ColdChainService:
             created_at=trip.created_at,
             batches=batch_items,
             violations_count=len(violation_items),
+            violation_count=len(violation_items),
             readings_count=len(trip.telemetry_readings),
             violations=violation_items,
             recent_telemetry=recent_readings,
+            telemetry=recent_readings,
         )
 
     @classmethod

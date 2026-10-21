@@ -34,6 +34,8 @@ class ColdChainViolationItem(BaseModel):
     trip_id: int
     started_at: datetime
     ended_at: datetime
+    start_time: datetime | None = None
+    end_time: datetime | None = None
     duration_minutes: float
     peak_temperature: float
     threshold: float
@@ -68,8 +70,10 @@ class TransportTripResponse(BaseModel):
     id: int
     trip_code: str
     vehicle_code: str
+    license_plate: str | None = None
     carrier_org_id: int
     carrier_org_name: str | None = None
+    carrier_name: str | None = None
     driver_name: str | None = None
     min_temperature: float
     max_temperature: float
@@ -79,6 +83,7 @@ class TransportTripResponse(BaseModel):
     created_at: datetime
     batches: list[TripBatchItem] = []
     violations_count: int = 0
+    violation_count: int = 0
     readings_count: int = 0
 
 
@@ -87,6 +92,7 @@ class TransportTripDetailResponse(TransportTripResponse):
 
     violations: list[ColdChainViolationItem] = []
     recent_telemetry: list[TelemetryReadingItem] = []
+    telemetry: list[TelemetryReadingItem] = []
 
 
 class TelemetryIngestResponse(BaseModel):
