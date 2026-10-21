@@ -408,8 +408,8 @@
       </div>
 
       <!-- Supply Chain Metrics KPI Bar -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="overviewKpiBar">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" id="kpiCardBatches">
           <div class="flex items-center justify-between">
             <p class="text-xs font-bold text-slate-500 uppercase">Tổng Lô Hàng Quản Lý</p>
             <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -420,7 +420,7 @@
           <p class="text-[11px] text-emerald-600 font-semibold mt-1">Đang lưu kho & vận chuyển</p>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" id="kpiCardPlots">
           <div class="flex items-center justify-between">
             <p class="text-xs font-bold text-slate-500 uppercase">Thửa Đất Vùng Trồng</p>
             <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -431,7 +431,7 @@
           <p class="text-[11px] text-slate-500 mt-1">7,500 m2 diện tích hợp chuẩn</p>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" id="kpiCardPhi">
           <div class="flex items-center justify-between">
             <p class="text-xs font-bold text-slate-500 uppercase">An Toàn Cách Ly (PHI)</p>
             <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -442,7 +442,18 @@
           <p class="text-[11px] text-emerald-600 font-semibold mt-1">Tuân thủ thời gian cách ly (S-62)</p>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hidden" id="kpiCardHandovers">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-slate-500 uppercase">Bàn Giao & Tiếp Nhận</p>
+            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <i class="fa-solid fa-truck-ramp-box"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-black text-amber-700 mt-2" id="kpiTotalHandovers">--</p>
+          <p class="text-[11px] text-amber-600 font-semibold mt-1">Phiếu bàn giao tổ chức</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" id="kpiCardColdChain">
           <div class="flex items-center justify-between">
             <p class="text-xs font-bold text-slate-500 uppercase">Chuỗi Lạnh IoT Hoạt Động</p>
             <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
@@ -457,8 +468,8 @@
       <!-- Quick Actions & Status Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Module Highlight: S-62 PHI Compliance -->
-        <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+        <!-- Module Highlight: S-62 PHI Compliance (Dành cho Farm / Inspector / Admin) -->
+        <div id="overviewSectionPhiCompliance" class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
           <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <span class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Tiêu chuẩn an toàn thu hoạch</span>
@@ -484,6 +495,37 @@
             </div>
             <button onclick="switchNavTab('materials_phi')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold whitespace-nowrap shadow-sm">
               Kiểm Tra Ngay
+            </button>
+          </div>
+        </div>
+
+        <!-- Module Highlight: Phân Phối & Tiếp Nhận Chuỗi Cung Ứng (Dành riêng cho Distributor, Co-op, Logistics) -->
+        <div id="overviewSectionDistributor" class="hidden lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Hệ Thống Phân Phối & Tiếp Nhận Chuỗi Cung Ứng</span>
+              <h3 class="font-black text-slate-800 text-lg">Giám Sát Nguồn Hàng & Tiếp Nhận Bàn Giao</h3>
+            </div>
+            <button onclick="switchNavTab('batches')" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1">
+              Xem Lô Hàng <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </button>
+          </div>
+          <p class="text-xs text-slate-600">
+            Kiểm soát nguồn gốc nông sản an toàn từ các HTX và đơn vị vận chuyển lạnh. Xác nhận bàn giao, theo dõi nhiệt độ bảo quản và sẵn sàng xuất bán ra thị trường với tem QR tra cứu minh bạch.
+          </p>
+
+          <div class="bg-emerald-50/70 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-truck-ramp-box"></i>
+              </div>
+              <div class="text-xs">
+                <p class="font-bold text-emerald-950">Biên bản bàn giao và tiếp nhận lô hàng (S-15, S-16)</p>
+                <p class="text-[11px] text-emerald-800">Xác nhận chuyển quyền sở hữu hoặc từ chối kèm lý do tối thiểu 10 ký tự.</p>
+              </div>
+            </div>
+            <button onclick="switchNavTab('handovers')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold whitespace-nowrap shadow-sm">
+              Mở Bàn Giao
             </button>
           </div>
         </div>
@@ -3132,8 +3174,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         if (tabBtn) {
           if (allowedTabs.includes(t)) {
             tabBtn.classList.remove("hidden");
+            tabBtn.style.display = "";
           } else {
             tabBtn.classList.add("hidden");
+            tabBtn.style.display = "none";
           }
         }
       });
@@ -3220,6 +3264,37 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       if (btnSimCold) {
         if (isCarrierOrAdmin && !isReadOnly) btnSimCold.classList.remove("hidden");
         else btnSimCold.classList.add("hidden");
+      }
+
+      // 9. Cập nhật hiển thị các thẻ KPI và phân đoạn trên trang Tổng Quan (Overview) theo vai trò
+      const cardPlots = document.getElementById("kpiCardPlots");
+      const cardPhi = document.getElementById("kpiCardPhi");
+      const cardHandovers = document.getElementById("kpiCardHandovers");
+      const secPhi = document.getElementById("overviewSectionPhiCompliance");
+      const secDist = document.getElementById("overviewSectionDistributor");
+
+      if (allowedTabs.includes("plots")) {
+        if (cardPlots) { cardPlots.classList.remove("hidden"); cardPlots.style.display = ""; }
+      } else {
+        if (cardPlots) { cardPlots.classList.add("hidden"); cardPlots.style.display = "none"; }
+      }
+
+      if (allowedTabs.includes("materials_phi")) {
+        if (cardPhi) { cardPhi.classList.remove("hidden"); cardPhi.style.display = ""; }
+        if (secPhi) { secPhi.classList.remove("hidden"); secPhi.style.display = ""; }
+        if (secDist) { secDist.classList.add("hidden"); secDist.style.display = "none"; }
+      } else {
+        if (cardPhi) { cardPhi.classList.add("hidden"); cardPhi.style.display = "none"; }
+        if (secPhi) { secPhi.classList.add("hidden"); secPhi.style.display = "none"; }
+        if (secDist) { secDist.classList.remove("hidden"); secDist.style.display = ""; }
+      }
+
+      if (cardHandovers) {
+        if (allowedTabs.includes("handovers") && !allowedTabs.includes("plots")) {
+          cardHandovers.classList.remove("hidden"); cardHandovers.style.display = "";
+        } else {
+          cardHandovers.classList.add("hidden"); cardHandovers.style.display = "none";
+        }
       }
     }
 
@@ -3724,15 +3799,23 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       allTabs.forEach(t => {
         const btn = document.getElementById(`tabBtn_${t}`);
         const view = document.getElementById(`view_${t}`);
+        const isAllowed = allowedTabs.includes(t);
         if (btn) {
-          if (t === tabId) {
-            btn.className = "nav-tab-btn nav-tab-active px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2";
+          if (!isAllowed) {
+            btn.classList.add('hidden');
+            btn.style.display = 'none';
           } else {
-            btn.className = "nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2";
+            btn.classList.remove('hidden');
+            btn.style.display = '';
+            if (t === tabId) {
+              btn.className = "nav-tab-btn nav-tab-active px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2";
+            } else {
+              btn.className = "nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2";
+            }
           }
         }
         if (view) {
-          if (t === tabId) view.classList.remove('hidden');
+          if (t === tabId && isAllowed) view.classList.remove('hidden');
           else view.classList.add('hidden');
         }
       });
@@ -3756,12 +3839,27 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
      * RENDER OVERVIEW TAB
      */
     function renderOverviewTab() {
-      const bCount = (state.batches || []).length;
+      const activeRole = getActiveRole();
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES.farm;
+
+      let list = state.batches || [];
+      if (!cfg.canAccessAllOrgs && cfg.orgId !== null) {
+        list = list.filter(b => b.org_id === cfg.orgId);
+      }
+      const bCount = list.length;
       const pCount = (state.plots || []).length;
+      const hCount = (state.handovers || []).filter(h => {
+        if (cfg.canAccessAllOrgs || cfg.orgId === null) return true;
+        return h.from_org_id === cfg.orgId || h.to_org_id === cfg.orgId;
+      }).length;
+
       const elB = document.getElementById("kpiTotalBatches");
       const elP = document.getElementById("kpiTotalPlots");
+      const elH = document.getElementById("kpiTotalHandovers");
+
       if (elB) elB.innerText = `${bCount} Lô`;
       if (elP) elP.innerText = `${pCount} Thửa`;
+      if (elH) elH.innerText = `${hCount} Phiếu`;
     }
 
     /**
