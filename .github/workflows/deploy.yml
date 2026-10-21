@@ -116,23 +116,8 @@ jobs:
             # Xoa container app_staging cu de tranh conflict name khi compose tao container moi
             docker rm -f app_staging || true
 
-            # Giai phong port 80 neu co container hoac process khac dang chiem giu
-            echo "Kiem tra va giai phong port 80 tren VPS..."
-            CONTAINER_80="$(docker ps -q --filter 'publish=80')"
-            if [ -n "$CONTAINER_80" ]; then
-              echo "Dung container dang chiem port 80: $CONTAINER_80"
-              docker stop $CONTAINER_80 || true
-              docker rm -f $CONTAINER_80 || true
-            fi
-
-            # Tat web server he thong neu vo tinh chiem port 80
-            sudo systemctl stop nginx 2>/dev/null || true
-            sudo systemctl stop apache2 2>/dev/null || true
-            sudo systemctl stop caddy 2>/dev/null || true
-
-            # Kill bat ky process nao con nam giu port 80 tren host
-            sudo fuser -k 80/tcp 2>/dev/null || true
-            sleep 2
+            # Dam bao Nginx chay de phuc vu SSL HTTPS tren port 443 va reverse proxy toi 127.0.0.1:8000
+            sudo systemctl start nginx 2>/dev/null || true
 
             # Deploy va cho container healthy
             if docker compose -f "$COMPOSE" \
@@ -153,7 +138,6 @@ jobs:
               # Khoi phuc image cu
               export IMAGE_TAG="$OLD_TAG"
               docker rm -f app_staging || true
-              sudo fuser -k 80/tcp 2>/dev/null || true
               sleep 2
 
               if docker compose -f "$COMPOSE" \
