@@ -46,12 +46,94 @@ def list_chain_events(
     batch_id: int | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
 ):
-    """Lấy danh sách các mắt xích sự kiện băm SHA-256 từ cơ sở dữ liệu thật."""
+    """
+    Lấy danh sách các mắt xích sự kiện băm SHA-256 từ cơ sở dữ liệu thật (S-05, S-23):
+    - Admin / Inspector: Xem toàn bộ sự kiện phục vụ kiểm toán / thanh tra.
+    - Tổ chức khác (farm, cooperative, carrier, retailer):
+      Chỉ xem các sự kiện thuộc quyền sở hữu của tổ chức đó (event.organization_id == current_user.organization_id)
+      HOẶC sự kiện thuộc chuỗi lịch sử của các lô hàng mà tổ chức đó đang giữ hoặc từng sở hữu/tiếp nhận (S-23).
+    - Ngăn chặn hoàn toàn rò rỉ dữ liệu giữa các tổ chức không liên quan.
+    """
+    from collections import deque
+
+    from sqlalchemy import and_, func, or_
+
+    from app.models.batch_relation import BatchRelation
     from app.models.chain_event import ChainEvent
+    from app.models.handover import Handover, HandoverStatus
 
     query = db.query(ChainEvent)
+
+    is_admin_or_inspector = current_user.role in INSPECTOR_ADMIN_ROLES
+    if not is_admin_or_inspector:
+        org_id = current_user.organization_id
+        if not org_id:
+            return []
+
+        # 1. Các lô mà tổ chức hiện đang trực tiếp nắm giữ (Điều kiện a)
+        held_batch_ids = {
+            b_id for (b_id,) in db.query(Batch.id).filter(Batch.organization_id == org_id).all()
+        }
+
+        # 2. Các lô tổ tiên của các lô đang nắm giữ (Điều kiện b: BFS ngược)
+        ancestor_ids: set[int] = set()
+        if held_batch_ids:
+            queue: deque[int] = deque(held_batch_ids)
+            visited: set[int] = set(held_batch_ids)
+            while queue:
+                curr_id = queue.popleft()
+                parent_relations = (
+                    db.query(BatchRelation.parent_batch_id)
+                    .filter(BatchRelation.child_batch_id == curr_id)
+                    .all()
+                )
+                for (p_id,) in parent_relations:
+                    ancestor_ids.add(p_id)
+                    if p_id not in visited:
+                        visited.add(p_id)
+                        queue.append(p_id)
+
+        # 3. Các lô tổ chức từng tiếp nhận thành công (to_org_id)
+        received_batch_ids = {
+            b_id
+            for (b_id,) in db.query(Handover.batch_id)
+            .filter(
+                Handover.to_org_id == org_id,
+                Handover.status == HandoverStatus.ACCEPTED.value,
+            )
+            .all()
+        }
+
+        # 4. Các lô tổ chức từng nắm giữ và đã bàn giao đi trong quá khứ (Điều kiện c: chỉ xem tới cutoff_time)
+        past_handovers = (
+            db.query(
+                Handover.batch_id,
+                func.coalesce(func.max(Handover.updated_at), func.max(Handover.created_at)).label("cutoff"),
+            )
+            .filter(
+                Handover.from_org_id == org_id,
+                Handover.status == HandoverStatus.ACCEPTED.value,
+            )
+            .group_by(Handover.batch_id)
+            .all()
+        )
+
+        full_access_batch_ids = held_batch_ids | ancestor_ids | received_batch_ids
+        conditions = [ChainEvent.organization_id == org_id]
+        if full_access_batch_ids:
+            conditions.append(ChainEvent.batch_id.in_(full_access_batch_ids))
+
+        for p_batch_id, cutoff in past_handovers:
+            if p_batch_id not in full_access_batch_ids and cutoff is not None:
+                conditions.append(
+                    and_(ChainEvent.batch_id == p_batch_id, ChainEvent.created_at <= cutoff)
+                )
+
+        query = query.filter(or_(*conditions))
+
     if batch_id:
         query = query.filter(ChainEvent.batch_id == batch_id)
+
     events = query.order_by(ChainEvent.id.desc()).limit(limit).all()
     return [
         {
@@ -103,6 +185,21 @@ def verify_batch_chain(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Không tìm thấy lô hàng tương ứng để kiểm tra chuỗi hash.",
         )
+
+    if current_user.role not in INSPECTOR_ADMIN_ROLES:
+        from app.services.batch_access_service import can_view_batch
+
+        allowed, _, _ = can_view_batch(
+            org_id=current_user.organization_id,
+            batch=target_batch,
+            db=db,
+            user_role=current_user.role,
+        )
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Không có quyền truy cập dữ liệu của tổ chức khác.",
+            )
 
     return verify_chain_integrity(db, batch_id=target_batch.id)
 

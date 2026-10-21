@@ -70,7 +70,7 @@ def get_trip_detail(
     - Danh sách các sự kiện vi phạm nhiệt độ chuỗi lạnh (> 30 phút).
     - Chuỗi dữ liệu đo nhiệt độ gần nhất từ cảm biến.
     """
-    return ColdChainService.get_trip_detail(db=db, trip_id=trip_id)
+    return ColdChainService.get_trip_detail(db=db, trip_id=trip_id, user=current_user)
 
 
 @router.post("/telemetry", response_model=TelemetryIngestResponse, status_code=status.HTTP_200_OK)

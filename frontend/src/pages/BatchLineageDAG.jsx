@@ -391,20 +391,22 @@ export default function BatchLineageDAG() {
 
         {/* Cụm nút hành động chính */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Nút Nạp Dữ Liệu Mẫu Phả Hệ 3-4 Tầng */}
-          <button
-            onClick={handleSeedDag}
-            disabled={loadingSeed}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm shadow-emerald-500/20 transition disabled:opacity-50"
-            title="Tạo ngay mạng lưới 13 lô qua 4 tổ chức với quan hệ tách gộp và đáp án đối chiếu"
-          >
-            {loadingSeed ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Boxes className="w-4 h-4" />
-            )}
-            Nạp bộ dữ liệu mẫu phả hệ 3-4 tầng (Seed S-22 / S-39)
-          </button>
+          {/* Nút Nạp Dữ Liệu Mẫu Phả Hệ 3-4 Tầng - Chỉ Quản trị viên */}
+          {['system_admin', 'admin'].includes(currentRole) && (
+            <button
+              onClick={handleSeedDag}
+              disabled={loadingSeed}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm shadow-emerald-500/20 transition disabled:opacity-50"
+              title="Tạo ngay mạng lưới 13 lô qua 4 tổ chức với quan hệ tách gộp và đáp án đối chiếu"
+            >
+              {loadingSeed ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Boxes className="w-4 h-4" />
+              )}
+              Nạp bộ dữ liệu mẫu phả hệ 3-4 tầng (Seed S-22 / S-39)
+            </button>
+          )}
 
           {/* Nút Tách Lô */}
           <button
