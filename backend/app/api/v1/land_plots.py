@@ -12,6 +12,7 @@ from app.api.deps import (
     verify_land_plot_access,
 )
 from app.models.land_plot import LandPlot
+from app.models.organization import Organization
 from app.models.user import User, UserRole
 from app.repositories.land_plot_repository import LandPlotRepository
 from app.schemas.land_plot import (
@@ -242,7 +243,19 @@ async def import_land_plots_csv(
     total = 0
     errors = []
 
-    target_org_id = current_user.organization_id or 1
+    target_org_id = current_user.organization_id
+    if not target_org_id:
+        farm_org = db.query(Organization).filter(Organization.code.ilike("%FARM%")).first()
+        if not farm_org:
+            farm_org = db.query(Organization).first()
+        if farm_org:
+            target_org_id = farm_org.id
+
+    if not target_org_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Hệ thống chưa có tổ chức nào để liên kết thửa đất.",
+        )
 
     for idx, row in enumerate(reader, start=2):
         total += 1
@@ -255,6 +268,11 @@ async def import_land_plots_csv(
 
         if not name:
             errors.append(f"Dòng {idx}: Thiếu tên thửa đất.")
+            skipped += 1
+            continue
+
+        if "variety" in clean_row or "default_unit" in clean_row:
+            errors.append(f"Dòng {idx} ({name}): Tệp này có cấu trúc danh mục sản phẩm, vui lòng chọn loại dữ liệu 'Danh Mục Sản Phẩm'.")
             skipped += 1
             continue
 
@@ -274,6 +292,15 @@ async def import_land_plots_csv(
             lat = 11.94
             lng = 108.45
 
+        existing = (
+            db.query(LandPlot)
+            .filter(LandPlot.name == name, LandPlot.organization_id == target_org_id)
+            .first()
+        )
+        if existing:
+            skipped += 1
+            continue
+
         new_plot = LandPlot(
             name=name,
             address=address,
@@ -285,7 +312,15 @@ async def import_land_plots_csv(
         db.add(new_plot)
         imported += 1
 
-    db.commit()
+    try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Lỗi khi lưu thửa đất vào CSDL: {exc!s}",
+        ) from exc
+
     return LandPlotCsvImportResponse(
         imported_count=imported,
         skipped_count=skipped,
