@@ -3273,13 +3273,25 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const container = document.getElementById("demoAccountsGrid");
       if (!container) return;
 
-      container.innerHTML = Object.entries(SUPPLY_CHAIN_ROLES).map(([key, r]) => {
+      const CANONICAL_ROLES = [
+        'farm',
+        'coop',
+        'logistics',
+        'distributor',
+        'inspector',
+        'system_admin',
+        'consumer'
+      ];
+
+      container.innerHTML = CANONICAL_ROLES.map(key => {
+        const r = SUPPLY_CHAIN_ROLES[key];
+        if (!r) return '';
         if (key === 'consumer') {
           return `
             <button 
               type="button" 
               onclick="selectDemoAccountRole('${key}')"
-              class="p-2 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-left transition-all flex items-center justify-between group cursor-pointer">
+              class="p-2 sm:col-span-2 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-left transition-all flex items-center justify-between group cursor-pointer shadow-sm">
               <div class="flex items-center gap-2">
                 <div class="w-6 h-6 rounded-lg ${r.iconBg} text-white flex items-center justify-center text-[10px]">
                   <i class="fa-solid ${r.icon}"></i>
@@ -3289,7 +3301,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
                   <p class="text-[9px] text-slate-400 font-mono">Chế độ công khai (Không cần login)</p>
                 </div>
               </div>
-              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">Public</span>
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Public</span>
             </button>
           `;
         }
@@ -3297,7 +3309,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           <button 
             type="button" 
             onclick="selectDemoAccountRole('${key}')"
-            class="p-2 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-left transition-all flex items-center justify-between group cursor-pointer">
+            class="p-2 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-left transition-all flex items-center justify-between group cursor-pointer shadow-sm">
             <div class="flex items-center gap-2">
               <div class="w-6 h-6 rounded-lg ${r.iconBg} text-white flex items-center justify-center text-[10px]">
                 <i class="fa-solid ${r.icon}"></i>
