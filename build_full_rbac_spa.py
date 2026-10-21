@@ -5831,12 +5831,18 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
         if (res.ok) {
           if (resBox) {
-            resBox.className = "p-3 rounded-2xl border bg-emerald-50 border-emerald-200 text-emerald-900 text-xs space-y-1 block";
-            msgEl.innerText = `Nhập thành công ${data.imported_count || 0} bản ghi (S-32)!`;
+            const isAllSkipped = (data.imported_count || 0) === 0 && (data.skipped_count || 0) > 0;
+            if (isAllSkipped) {
+              resBox.className = "p-3 rounded-2xl border bg-amber-50 border-amber-200 text-amber-900 text-xs space-y-1 block";
+              msgEl.innerText = `Hoàn tất xử lý: 0 bản ghi mới (${data.skipped_count || 0} dòng đã có sẵn hoặc lỗi)`;
+            } else {
+              resBox.className = "p-3 rounded-2xl border bg-emerald-50 border-emerald-200 text-emerald-900 text-xs space-y-1 block";
+              msgEl.innerText = `Xử lý thành công ${data.imported_count || 0} bản ghi (S-32)!`;
+            }
             detEl.innerHTML = `
-              <div>• Tổng số dòng nhập thành công: ${data.imported_count || 0}</div>
-              <div>• Bỏ qua / Trùng lặp: ${data.skipped_count || 0}</div>
-              ${(data.errors && data.errors.length) ? data.errors.map(err => `<div class="text-amber-700">• ${err}</div>`).join('') : ''}
+              <div>• Tổng số dòng hợp lệ / cập nhật: <b>${data.imported_count || 0}</b></div>
+              <div>• Bỏ qua / Lỗi: <b>${data.skipped_count || 0}</b></div>
+              ${(data.errors && data.errors.length) ? data.errors.map(err => `<div class="text-rose-700 font-medium">• ${err}</div>`).join('') : ''}
             `;
           }
           await loadServerData();
