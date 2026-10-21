@@ -246,6 +246,48 @@ class TestS17S18S19SplitMerge:
         assert any(e.event_type == "BATCH_SPLIT_PARENT" for e in chain_parent)
         assert verify_chain_integrity(db_session, parent_db.id)["valid"] is True
 
+    def test_split_batch_as_system_admin_without_org(
+        self, client: TestClient, db_session: Session, split_merge_seed: dict
+    ):
+        """Quản trị hệ thống (role: system_admin, organization_id=None) tách lô thành công mà không bị lỗi NotNullViolation."""
+        sysadmin = User(
+            id=399,
+            email="sysadmin@example.com",
+            hashed_password=get_password_hash("pass123"),
+            full_name="System Admin",
+            role=UserRole.SYSTEM_ADMIN.value,
+            organization_id=None,
+            is_active=True,
+        )
+        db_session.add(sysadmin)
+        db_session.flush()
+
+        headers_sysadmin = get_auth_headers(
+            sysadmin.email,
+            sysadmin.role,
+            sysadmin.organization_id,
+        )
+        payload = {
+            "splits": [
+                {"quantity": 10.0, "notes": "SysAdmin Split 1"},
+                {"quantity": 10.0, "notes": "SysAdmin Split 2"},
+            ],
+            "notes": "Sysadmin split test",
+        }
+        resp = client.post(
+            f"/api/v1/batches/{split_merge_seed['batch_parent'].id}/split",
+            json=payload,
+            headers=headers_sysadmin,
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+        data = resp.json()
+        assert len(data["child_batches"]) == 2
+        child_id = data["child_batches"][0]["id"]
+        child_events = db_session.query(ChainEvent).filter_by(batch_id=child_id).all()
+        assert len(child_events) > 0
+        assert child_events[0].organization_id == split_merge_seed["batch_parent"].organization_id
+        assert verify_chain_integrity(db_session, child_id)["valid"] is True
+
     def test_split_batch_exceeding_remaining_quantity(
         self, client: TestClient, db_session: Session, split_merge_seed: dict
     ):
@@ -383,6 +425,50 @@ class TestS17S18S19SplitMerge:
         for r in relations:
             assert r.relation_type == BatchRelationType.MERGE.value
             assert r.quantity in [25.0, 45.0]
+
+    def test_merge_batches_as_system_admin_without_org(
+        self, client: TestClient, db_session: Session, split_merge_seed: dict
+    ):
+        """Quản trị hệ thống (role: system_admin, organization_id=None) gộp lô thành công mà không bị lỗi NotNullViolation."""
+        sysadmin = User(
+            id=398,
+            email="sysadmin_merge@example.com",
+            hashed_password=get_password_hash("pass123"),
+            full_name="System Admin Merge",
+            role=UserRole.SYSTEM_ADMIN.value,
+            organization_id=None,
+            is_active=True,
+        )
+        db_session.add(sysadmin)
+        db_session.flush()
+
+        headers_sysadmin = get_auth_headers(
+            sysadmin.email,
+            sysadmin.role,
+            sysadmin.organization_id,
+        )
+        payload = {
+            "sources": [
+                {
+                    "batch_id": split_merge_seed["batch_melon_1"].id,
+                    "quantity": 5.0,
+                },
+                {
+                    "batch_id": split_merge_seed["batch_melon_2"].id,
+                    "quantity": 5.0,
+                },
+            ],
+            "notes": "SysAdmin merge",
+        }
+        resp = client.post("/api/v1/batches/merge", json=payload, headers=headers_sysadmin)
+        assert resp.status_code == status.HTTP_201_CREATED
+        data = resp.json()
+        assert data["total_merged_quantity"] == 10.0
+        merged_id = data["merged_batch"]["id"]
+        # Verify merged batch has organization_id set to base parent's organization_id
+        merged_batch_db = db_session.query(Batch).filter_by(id=merged_id).first()
+        assert merged_batch_db.organization_id == split_merge_seed["org_a"].id
+        assert verify_chain_integrity(db_session, merged_id)["valid"] is True
 
     def test_merge_batches_different_products_rejected(
         self, client: TestClient, db_session: Session, split_merge_seed: dict

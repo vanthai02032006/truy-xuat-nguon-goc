@@ -714,13 +714,14 @@ def merge_batches(
 
     total_merged_qty = round(total_merged_qty, 3)
     base_parent = parents[0]
+    effective_org_id = current_user.organization_id or base_parent.organization_id
 
     # 6. Tạo lô mới đại diện cho lô đã gộp
     merged_code = generate_unique_batch_code(db)
     merged_batch = Batch(
         batch_code=merged_code,
         product_name=base_parent.product_name,
-        organization_id=current_user.organization_id,
+        organization_id=effective_org_id,
         land_plot_id=base_parent.land_plot_id,
         status="active",
         initial_quantity=total_merged_qty,
@@ -751,7 +752,7 @@ def merge_batches(
                 f"Trích {src.quantity} {p.unit} để gộp vào lô mới {merged_batch.batch_code}. "
                 f"Khối lượng còn lại: {p.remaining_quantity} {p.unit}"
             ),
-            organization_id=current_user.organization_id,
+            organization_id=effective_org_id,
         )
 
     # Ghi sự kiện hash cho lô gộp mới
@@ -767,7 +768,7 @@ def merge_batches(
             f"Tạo lô mới từ việc gộp các lô [{src_codes_str}]. "
             f"Tổng khối lượng gộp: {total_merged_qty} {merged_batch.unit}"
         ),
-        organization_id=current_user.organization_id,
+        organization_id=effective_org_id,
     )
 
     db.commit()
@@ -888,6 +889,7 @@ def split_batch(
         db.add(rel)
 
         # Ghi nhận mắt xích hash cho lô con
+        effective_org_id = current_user.organization_id or parent.organization_id
         record_chain_event(
             db=db,
             batch_id=child.id,
@@ -896,7 +898,7 @@ def split_batch(
                 f"Lô con {child.batch_code} ({item.quantity} {child.unit}) "
                 f"được tách ra từ lô mẹ {parent.batch_code} (#{parent.id})"
             ),
-            organization_id=current_user.organization_id,
+            organization_id=effective_org_id,
         )
 
     # Ghi nhận mắt xích hash cho lô mẹ
@@ -910,7 +912,7 @@ def split_batch(
             f"với tổng khối lượng {total_split_qty} {parent.unit}. "
             f"Khối lượng còn lại: {parent.remaining_quantity} {parent.unit}"
         ),
-        organization_id=current_user.organization_id,
+        organization_id=effective_org_id,
     )
 
     db.commit()

@@ -120,6 +120,12 @@ def record_chain_event(
     - Các sự kiện tiếp theo nối tiếp prev_hash = current_hash của sự kiện trước đó của lô.
     - Bảng là append-only, được bảo chứng bằng SHA-256.
     """
+    # Đảm bảo organization_id luôn có giá trị (tránh vi phạm NOT NULL của Postgres khi user là SysAdmin)
+    if organization_id is None and batch_id:
+        batch_obj = db.query(Batch).filter(Batch.id == batch_id).first()
+        if batch_obj and batch_obj.organization_id is not None:
+            organization_id = batch_obj.organization_id
+
     now_dt = (
         (timestamp.astimezone(UTC).replace(tzinfo=None) if timestamp.tzinfo else timestamp)
         if timestamp
