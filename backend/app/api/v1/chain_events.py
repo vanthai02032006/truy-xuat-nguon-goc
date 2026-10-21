@@ -43,7 +43,7 @@ class SimulateTamperRequest(BaseModel):
 def list_chain_events(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
-    batch_id: int | None = Query(default=None),
+    batch_id: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
 ):
     """
@@ -132,7 +132,14 @@ def list_chain_events(
         query = query.filter(or_(*conditions))
 
     if batch_id:
-        query = query.filter(ChainEvent.batch_id == batch_id)
+        from app.repositories.batch_repository import BatchRepository
+        target_b = BatchRepository.get_by_id_or_code(db, batch_id)
+        if target_b:
+            query = query.filter(ChainEvent.batch_id == target_b.id)
+        elif str(batch_id).strip().isdigit():
+            query = query.filter(ChainEvent.batch_id == int(str(batch_id).strip()))
+        else:
+            query = query.filter(ChainEvent.batch_id == -1)
 
     events = query.order_by(ChainEvent.id.desc()).limit(limit).all()
     return [

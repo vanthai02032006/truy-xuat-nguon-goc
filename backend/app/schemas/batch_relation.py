@@ -26,7 +26,7 @@ class BatchSplitResponse(BaseModel):
 
 
 class MergeSourceItem(BaseModel):
-    batch_id: int = Field(..., description="ID của lô nguồn cần gộp")
+    batch_id: int | str = Field(..., description="ID hoặc Mã của lô nguồn cần gộp")
     quantity: float = Field(
         ..., gt=0, description="Khối lượng trích xuất từ lô này để gộp"
     )

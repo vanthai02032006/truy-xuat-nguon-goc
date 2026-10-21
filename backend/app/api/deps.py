@@ -202,7 +202,7 @@ def enforce_route_permission(required_permission: str | list[str]):
 
 
 def verify_batch_access(
-    batch_id: int,
+    batch_id: int | str,
     request: Request,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
@@ -212,11 +212,11 @@ def verify_batch_access(
     - AC 2: Gọi thẳng API với mã bản ghi của tổ chức khác -> Trả về 403 và ghi nhật ký lần thử.
     - AC 4: Cán bộ kiểm tra (inspector) -> Thấy được lô của mọi tổ chức nhưng chỉ ở chế độ đọc.
     """
-    batch = BatchRepository.get_by_id(db, batch_id)
+    batch = BatchRepository.get_by_id_or_code(db, batch_id)
     if not batch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Không tìm thấy lô hàng với ID {batch_id}",
+            detail=f"Không tìm thấy lô hàng với ID hoặc mã '{batch_id}'",
         )
 
     client_ip = request.client.host if request.client else "unknown"
