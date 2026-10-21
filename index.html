@@ -2683,7 +2683,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
      * Loại bỏ hoàn toàn Farm ERP (P&L, lương, chấm công, sâu bệnh, đề xuất vật tư)
      * Tập trung: S-06, S-08, S-09, S-10, S-12, S-13, S-14, S-15, S-16, S-62
      */
-    const APP_STORAGE_KEY = "nsl_supplychain_state_v8";
+    const APP_STORAGE_KEY = "nsl_supplychain_state_v9";
 
     // 7 Chuỗi Cung Ứng Roles Configuration (Epic E-02 & User Story S-04)
     const SUPPLY_CHAIN_ROLES = {
@@ -4578,63 +4578,91 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
     }
 
-    // 4. Mở Modal Tách Lô (S-17)
+    // 4. Mở Modal Tách Lô (S-17, S-18)
     function openSplitModalForCurrentBatch() {
-      const parentCode = currentDetailBatchCode;
-      const batch = state.batches.find(b => b.code === parentCode);
-      if (!batch) {
-        showToast("Không tìm thấy thông tin lô mẹ!", "error");
+      const parentCode = currentDetailBatchCode || (document.getElementById("modalBatchCode") ? document.getElementById("modalBatchCode").innerText.trim() : null);
+      if (!parentCode || parentCode === "--") {
+        showToast("Không tìm thấy thông tin mã lô mẹ để tách!", "error");
         return;
+      }
+
+      let batch = (state.batches || []).find(b => 
+        (b.code && b.code.toLowerCase() === parentCode.toLowerCase()) || 
+        (b.batch_code && b.batch_code.toLowerCase() === parentCode.toLowerCase()) || 
+        (b.id && String(b.id) === String(parentCode))
+      );
+
+      // Nếu chưa có trong state.batches, trích xuất từ modal chi tiết đang mở
+      if (!batch) {
+        const prodName = document.getElementById("modalBatchProduct") ? document.getElementById("modalBatchProduct").innerText.trim() : "Nông sản";
+        batch = {
+          code: parentCode,
+          batch_code: parentCode,
+          product: prodName,
+          product_name: prodName,
+          remaining_qty: 20,
+          qty: 20
+        };
       }
 
       const roleKey = state.currentRole || "farm";
       const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
       if (roleKey === "consumer" || cfg.isReadOnly) {
-        showToast("Vai trò của bạn chỉ có quyền tra cứu, không được tách lô!", "error");
+        showToast("Vai trò của bạn chỉ có quyền tra cứu, không được phép tách lô!", "error");
         return;
       }
 
-      const remQty = batch.remaining_qty !== undefined ? batch.remaining_qty : batch.qty;
+      const remQty = batch.remaining_qty !== undefined ? batch.remaining_qty : (batch.remaining_quantity !== undefined ? batch.remaining_quantity : (batch.qty || 0));
       if (remQty <= 0) {
         showToast("Lô này đã hết số lượng khả dụng, không thể tách thêm!", "warning");
         return;
       }
 
-      document.getElementById('splitParentCode').innerText = batch.code;
-      document.getElementById('splitParentProduct').innerText = batch.product;
-      const remEl = document.getElementById('splitParentRemainingQty');
-      remEl.innerText = `${remQty} kg`;
-      remEl.dataset.qty = remQty;
+      // Đóng modal chi tiết để modal tách lô hiển thị độc lập
+      closeModal('batchDetailModal');
+
+      const codeEl = document.getElementById('splitModalParentCode');
+      if (codeEl) codeEl.innerText = batch.code || parentCode;
+
+      const prodEl = document.getElementById('splitModalProductName');
+      if (prodEl) prodEl.innerText = batch.product || batch.product_name || "Nông sản";
+
+      const remEl = document.getElementById('splitModalRemainingQty');
+      if (remEl) {
+        remEl.innerText = remQty;
+        remEl.dataset.qty = remQty;
+      }
 
       // Khởi tạo 2 hàng lô con mặc định
-      const container = document.getElementById('splitChildrenContainer');
+      const container = document.getElementById('splitRowsContainer');
+      if (!container) return;
       const half1 = (remQty / 2).toFixed(1);
       const half2 = (remQty - half1).toFixed(1);
       container.innerHTML = `
         <div class="split-child-row flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-          <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center split-row-index">1</span>
+          <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center split-row-index">1</span>
           <div class="flex-1 grid grid-cols-2 gap-2">
             <div>
               <label class="text-[10px] font-bold text-slate-500 uppercase">Khối lượng tách (kg)</label>
-              <input type="number" step="0.01" min="0.01" max="${remQty}" value="${half1}" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" required/>
+              <input type="number" step="0.01" min="0.01" max="${remQty}" value="${half1}" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500" required/>
             </div>
             <div>
               <label class="text-[10px] font-bold text-slate-500 uppercase">Ghi chú lô con</label>
-              <input type="text" placeholder="Đóng thùng loại A..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+              <input type="text" placeholder="Đóng thùng loại A..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"/>
             </div>
           </div>
           <button type="button" onclick="removeSplitRow(this)" class="p-2 text-rose-500 hover:text-rose-700 text-sm"><i class="fa-solid fa-trash"></i></button>
         </div>
         <div class="split-child-row flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-          <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center split-row-index">2</span>
+          <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center split-row-index">2</span>
           <div class="flex-1 grid grid-cols-2 gap-2">
             <div>
               <label class="text-[10px] font-bold text-slate-500 uppercase">Khối lượng tách (kg)</label>
-              <input type="number" step="0.01" min="0.01" max="${remQty}" value="${half2}" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" required/>
+              <input type="number" step="0.01" min="0.01" max="${remQty}" value="${half2}" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500" required/>
             </div>
             <div>
               <label class="text-[10px] font-bold text-slate-500 uppercase">Ghi chú lô con</label>
-              <input type="text" placeholder="Xuất sang siêu thị..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+              <input type="text" placeholder="Xuất sang siêu thị..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"/>
             </div>
           </div>
           <button type="button" onclick="removeSplitRow(this)" class="p-2 text-rose-500 hover:text-rose-700 text-sm"><i class="fa-solid fa-trash"></i></button>
@@ -4646,23 +4674,25 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     }
 
     function addSplitRow() {
-      const container = document.getElementById('splitChildrenContainer');
-      const remQty = parseFloat(document.getElementById('splitParentRemainingQty').dataset.qty) || 0;
+      const container = document.getElementById('splitRowsContainer');
+      if (!container) return;
+      const remEl = document.getElementById('splitModalRemainingQty');
+      const remQty = parseFloat(remEl ? remEl.dataset.qty : 0) || 0;
       const currentRows = container.querySelectorAll('.split-child-row').length;
       const newIndex = currentRows + 1;
 
       const div = document.createElement('div');
       div.className = "split-child-row flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200";
       div.innerHTML = `
-        <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center split-row-index">${newIndex}</span>
+        <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center split-row-index">${newIndex}</span>
         <div class="flex-1 grid grid-cols-2 gap-2">
           <div>
             <label class="text-[10px] font-bold text-slate-500 uppercase">Khối lượng tách (kg)</label>
-            <input type="number" step="0.01" min="0.01" max="${remQty}" value="50" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" required/>
+            <input type="number" step="0.01" min="0.01" max="${remQty}" value="10" oninput="calculateSplitTotals()" class="split-child-qty w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500" required/>
           </div>
           <div>
             <label class="text-[10px] font-bold text-slate-500 uppercase">Ghi chú lô con</label>
-            <input type="text" placeholder="Lô con #${newIndex}..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+            <input type="text" placeholder="Lô con #${newIndex}..." class="split-child-notes w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"/>
           </div>
         </div>
         <button type="button" onclick="removeSplitRow(this)" class="p-2 text-rose-500 hover:text-rose-700 text-sm"><i class="fa-solid fa-trash"></i></button>
@@ -4672,7 +4702,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     }
 
     function removeSplitRow(btn) {
-      const container = document.getElementById('splitChildrenContainer');
+      const container = document.getElementById('splitRowsContainer');
+      if (!container) return;
       const rows = container.querySelectorAll('.split-child-row');
       if (rows.length <= 1) {
         showToast("Phải có ít nhất 1 lô con khi tách!", "warning");
@@ -4687,7 +4718,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     }
 
     function calculateSplitTotals() {
-      const remQty = parseFloat(document.getElementById('splitParentRemainingQty').dataset.qty) || 0;
+      const remEl = document.getElementById('splitModalRemainingQty');
+      const remQty = parseFloat(remEl ? remEl.dataset.qty : 0) || 0;
       const qtyInputs = Array.from(document.querySelectorAll('.split-child-qty'));
       let sum = 0;
       let hasError = false;
@@ -4698,33 +4730,47 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         sum += val;
       });
 
-      const totalEl = document.getElementById('splitTotalQuantity');
-      const remainEl = document.getElementById('splitRemainingParentQty');
-      const errorEl = document.getElementById('splitQtyErrorAlert');
+      const totalEl = document.getElementById('splitTotalCalculated');
+      const remainEl = document.getElementById('splitRemainingCalculated');
+      const errorEl = document.getElementById('splitValidationAlert');
       const submitBtn = document.getElementById('btnSubmitSplit');
 
-      totalEl.innerText = `${sum.toFixed(2)} kg`;
+      if (totalEl) totalEl.innerText = sum.toFixed(2);
       const leftover = remQty - sum;
-      remainEl.innerText = `${leftover.toFixed(2)} kg`;
+      if (remainEl) remainEl.innerText = leftover.toFixed(2);
 
       if (sum > remQty || hasError || sum <= 0) {
-        errorEl.classList.remove('hidden');
-        submitBtn.disabled = true;
-        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        if (errorEl) errorEl.classList.remove('hidden');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
       } else {
-        errorEl.classList.add('hidden');
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        if (errorEl) errorEl.classList.add('hidden');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
       }
     }
 
     // 5. Thực Hiện Tách Lô (S-17, S-18)
     async function submitSplitBatch() {
-      const parentCode = currentDetailBatchCode;
-      const batch = state.batches.find(b => b.code === parentCode);
-      if (!batch) return;
+      const parentCode = currentDetailBatchCode || (document.getElementById("splitModalParentCode") ? document.getElementById("splitModalParentCode").innerText.trim() : null);
+      if (!parentCode) {
+        showToast("Không tìm thấy mã lô mẹ!", "error");
+        return;
+      }
 
-      const remQty = batch.remaining_qty !== undefined ? batch.remaining_qty : batch.qty;
+      let batch = (state.batches || []).find(b => 
+        (b.code && b.code.toLowerCase() === parentCode.toLowerCase()) || 
+        (b.batch_code && b.batch_code.toLowerCase() === parentCode.toLowerCase()) || 
+        (b.id && String(b.id) === String(parentCode))
+      );
+
+      const remEl = document.getElementById('splitModalRemainingQty');
+      const remQty = remEl ? (parseFloat(remEl.dataset.qty) || 0) : (batch ? (batch.remaining_qty !== undefined ? batch.remaining_qty : batch.qty) : 0);
+
       const rows = Array.from(document.querySelectorAll('.split-child-row'));
       const children = [];
       let sum = 0;
@@ -4745,24 +4791,37 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
+      const submitBtn = document.getElementById('btnSubmitSplit');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý tách lô...';
+      }
+
       try {
-        await apiFetch(`/api/v1/batches/${encodeURIComponent(parentCode)}/split`, {
+        const res = await apiFetch(`/api/v1/batches/${encodeURIComponent(parentCode)}/split`, {
           method: "POST",
           body: JSON.stringify({
             splits: children.map(c => ({ quantity: c.quantity, notes: c.notes })),
-            notes: `Tách lô từ ${parentCode}`
+            notes: document.getElementById("splitNotesInput") ? document.getElementById("splitNotesInput").value.trim() : `Tách lô từ ${parentCode}`
           })
         });
+
         await loadServerData();
         closeModal('splitBatchModal');
         renderBatchesTable();
         renderTraceabilityTab();
-        handleQuickSearch(parentCode);
-        showToast(`TÁCH LÔ THÀNH CÔNG (S-17)! Đã tạo ${children.length} lô con từ lô mẹ ${parentCode}`, "success");
+        
+        const childCodes = (res && res.child_batches) ? res.child_batches.map(c => c.batch_code).join(', ') : `${children.length} lô con`;
+        showToast(`TÁCH LÔ THÀNH CÔNG (S-17)! Đã sinh các lô con: ${childCodes}`, "success");
         return;
       } catch (e) {
         console.warn("Lỗi API tách lô:", e);
         showToast(`Lỗi tách lô: ${e.message}`, "error");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Xác Nhận Tách Lô (S-17)';
+        }
       }
     }
 
