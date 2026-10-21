@@ -778,7 +778,7 @@ def merge_batches(
     status_code=status.HTTP_201_CREATED,
 )
 def split_batch(
-    batch_id: int,
+    batch_id: int | str,
     payload: BatchSplitRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
@@ -799,12 +799,13 @@ def split_batch(
         )
 
     # Khóa dòng lô mẹ với SELECT ... FOR UPDATE chống race condition (S-17, S-18)
-    parent = db.query(Batch).filter(Batch.id == batch_id).with_for_update().first()
-    if not parent:
+    resolved_batch = _resolve_batch_by_id_or_code(db, batch_id)
+    if not resolved_batch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Lô hàng #{batch_id} không tồn tại.",
+            detail=f"Lô hàng '{batch_id}' không tồn tại.",
         )
+    parent = db.query(Batch).filter(Batch.id == resolved_batch.id).with_for_update().first()
 
     # Kiểm tra phân quyền: Chỉ tổ chức đang giữ quyền sở hữu mới được tách lô
     if (
