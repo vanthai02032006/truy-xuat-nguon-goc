@@ -388,3 +388,39 @@ Khu Vực Sầu Riêng Ri6 02,Cai Lậy Tiền Giang,3.0,10.35,106.12
         assert data_plots["imported_count"] == 2
         assert len(data_plots["errors"]) == 0
 
+    def test_import_products_csv_with_extended_headers_and_multipart(
+        self, client: TestClient, test_setup
+    ):
+        """Kiểm tra import CSV với cột default_unit, variety, category và upload dạng multipart/form-data."""
+        admin_user = test_setup["user_sysadmin"]
+        admin_headers = get_auth_headers(admin_user.email, admin_user.role)
+        csv_data = """code,name,variety,category,default_unit,description
+SP-001,Cà Chua Beef Hữu Cơ Mới,Beef F1,Rau ăn quả,kg,Cà chua tiêu chuẩn VietGAP
+SP-002,Xà Lách Thuỷ Canh Lolo Mới,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy canh công nghệ cao
+"""
+        # Test qua JSON body
+        res = client.post(
+            "/api/v1/products/import-csv",
+            headers=admin_headers,
+            json={"csv_content": csv_data},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["imported_count"] == 2
+        assert data["errors"] == []
+
+        # Test qua Multipart form upload
+        csv_file_data = """code,name,variety,category,default_unit,description
+SP-003,Dưa Chuột Baby Mới,Baby F1,Rau ăn quả,kg,Dưa chuột bao tử giòn ngọt
+"""
+        res_mp = client.post(
+            "/api/v1/products/import-csv",
+            headers=admin_headers,
+            files={"file": ("test.csv", csv_file_data, "text/csv")},
+        )
+        assert res_mp.status_code == 200
+        data_mp = res_mp.json()
+        assert data_mp["imported_count"] == 1
+        assert data_mp["errors"] == []
+
+

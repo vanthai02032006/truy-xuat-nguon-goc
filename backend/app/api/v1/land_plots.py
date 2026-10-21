@@ -2,7 +2,7 @@ import csv
 import io
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -186,8 +186,8 @@ class LandPlotCsvImportResponse(BaseModel):
 
 
 @router.post("/import-csv", response_model=LandPlotCsvImportResponse)
-def import_land_plots_csv(
-    payload: LandPlotCsvImportRequest,
+async def import_land_plots_csv(
+    request: Request,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
@@ -202,7 +202,33 @@ def import_land_plots_csv(
             detail="Cán bộ kiểm tra chỉ có quyền xem (Read-only), không được phép thêm thửa đất.",
         )
 
-    lines = payload.csv_content.strip()
+    content_type = request.headers.get("content-type", "")
+    lines = ""
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+            lines = (body.get("csv_content") or "").strip()
+        except Exception:  # noqa: BLE001
+            lines = ""
+    elif "multipart/form-data" in content_type:
+        try:
+            raw = await request.body()
+            parts = raw.split(b"\r\n\r\n", 1)
+            if len(parts) == 2:
+                csv_bytes = parts[1].rsplit(b"\r\n--", 1)[0]
+                lines = csv_bytes.decode("utf-8", errors="replace").strip()
+            else:
+                lines = raw.decode("utf-8", errors="replace").strip()
+        except Exception:  # noqa: BLE001
+            lines = ""
+    else:
+        try:
+            body = await request.json()
+            lines = (body.get("csv_content") or "").strip()
+        except Exception:  # noqa: BLE001
+            raw = await request.body()
+            lines = raw.decode("utf-8", errors="replace").strip()
+
     if not lines:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

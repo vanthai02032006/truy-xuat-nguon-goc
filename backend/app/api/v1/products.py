@@ -4,7 +4,7 @@ import csv
 import io
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -149,18 +149,44 @@ class ProductCsvImportResponse(BaseModel):
 
 
 @router.post("/import-csv", response_model=ProductCsvImportResponse)
-def import_products_csv(
-    payload: ProductCsvImportRequest,
+async def import_products_csv(
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
     admin_user: Annotated[User, Depends(require_admin)],
 ):
     """
     User Story S-32: Nhập danh mục sản phẩm từ tệp CSV (Chỉ Admin).
-    - Cột: name (tên sản phẩm), unit (đơn vị: kg/tấn/thùng), description (mô tả), standard (tiêu chuẩn).
-    - Kiểm tra đơn vị tính bắt buộc là enum: 'kg', 'tấn', 'thùng'.
+    - Hỗ trợ cả JSON body {"csv_content": "..."}, multipart FormData (file/csv_content), và plain text.
+    - Cột nhận diện: name/tên, unit/default_unit/đơn vị tính (kg, tấn, thùng), description/mô tả, variety/giống, category/loại.
     - Bỏ qua các sản phẩm trùng tên.
     """
-    lines = payload.csv_content.strip()
+    content_type = request.headers.get("content-type", "")
+    lines = ""
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+            lines = (body.get("csv_content") or "").strip()
+        except Exception:  # noqa: BLE001
+            lines = ""
+    elif "multipart/form-data" in content_type:
+        try:
+            raw = await request.body()
+            parts = raw.split(b"\r\n\r\n", 1)
+            if len(parts) == 2:
+                csv_bytes = parts[1].rsplit(b"\r\n--", 1)[0]
+                lines = csv_bytes.decode("utf-8", errors="replace").strip()
+            else:
+                lines = raw.decode("utf-8", errors="replace").strip()
+        except Exception:  # noqa: BLE001
+            lines = ""
+    else:
+        try:
+            body = await request.json()
+            lines = (body.get("csv_content") or "").strip()
+        except Exception:  # noqa: BLE001
+            raw = await request.body()
+            lines = raw.decode("utf-8", errors="replace").strip()
+
     if not lines:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -175,35 +201,64 @@ def import_products_csv(
     errors = []
 
     valid_units = {"kg", "tấn", "thùng"}
+    unit_map = {
+        "kg": "kg",
+        "kilogram": "kg",
+        "tấn": "tấn",
+        "tan": "tấn",
+        "thùng": "thùng",
+        "thung": "thùng",
+    }
 
     for idx, row in enumerate(reader, start=2):
         total += 1
         clean_row = {str(k).strip().lower(): str(v).strip() for k, v in row.items() if k}
         name = clean_row.get("name") or clean_row.get("tên sản phẩm") or clean_row.get("tên")
-        unit = clean_row.get("unit") or clean_row.get("đơn vị tính") or clean_row.get("đơn vị")
+        raw_unit = (
+            clean_row.get("unit")
+            or clean_row.get("default_unit")
+            or clean_row.get("đơn vị tính")
+            or clean_row.get("đơn vị")
+            or clean_row.get("dvt")
+        )
         desc = clean_row.get("description") or clean_row.get("mô tả") or ""
+        variety = clean_row.get("variety") or clean_row.get("giống") or ""
+        category = clean_row.get("category") or clean_row.get("loại") or ""
+        standard = clean_row.get("standard") or clean_row.get("tiêu chuẩn") or ""
 
         if not name:
             errors.append(f"Dòng {idx}: Thiếu tên sản phẩm.")
             skipped += 1
             continue
 
-        if not unit or unit.lower() not in valid_units:
-            errors.append(f"Dòng {idx} ({name}): Đơn vị tính '{unit}' không hợp lệ. Chỉ chấp nhận 'kg', 'tấn', 'thùng'.")
+        unit = raw_unit.lower().strip() if raw_unit else "kg"
+        unit = unit_map.get(unit, unit)
+
+        if unit not in valid_units:
+            errors.append(f"Dòng {idx} ({name}): Đơn vị tính '{raw_unit}' không hợp lệ. Chỉ chấp nhận 'kg', 'tấn', 'thùng'.")
             skipped += 1
             continue
-
-        unit = unit.lower()
 
         existing = ProductRepository.get_by_name(db, name)
         if existing:
             skipped += 1
             continue
 
+        extra_parts = []
+        if variety and variety not in desc:
+            extra_parts.append(f"Giống: {variety}")
+        if category and category not in desc:
+            extra_parts.append(f"Loại: {category}")
+        if standard and standard not in desc:
+            extra_parts.append(f"Tiêu chuẩn: {standard}")
+        if desc:
+            extra_parts.append(desc)
+        final_desc = " | ".join(extra_parts) if extra_parts else (desc if desc else None)
+
         new_prod = Product(
             name=name,
             unit=unit,
-            description=desc if desc else None,
+            description=final_desc,
         )
         db.add(new_prod)
         imported += 1
