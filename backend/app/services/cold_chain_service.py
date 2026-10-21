@@ -9,6 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.batch import Batch
+from app.models.batch_relation import BatchRelation
 from app.models.chain_event import ChainEvent
 from app.models.cold_chain import (
     ColdChainViolation,
@@ -203,6 +204,22 @@ class ColdChainService:
                     .all()
                 }
                 org_batch_ids.update(handover_batch_ids)
+                # Lấy thêm các lô con/cháu sinh ra từ các lô của tổ chức này (downstream split/merge)
+                downstream_ids = set(org_batch_ids)
+                queue = list(org_batch_ids)
+                while queue:
+                    curr_id = queue.pop()
+                    children = [
+                        rel.child_batch_id
+                        for rel in db.query(BatchRelation.child_batch_id)
+                        .filter(BatchRelation.parent_batch_id == curr_id)
+                        .all()
+                    ]
+                    for ch in children:
+                        if ch not in downstream_ids:
+                            downstream_ids.add(ch)
+                            queue.append(ch)
+                org_batch_ids.update(downstream_ids)
                 # Lấy thêm các lô hàng có ChainEvent của tổ chức này
                 event_batch_ids = {
                     e_b_id
@@ -299,6 +316,23 @@ class ColdChainService:
                                     related_org_ids.add(h.from_org_id)
                                 if h.to_org_id:
                                     related_org_ids.add(h.to_org_id)
+                            # Tìm tổ chức tổ tiên (vùng trồng/nông trại gốc) qua quan hệ tách/gộp BatchRelation
+                            current_ids = [tb.batch.id]
+                            visited = set()
+                            while current_ids:
+                                cid = current_ids.pop()
+                                if cid in visited:
+                                    continue
+                                visited.add(cid)
+                                parents = (
+                                    db.query(BatchRelation)
+                                    .filter(BatchRelation.child_batch_id == cid)
+                                    .all()
+                                )
+                                for p in parents:
+                                    if p.parent_batch and p.parent_batch.organization_id:
+                                        related_org_ids.add(p.parent_batch.organization_id)
+                                    current_ids.append(p.parent_batch_id)
                     if user.organization_id and user.organization_id not in related_org_ids:
                         has_access = False
                         for tb in trip.trip_batches:
