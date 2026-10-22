@@ -994,8 +994,8 @@ def generate_spa_html():
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
-          <button onclick="switchNavTab('batches')" class="px-4 py-2.5 bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
-            <i class="fa-solid fa-boxes-stacked"></i> Chọn Lô Cần Mở Thu Hồi
+          <button onclick="handleOpenRecallBatchPicker()" class="px-4 py-2.5 bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation"></i> Chọn Lô Cần Mở Thu Hồi
           </button>
         </div>
       </div>
@@ -2371,6 +2371,12 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             class="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
             <i class="fa-solid fa-cart-shopping"></i> Ghi Nhận Đã Bán Hết (S-29)
           </button>
+          <button 
+            id="modalBtnRecall" 
+            onclick="openRecallModalForCurrentBatch()" 
+            class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-triangle-exclamation"></i> Thu Hồi Khẩn Cấp (S-33)
+          </button>
         </div>
         <button onclick="closeModal('batchDetailModal')" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
           Đóng Cửa Sổ
@@ -2448,7 +2454,14 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         <button onclick="closeModal('openRecallModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
-      <div class="p-3.5 bg-rose-50/60 rounded-2xl border border-rose-200 grid grid-cols-2 gap-2 text-xs">
+      <!-- Lựa chọn lô hàng khi mở từ trang Recall -->
+      <div id="recallBatchSelectWrapper" class="hidden">
+        <label class="block text-xs font-bold text-slate-700 mb-1">Chọn Lô Nông Sản Cần Kích Hoạt Thu Hồi:</label>
+        <select id="recallBatchSelect" onchange="onRecallBatchSelected(this.value)" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-rose-800 focus:ring-2 focus:ring-rose-500">
+        </select>
+      </div>
+
+      <div id="recallModalStaticInfo" class="p-3.5 bg-rose-50/60 rounded-2xl border border-rose-200 grid grid-cols-2 gap-2 text-xs">
         <div>
           <span class="text-[10px] text-slate-400 uppercase font-semibold">Mã Lô Gặp Sự Cố</span>
           <p id="recallModalBatchCode" class="font-mono font-bold text-rose-900">BATCH-...</p>
@@ -6546,6 +6559,23 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         }
       }
 
+      // Điều khiển hiển thị nút Thu Hồi Khẩn Cấp (S-33):
+      const activeRole = getActiveRole();
+      const recallBtn = document.getElementById("modalBtnRecall");
+      if (recallBtn) {
+        const isSystemAdmin = activeRole === "system_admin";
+        const isInspector = activeRole === "inspector";
+        const isBatchOwner = cfg.orgId !== null && foundBatch && (foundBatch.org_id === cfg.orgId || foundBatch.organization_id === cfg.orgId);
+        const canTriggerRecall = isSystemAdmin || isInspector || isBatchOwner;
+        const isAlreadyRecalled = bStatus.includes("thu hồi") || bStatus.includes("recalled") || bStatus.includes("phong tỏa");
+
+        if (canTriggerRecall && !isAlreadyRecalled && activeRole !== "consumer") {
+          recallBtn.classList.remove("hidden");
+        } else {
+          recallBtn.classList.add("hidden");
+        }
+      }
+
       // Dựng cây phả hệ (S-17, S-18, S-19)
       fetchAndRenderLineage(data.batch_code);
 
@@ -6603,23 +6633,90 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
     }
 
+    function handleOpenRecallBatchPicker() {
+      const activeRole = getActiveRole();
+      if (activeRole === "consumer") {
+        showToast("Người tiêu dùng không có quyền mở lệnh thu hồi khẩn cấp!", "error");
+        return;
+      }
+
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES.farm;
+      const isInspector = activeRole === "inspector";
+      const isSystemAdmin = activeRole === "system_admin";
+
+      // Lọc danh sách lô mà role hiện tại có quyền mở thu hồi
+      let eligibleBatches = state.batches || [];
+      if (!isInspector && !isSystemAdmin && cfg.orgId !== null) {
+        eligibleBatches = eligibleBatches.filter(b => b.org_id === cfg.orgId || b.organization_id === cfg.orgId);
+      }
+
+      // Loại các lô đã bị phong tỏa / thu hồi
+      eligibleBatches = eligibleBatches.filter(b => {
+        const st = (b.status || "").toLowerCase();
+        return !st.includes("thu hồi") && !st.includes("recalled") && !st.includes("phong tỏa");
+      });
+
+      if (eligibleBatches.length === 0) {
+        showToast("Không tìm thấy lô hàng khả dụng nào thuộc quyền quản lý của bạn để kích hoạt thu hồi!", "warning");
+        return;
+      }
+
+      const selectEl = document.getElementById("recallBatchSelect");
+      const wrapper = document.getElementById("recallBatchSelectWrapper");
+      if (selectEl && wrapper) {
+        wrapper.classList.remove("hidden");
+        selectEl.innerHTML = eligibleBatches.map(b => `
+          <option value="${b.code}">${b.code} - ${b.product} (${b.farm || 'Kho'}) [${b.remaining_qty !== undefined ? b.remaining_qty : b.qty} ${b.unit || 'kg'}]</option>
+        `).join("");
+      }
+
+      const firstBatch = eligibleBatches[0];
+      currentDetailBatchCode = firstBatch.code;
+      document.getElementById("recallModalBatchCode").innerText = firstBatch.code;
+      document.getElementById("recallModalProductName").innerText = firstBatch.product;
+      document.getElementById("recallReasonInput").value = "";
+      handleRecallReasonInput();
+
+      openModal("openRecallModal");
+    }
+
+    function onRecallBatchSelected(code) {
+      if (!code) return;
+      currentDetailBatchCode = code;
+      const b = (state.batches || []).find(x => x.code === code);
+      if (!b) return;
+      const codeEl = document.getElementById("recallModalBatchCode");
+      const prodEl = document.getElementById("recallModalProductName");
+      if (codeEl) codeEl.innerText = b.code;
+      if (prodEl) prodEl.innerText = b.product;
+    }
+
     function openRecallModalForCurrentBatch() {
       const batchCode = currentDetailBatchCode;
       const b = state.batches.find(x => x.code === batchCode);
       if (!b) return;
 
-      const roleKey = state.currentRole || "farm";
-      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      const activeRole = getActiveRole();
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES.farm;
 
-      // Phân quyền S-33: Cán bộ kiểm tra (Inspector) hoặc Quản trị của tổ chức đang giữ lô
-      const isInspector = roleKey === "inspector";
-      const isAdmin = roleKey === "system_admin" || cfg.role === "Admin";
-      const isHoldingOrg = cfg.orgId !== null && b.org_id === cfg.orgId;
+      // Phân quyền S-33: Cán bộ kiểm tra (Inspector), Quản trị hệ thống (System Admin), hoặc Đơn vị sở hữu lô hàng
+      const isInspector = activeRole === "inspector";
+      const isSystemAdmin = activeRole === "system_admin";
+      const isBatchOwner = cfg.orgId !== null && (b.org_id === cfg.orgId || b.organization_id === cfg.orgId);
 
-      if (!isInspector && !(isAdmin && isHoldingOrg) && roleKey !== "system_admin") {
-        showToast("Chỉ Cán bộ kiểm tra (Inspector) hoặc Quản trị của tổ chức đang giữ lô mới có quyền mở lệnh thu hồi (S-33)!", "error");
+      if (!isInspector && !isSystemAdmin && !isBatchOwner) {
+        showToast("Chỉ Cán bộ kiểm tra (Inspector), Quản trị hệ thống hoặc Đơn vị sở hữu lô mới có quyền mở lệnh thu hồi (S-33)!", "error");
         return;
       }
+
+      const bStatus = (b.status || "").toLowerCase();
+      if (bStatus.includes("thu hồi") || bStatus.includes("recalled") || bStatus.includes("phong tỏa")) {
+        showToast(`Lô ${b.code} hiện đã nằm trong diện phong tỏa thu hồi!`, "warning");
+        return;
+      }
+
+      const wrapper = document.getElementById("recallBatchSelectWrapper");
+      if (wrapper) wrapper.classList.add("hidden");
 
       document.getElementById("recallModalBatchCode").innerText = b.code;
       document.getElementById("recallModalProductName").innerText = b.product;
