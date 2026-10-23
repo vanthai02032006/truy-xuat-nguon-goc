@@ -2,7 +2,7 @@ import os
 import sys
 
 def generate_spa_html():
-    return '''<!DOCTYPE html>
+    return r'''<!DOCTYPE html>
 <html lang="vi" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
@@ -19,6 +19,14 @@ def generate_spa_html():
   
   <!-- Chart.js CDN for Cold Chain IoT & Telemetry Visualizations -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- jsQR: giải mã mã QR từ camera và ảnh tem tải lên -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <!-- Leaflet + OpenStreetMap: bản đồ hành trình trên trang công khai (S-60), mã nguồn mở, không cần API key -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- qrcode-generator: sinh mã QR in tem cho lô (S-46) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 
   <!-- Tailwind CSS Play CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -58,7 +66,7 @@ def generate_spa_html():
     
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #f8fafc; }
+    ::-webkit-scrollbar-track { background: transparent; margin: 14px 0; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     
@@ -97,24 +105,24 @@ def generate_spa_html():
               <span class="text-base sm:text-xl font-black tracking-tight bg-gradient-to-r from-emerald-900 to-emerald-700 bg-clip-text text-transparent">
                 Nông Sản Lành
               </span>
-              <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <span class="hidden 2xl:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                 Chuỗi Cung Ứng Đa Tổ Chức
               </span>
             </div>
-            <p class="hidden sm:block text-xs text-slate-500 font-medium">Truy Xuất Nguồn Gốc & Giám Sát Chuỗi Lạnh IoT</p>
+            <p class="hidden xl:block text-xs text-slate-500 font-medium">Truy Xuất Nguồn Gốc & Giám Sát Chuỗi Lạnh IoT</p>
           </div>
         </div>
 
         <!-- Quick Trace Search Bar -->
-        <div class="hidden md:flex flex-1 max-w-sm mx-6">
+        <div class="hidden lg:flex flex-1 min-w-[180px] max-w-sm mx-3 xl:mx-6">
           <div class="relative w-full">
             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
               <i class="fa-solid fa-magnifying-glass text-xs"></i>
             </span>
-            <input 
-              type="text" 
+            <input
+              type="text"
               id="topSearchBar"
-              placeholder="Nhập mã lô tra cứu (VD: VK89XPT2 hoặc mã bất kỳ trên danh sách)..." 
+              placeholder="Nhập mã lô in trên tem hoặc tên sản phẩm..."
               onkeydown="if(event.key === 'Enter') handleQuickSearch(this.value)"
               class="w-full pl-9 pr-14 py-2 text-xs bg-slate-100/90 hover:bg-slate-100 border border-slate-200 rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
             />
@@ -138,9 +146,9 @@ def generate_spa_html():
               <div id="currentRoleIconBox" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs font-black shadow-sm">
                 <i class="fa-solid fa-seedling" id="currentRoleIcon"></i>
               </div>
-              <div class="leading-tight pr-0.5 sm:pr-1">
+              <div class="hidden sm:block leading-tight pr-0.5 sm:pr-1">
                 <div class="flex items-center gap-1 sm:gap-1.5">
-                  <span class="font-bold text-slate-800 text-[11px] sm:text-xs" id="currentRoleTitle">Vùng Trồng (Farm)</span>
+                  <span class="font-bold text-slate-800 text-[11px] sm:text-xs truncate max-w-[90px] xl:max-w-[180px]" id="currentRoleTitle">Vùng Trồng (Farm)</span>
                   <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200" id="currentRoleBadge">Org #1</span>
                 </div>
                 <p class="hidden sm:block text-[10px] text-slate-500 font-medium truncate max-w-[120px]" id="currentOrgName">HTX Nông Nghiệp Thắng Lợi</p>
@@ -151,7 +159,7 @@ def generate_spa_html():
             <!-- 7 Supply Chain Roles Dropdown Menu (Epic E-02) -->
             <div id="roleDropdownMenu" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-200/90 py-2.5 z-50 animate-fadeIn">
               <div class="px-3.5 pb-2 border-b border-slate-100 flex items-center justify-between">
-                <span class="text-[11px] font-black uppercase text-slate-400 tracking-wider">Chuỗi Cung Ứng Đa Tổ Chức (E-02)</span>
+                <span class="text-[11px] font-black uppercase text-slate-400 tracking-wider">Chuỗi Cung Ứng Đa Tổ Chức</span>
                 <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">7 Vai Trò</span>
               </div>
               <div class="max-h-[380px] overflow-y-auto p-1.5 space-y-1">
@@ -250,7 +258,7 @@ def generate_spa_html():
                       <span class="font-bold text-slate-800">7. Người Tiêu Dùng (Consumer)</span>
                       <span class="text-[9px] font-bold px-1.5 rounded-full bg-slate-100 text-slate-600">Không Login</span>
                     </div>
-                    <p class="text-[11px] text-slate-500 font-medium">Khách quét QR tra cứu công khai (S-48)</p>
+                    <p class="text-[11px] text-slate-500 font-medium">Khách quét QR tra cứu công khai</p>
                   </div>
                 </div>
 
@@ -263,9 +271,9 @@ def generate_spa_html():
             id="seedDatabaseBtn" 
             onclick="seedFullDatabase()" 
             title="Nạp 13 lô hàng mẫu qua 4 tầng phả hệ & chuỗi hash vào cơ sở dữ liệu thật"
-            class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 p-2 sm:px-3 sm:py-2 rounded-2xl flex items-center gap-1.5 text-xs font-bold transition-all transform active:scale-95 cursor-pointer">
+            class="max-sm:!hidden bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 p-2 sm:px-3 sm:py-2 rounded-2xl flex items-center gap-1.5 text-xs font-bold transition-all transform active:scale-95 cursor-pointer">
             <i class="fa-solid fa-database text-amber-600"></i>
-            <span class="hidden sm:inline">Nạp Dữ Liệu Thật (Seed)</span>
+            <span class="hidden 2xl:inline">Nạp Dữ Liệu Thật (Seed)</span>
           </button>
 
           <!-- Nút Đăng Nhập / Đổi Tài Khoản S-04 (T-08, T-09, T-10) -->
@@ -273,10 +281,10 @@ def generate_spa_html():
             <button 
               id="authLoginBtn" 
               onclick="openLoginModal()" 
-              title="Đăng Nhập / Đổi Tài Khoản (S-04)"
+              title="Đăng Nhập / Đổi Tài Khoản"
               class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white p-2 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-1.5 shadow-sm hover:shadow text-xs font-bold transition-all transform active:scale-95 cursor-pointer">
               <i class="fa-solid fa-right-to-bracket text-xs" id="authBtnIcon"></i>
-              <span id="authBtnLabel" class="hidden sm:inline">Đăng Nhập / Đổi TK</span>
+              <span id="authBtnLabel" class="hidden lg:inline-block truncate max-w-[96px] xl:max-w-[200px]">Đăng Nhập / Đổi TK</span>
               <span id="authActiveDot" class="w-2 h-2 rounded-full bg-emerald-300 hidden"></span>
             </button>
             <button 
@@ -290,6 +298,27 @@ def generate_spa_html():
 
         </div>
 
+      </div>
+
+      <!-- Ô tìm kiếm cho màn hình nhỏ (< lg): hiển thị thành một hàng riêng để luôn đủ chỗ gõ -->
+      <div class="lg:hidden pb-3">
+        <div class="relative w-full">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+          </span>
+          <input
+            type="text"
+            id="topSearchBarMobile"
+            placeholder="Nhập mã lô in trên tem hoặc tên sản phẩm..."
+            onkeydown="if(event.key === 'Enter') handleQuickSearch(this.value)"
+            class="w-full pl-9 pr-16 py-2 text-xs bg-slate-100/90 hover:bg-slate-100 border border-slate-200 rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+          />
+          <button
+            onclick="handleQuickSearch(document.getElementById('topSearchBarMobile').value)"
+            class="absolute inset-y-1 right-1 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-[11px] font-bold transition-colors">
+            Tìm
+          </button>
+        </div>
       </div>
     </div>
 
@@ -308,74 +337,85 @@ def generate_spa_html():
           id="tabBtn_batches" 
           onclick="switchNavTab('batches')"
           class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2">
-          <i class="fa-solid fa-boxes-stacked"></i> Lô Hàng Thu Hoạch (S-08, S-14)
+          <i class="fa-solid fa-boxes-stacked"></i> Lô Hàng Thu Hoạch
         </button>
 
         <button 
           id="tabBtn_plots" 
           onclick="switchNavTab('plots')"
           class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2">
-          <i class="fa-solid fa-map-location-dot"></i> Thửa Đất Vùng Trồng (S-06)
+          <i class="fa-solid fa-map-location-dot"></i> Thửa Đất Vùng Trồng
         </button>
 
         <button 
           id="tabBtn_materials_phi" 
           onclick="switchNavTab('materials_phi')"
           class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2">
-          <i class="fa-solid fa-shield-virus text-amber-600"></i> Nhật Ký Vật Tư & Thời Gian Cách Ly (S-62)
+          <i class="fa-solid fa-shield-virus text-amber-600"></i> Nhật Ký Vật Tư & Thời Gian Cách Ly
         </button>
 
         <button 
           id="tabBtn_handovers" 
           onclick="switchNavTab('handovers')"
           class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2">
-          <i class="fa-solid fa-truck-ramp-box"></i> Bàn Giao & Vận Chuyển Lạnh (S-15, S-16)
+          <i class="fa-solid fa-truck-ramp-box"></i> Bàn Giao & Vận Chuyển Lạnh
         </button>
 
                 <button 
           id="tabBtn_recalls" 
           onclick="switchNavTab('recalls')"
           class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-900 transition-all flex items-center gap-2">
-          <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Thu Hồi Khẩn Cấp (E-06)
+          <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Thu Hồi Khẩn Cấp
         </button>
 
         <button 
           id="tabBtn_cold_chain" 
           onclick="switchNavTab('cold_chain')"
           class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-cyan-600 hover:bg-cyan-50 hover:text-cyan-900 transition-all flex items-center gap-2">
-          <i class="fa-solid fa-snowflake text-cyan-600"></i> Chuỗi Lạnh & IoT (E-07)
+          <i class="fa-solid fa-snowflake text-cyan-600"></i> Chuỗi Lạnh & IoT
         </button>
 
         <button 
           id="tabBtn_traceability" 
           onclick="switchNavTab('traceability')"
           class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2">
-          <i class="fa-solid fa-link"></i> Toàn Vẹn Chuỗi Hash SHA-256 (S-10, S-12)
+          <i class="fa-solid fa-link"></i> Toàn Vẹn Chuỗi Hash SHA-256
         </button>
 
         <button 
           id="tabBtn_audit" 
           onclick="switchNavTab('audit')"
           class="hidden nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-purple-600 hover:bg-purple-50 hover:text-purple-900 transition-all flex items-center gap-2">
-          <i class="fa-solid fa-shield-halved text-purple-600"></i> Nhật Ký Hệ Thống (S-31)
+          <i class="fa-solid fa-shield-halved text-purple-600"></i> Nhật Ký Hệ Thống
         </button>
 
         <button 
           id="tabBtn_public" 
           onclick="switchNavTab('public')"
           class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2">
-          <i class="fa-solid fa-qrcode text-emerald-600"></i> Tra Cứu Công Khai (S-48)
+          <i class="fa-solid fa-qrcode text-emerald-600"></i> Tra Cứu Công Khai
         </button>
 
       </div>
     </div>
 
     <!-- Inspector Read-Only Alert Banner (Epic E-02) -->
+    <!-- Cảnh báo lệnh thu hồi chạm tới lô của tổ chức đang đăng nhập (S-36) -->
+    <div id="recallAlertBanner" class="hidden bg-rose-700 text-white px-4 py-2.5 text-xs font-medium border-b border-rose-800 shadow-md">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-2.5">
+          <i class="fa-solid fa-triangle-exclamation text-amber-300 text-sm animate-pulse"></i>
+          <span id="recallAlertText">Có lệnh thu hồi liên quan tới lô hàng của tổ chức bạn.</span>
+        </div>
+        <button onclick="switchNavTab('recalls')" class="px-3 py-1 rounded-full bg-white text-rose-700 font-bold text-[11px] hover:bg-rose-50 shrink-0">Xem &amp; xác nhận xử lý</button>
+      </div>
+    </div>
+
     <div id="inspectorBanner" class="hidden bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-800 text-white px-4 py-2.5 text-xs font-medium border-b border-purple-700 shadow-md">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <i class="fa-solid fa-clipboard-check text-amber-300 text-sm"></i>
-          <span><strong>Chế độ Cán Bộ Kiểm Tra (Inspector - Epic E-02):</strong> Bạn có quyền tra cứu lô hàng trên <strong>mọi tổ chức độc lập</strong> toàn chuỗi, nhưng hệ thống được khóa ở <strong>chế độ CHỈ ĐỌC (Read-only)</strong>. Mọi hành vi tạo/sửa/xóa sẽ bị từ chối HTTP 403 Forbidden.</span>
+          <span><strong>Chế độ Cán Bộ Kiểm Tra (Inspector):</strong> Bạn có quyền tra cứu lô hàng trên <strong>mọi tổ chức độc lập</strong> toàn chuỗi, nhưng hệ thống được khóa ở <strong>chế độ CHỈ ĐỌC (Read-only)</strong>. Mọi hành vi tạo/sửa/xóa sẽ bị từ chối HTTP 403 Forbidden.</span>
         </div>
         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-700/80 text-purple-200 border border-purple-500 shrink-0">READ-ONLY AUDIT</span>
       </div>
@@ -398,7 +438,7 @@ def generate_spa_html():
           </div>
           <h2 class="text-2xl sm:text-3xl font-black text-white">Giám Sát Chuỗi Cung Ứng & An Toàn Thực Phẩm</h2>
           <p class="text-xs sm:text-sm text-emerald-100/90 max-w-2xl">
-            Theo dõi hành trình lô hàng từ vùng canh tác, kiểm soát chặt chẽ thời gian cách ly phân bón/thuốc BVTV (S-62), bàn giao qua các đơn vị và kiểm soát nhiệt độ xe lạnh IoT.
+            Theo dõi hành trình lô hàng từ vùng canh tác, kiểm soát chặt chẽ thời gian cách ly phân bón/thuốc BVTV, bàn giao qua các đơn vị và kiểm soát nhiệt độ xe lạnh IoT.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
@@ -406,7 +446,7 @@ def generate_spa_html():
             <i class="fa-solid fa-plus-circle"></i> Khởi Tạo Lô Thu Hoạch
           </button>
           <button id="btnOverviewAddMaterial" onclick="handleAddMaterialClick()" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
-            <i class="fa-solid fa-spray-can"></i> Ghi Nhận Vật Tư (S-62)
+            <i class="fa-solid fa-spray-can"></i> Ghi Nhận Vật Tư
           </button>
         </div>
       </div>
@@ -432,7 +472,7 @@ def generate_spa_html():
             </div>
           </div>
           <p class="text-2xl font-black text-blue-700 mt-2" id="kpiTotalPlots">--</p>
-          <p class="text-[11px] text-slate-500 mt-1">7,500 m2 diện tích hợp chuẩn</p>
+          <p class="text-[11px] text-slate-500 mt-1" id="kpiPlotsArea">-- m2 diện tích canh tác</p>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" id="kpiCardPhi">
@@ -442,8 +482,8 @@ def generate_spa_html():
               <i class="fa-solid fa-shield-check"></i>
             </div>
           </div>
-          <p class="text-2xl font-black text-emerald-700 mt-2" id="kpiPhiCompliant">100% Đạt Chuẩn</p>
-          <p class="text-[11px] text-emerald-600 font-semibold mt-1">Tuân thủ thời gian cách ly (S-62)</p>
+          <p class="text-2xl font-black text-emerald-700 mt-2" id="kpiPhiCompliant">--</p>
+          <p class="text-[11px] text-emerald-600 font-semibold mt-1" id="kpiPhiCompliantSub">Tuân thủ thời gian cách ly</p>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hidden" id="kpiCardHandovers">
@@ -464,8 +504,8 @@ def generate_spa_html():
               <i class="fa-solid fa-snowflake"></i>
             </div>
           </div>
-          <p class="text-2xl font-black text-teal-700 mt-2" id="kpiColdChainTemp">3.8°C - 4.5°C</p>
-          <p class="text-[11px] text-teal-600 font-semibold mt-1">Không vi phạm sốc nhiệt</p>
+          <p class="text-2xl font-black text-teal-700 mt-2" id="kpiColdChainTemp">--</p>
+          <p class="text-[11px] text-teal-600 font-semibold mt-1" id="kpiColdChainSub">Đang tải dữ liệu chuyến xe...</p>
         </div>
       </div>
 
@@ -477,7 +517,7 @@ def generate_spa_html():
           <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <span class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Tiêu chuẩn an toàn thu hoạch</span>
-              <h3 class="font-black text-slate-800 text-lg">Giám Sát Thời Gian Cách Ly Vật Tư (Story S-62)</h3>
+              <h3 class="font-black text-slate-800 text-lg">Giám Sát Thời Gian Cách Ly Vật Tư</h3>
             </div>
             <button onclick="switchNavTab('materials_phi')" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1">
               Xem toàn bộ nhật ký <i class="fa-solid fa-arrow-right text-[10px]"></i>
@@ -524,7 +564,7 @@ def generate_spa_html():
                 <i class="fa-solid fa-truck-ramp-box"></i>
               </div>
               <div class="text-xs">
-                <p class="font-bold text-emerald-950">Biên bản bàn giao và tiếp nhận lô hàng (S-15, S-16)</p>
+                <p class="font-bold text-emerald-950">Biên bản bàn giao và tiếp nhận lô hàng</p>
                 <p class="text-[11px] text-emerald-800">Xác nhận chuyển quyền sở hữu hoặc từ chối kèm lý do tối thiểu 10 ký tự.</p>
               </div>
             </div>
@@ -581,18 +621,18 @@ def generate_spa_html():
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Hồ Sơ Nông Sản Đa Tổ Chức</span>
-          <h2 class="text-2xl font-black text-slate-900 mt-1">Danh Sách Lô Hàng Thu Hoạch Đang Lưu Giữ (S-14)</h2>
+          <h2 class="text-2xl font-black text-slate-900 mt-1">Danh Sách Lô Hàng Thu Hoạch Đang Lưu Giữ</h2>
           <p class="text-xs text-slate-500 mt-1">Mã lô ngẫu nhiên đủ dài, tìm kiếm không phân biệt hoa thường, phân trang 20 lô/trang</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <button id="btnCsvBatches" onclick="openCsvImportModal('products')" class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
-            <i class="fa-solid fa-file-csv"></i> Nhập CSV (S-32)
+            <i class="fa-solid fa-file-csv"></i> Nhập CSV
           </button>
           <button id="btnOrgLocations" onclick="openOrganizationLocationsModal()" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
-            <i class="fa-solid fa-store"></i> Điểm Bán / Kho (S-30)
+            <i class="fa-solid fa-store"></i> Điểm Bán / Kho
           </button>
           <button id="btnOpenMergeModal" onclick="openMergeModalForSelected()" class="hidden px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-all">
-            <i class="fa-solid fa-object-group"></i> Gộp Lô Đã Chọn (<span id="mergeSelectedCount">0</span>) (S-19)
+            <i class="fa-solid fa-object-group"></i> Gộp Lô Đã Chọn (<span id="mergeSelectedCount">0</span>)
           </button>
           <button id="addBatchBtn" onclick="handleAddBatchClick()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
             <i class="fa-solid fa-plus"></i> Tạo Lô Thu Hoạch Mới
@@ -612,7 +652,7 @@ def generate_spa_html():
             class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
           />
         </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto">
+        <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap">
           <span class="text-xs text-slate-500 font-medium">Lọc sản phẩm:</span>
           <select id="batchProductFilter" onchange="filterBatchesByProduct(this.value)" class="p-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
             <option value="all">Tất cả sản phẩm</option>
@@ -621,6 +661,11 @@ def generate_spa_html():
             <option value="Dưa Lưới Huỳnh Long">Dưa Lưới Huỳnh Long</option>
             <option value="Bơ Sáp 034 Đặc Sản">Bơ Sáp 034 Đặc Sản</option>
           </select>
+          <select id="batchOrgFilter" onchange="onBatchFiltersChanged()" title="Lọc theo tổ chức / vùng trồng" class="hidden p-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="all">Mọi tổ chức</option>
+          </select>
+          <input type="date" id="batchDateFrom" onchange="onBatchFiltersChanged()" title="Ngày tạo lô từ" class="p-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <input type="date" id="batchDateTo" onchange="onBatchFiltersChanged()" title="Ngày tạo lô đến" class="p-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         </div>
       </div>
 
@@ -634,9 +679,9 @@ def generate_spa_html():
                 <th class="p-3.5">Mã Định Danh Lô</th>
                 <th class="p-3.5">Tên Nông Sản</th>
                 <th class="p-3.5">Thửa Đất Nguồn</th>
-                <th class="p-3.5">Khối Lượng Còn Lại (S-17)</th>
+                <th class="p-3.5">Khối Lượng Còn Lại</th>
                 <th class="p-3.5">Trạng Thái Chuỗi Lạnh</th>
-                <th class="p-3.5">Thời Gian Cách Ly (S-62)</th>
+                <th class="p-3.5">Thời Gian Cách Ly</th>
                 <th class="p-3.5 text-right">Thao Tác</th>
               </tr>
             </thead>
@@ -644,6 +689,28 @@ def generate_spa_html():
               <!-- Rendered dynamically -->
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Phân trang danh sách lô: 20 lô mỗi trang (S-14) -->
+      <div id="batchesPagination" class="flex items-center justify-between gap-2 text-xs flex-wrap"></div>
+
+      <!-- Danh mục sản phẩm trên máy chủ (bao gồm sản phẩm nhập từ CSV) -->
+      <div id="productCatalogSection" class="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-3 scroll-mt-40">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 class="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+              <i class="fa-solid fa-tags text-emerald-600"></i> Danh Mục Sản Phẩm
+              <span id="productCatalogCount" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">0</span>
+            </h3>
+            <p class="text-[11px] text-slate-500 mt-0.5">Sản phẩm khai báo trên máy chủ (kể cả nhập từ CSV). Dùng để chọn khi khởi tạo lô thu hoạch mới.</p>
+          </div>
+          <button id="btnAddProduct" onclick="openAddProductModal()" class="hidden px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i> Thêm Sản Phẩm
+          </button>
+        </div>
+        <div id="productCatalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+          <!-- Rendered dynamically -->
         </div>
       </div>
 
@@ -658,12 +725,12 @@ def generate_spa_html():
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Vùng Trồng Canh Tác</span>
-          <h2 class="text-2xl font-black text-slate-900 mt-1">Khai Báo Thửa Đất Thuộc Tổ Chức Mình (S-06)</h2>
+          <h2 class="text-2xl font-black text-slate-900 mt-1">Khai Báo Thửa Đất Thuộc Tổ Chức Mình</h2>
           <p class="text-xs text-slate-500 mt-1">Diện tích phải &gt; 0, toạ độ GPS dạng số thực, chỉ thấy thửa của tổ chức mình</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button onclick="openCsvImportModal('land_plots')" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
-            <i class="fa-solid fa-file-csv"></i> Nhập Thửa Đất CSV (S-32)
+          <button id="btnCsvPlots" onclick="openCsvImportModal('land_plots')" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-file-csv"></i> Nhập Thửa Đất CSV
           </button>
           <button id="addPlotBtn" onclick="handleAddPlotClick()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
             <i class="fa-solid fa-plus"></i> Khai Báo Thửa Đất Mới
@@ -690,7 +757,7 @@ def generate_spa_html():
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-900/60 text-amber-200 text-xs font-bold border border-amber-400/30">
             <i class="fa-solid fa-shield-virus"></i> Tiêu Chuẩn VietGAP / GlobalGAP
           </div>
-          <h2 class="text-2xl sm:text-3xl font-black text-white mt-2">Nhật Ký Vật Tư & Kiểm Tra Thời Gian Cách Ly (S-62)</h2>
+          <h2 class="text-2xl sm:text-3xl font-black text-white mt-2">Nhật Ký Vật Tư & Kiểm Tra Thời Gian Cách Ly</h2>
           <p class="text-xs sm:text-sm text-amber-100 mt-1">Ghi nhận phân bón, thuốc BVTV đã dùng gắn với một lô hàng cụ thể để kiểm tra thời gian cách ly (PHI) khi thu hoạch</p>
         </div>
         <button id="addMaterialBtn" onclick="handleAddMaterialClick()" class="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-900 font-black rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 whitespace-nowrap">
@@ -713,13 +780,13 @@ def generate_spa_html():
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end bg-slate-50 p-4 rounded-2xl border border-slate-200">
           <div class="sm:col-span-5">
             <label class="block font-bold text-slate-700 text-xs mb-1">Chọn Lô Nông Sản Cần Kiểm Tra</label>
-            <select id="phiCheckBatchSelect" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500">
+            <select id="phiCheckBatchSelect" onchange="clearPhiCheckResult()" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500">
               <!-- Rendered dynamically -->
             </select>
           </div>
           <div class="sm:col-span-4">
             <label class="block font-bold text-slate-700 text-xs mb-1">Ngày Thu Hoạch Dự Kiến</label>
-            <input type="date" id="phiCheckHarvestDate" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500" value="2026-10-20" />
+            <input type="date" id="phiCheckHarvestDate" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500" onchange="clearPhiCheckResult()" />
           </div>
           <div class="sm:col-span-3">
             <button onclick="executePhiCheck()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2">
@@ -737,7 +804,7 @@ def generate_spa_html():
       <!-- S-62 Batch Material Usage Table -->
       <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 class="font-extrabold text-slate-800 text-sm">Nhật Ký Chi Tiết Sử Dụng Vật Tư Gắn Theo Từng Lô Hàng (S-62)</h3>
+          <h3 class="font-extrabold text-slate-800 text-sm">Nhật Ký Chi Tiết Sử Dụng Vật Tư Gắn Theo Từng Lô Hàng</h3>
           <span class="text-xs text-slate-500">Tự động tính ngày an toàn thu hoạch = Ngày sử dụng + Số ngày cách ly</span>
         </div>
         <div class="overflow-x-auto">
@@ -772,7 +839,7 @@ def generate_spa_html():
       
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Luân Chuyển Chuỗi Cung Ứng (User Story S-15, S-16)</span>
+          <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Luân Chuyển Chuỗi Cung Ứng</span>
           <h2 class="text-2xl font-black text-slate-900 mt-1">Bàn Giao Lô Hàng Giữa Các Tổ Chức Độc Lập</h2>
           <p class="text-xs text-slate-500 mt-1">Chặn bàn giao lần hai khi đang chờ duyệt. Bên nhận xác nhận chuyển quyền hoặc từ chối kèm lý do (tối thiểu 10 ký tự) trong cùng giao dịch.</p>
         </div>
@@ -821,7 +888,7 @@ def generate_spa_html():
                 <th class="p-3.5">Nhiệt Độ Xe / Kho Lạnh</th>
                 <th class="p-3.5">Thời Gian Tạo</th>
                 <th class="p-3.5">Trạng Thái Lô</th>
-                <th class="p-3.5 text-right">Hành Động Xác Nhận (S-16)</th>
+                <th class="p-3.5 text-right">Hành Động Xác Nhận</th>
               </tr>
             </thead>
             <tbody id="incomingHandoversTableBody" class="divide-y divide-slate-100 font-medium">
@@ -869,7 +936,7 @@ def generate_spa_html():
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 text-emerald-400 text-xs font-bold border border-slate-700">
             <i class="fa-solid fa-shield-halved"></i> Bảo Vệ Bất Biến (Tamper-Proof)
           </div>
-          <h2 class="text-2xl sm:text-3xl font-black text-white mt-2">Chuỗi Hash Sự Kiện & Kiểm Tra Toàn Vẹn (S-10, S-12)</h2>
+          <h2 class="text-2xl sm:text-3xl font-black text-white mt-2">Chuỗi Hash Sự Kiện & Kiểm Tra Toàn Vẹn</h2>
           <p class="text-xs sm:text-sm text-slate-400 mt-1">Mỗi sự kiện nối hash SHA-256 với sự kiện trước. Thuật toán kiểm tra phát hiện chính xác vị trí bị sửa lén hoặc bị xoá</p>
         </div>
         <button onclick="runHashIntegrityCheck()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
@@ -881,8 +948,8 @@ def generate_spa_html():
       <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 class="font-black text-slate-800 text-base">Sổ Sự Kiện Nối Hash SHA-256 (Append-Only Event Ledger)</h3>
-          <span id="integrityStatusBadge" class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold flex items-center gap-1.5">
-            <i class="fa-solid fa-circle-check"></i> Chuỗi Hash Hợp Lệ 100%
+          <span id="integrityStatusBadge" class="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-question"></i> Chưa kiểm tra
           </span>
         </div>
 
@@ -893,7 +960,7 @@ def generate_spa_html():
                 <th class="p-3">Thứ Tự</th>
                 <th class="p-3">Loại Sự Kiện</th>
                 <th class="p-3">Lô Nông Sản</th>
-                <th class="p-3">Tổ Chức Thực Hiện (S-13)</th>
+                <th class="p-3">Tổ Chức Thực Hiện</th>
                 <th class="p-3">Previous Hash</th>
                 <th class="p-3">Current Hash</th>
                 <th class="p-3 text-right">Trạng Thái</th>
@@ -966,7 +1033,7 @@ def generate_spa_html():
             <!-- Cam kết bảo mật & Chống Scraping (E-08) -->
             <div class="flex items-center justify-center gap-2 mt-4 text-xs text-emerald-200/90 font-medium">
               <i class="fa-solid fa-lock text-emerald-400"></i>
-              <span>Cơ chế bảo vệ dữ liệu chống thu thập tự động (Anti-Scraping E-08 & S-48).</span>
+              <span>Cơ chế bảo vệ dữ liệu chống thu thập tự động (Anti-Scraping).</span>
             </div>
           </div>
 
@@ -986,11 +1053,11 @@ def generate_spa_html():
       <div class="bg-gradient-to-r from-rose-900 via-rose-800 to-amber-950 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-rose-700">
         <div class="space-y-2">
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-700/60 border border-rose-500/30 text-rose-200 text-xs font-bold">
-            <i class="fa-solid fa-triangle-exclamation text-rose-300"></i> Epic E-06: Ứng Phó Khẩn Cấp Sự Cố An Toàn Thực Phẩm
+            <i class="fa-solid fa-triangle-exclamation text-rose-300"></i> Ứng Phó Khẩn Cấp Sự Cố An Toàn Thực Phẩm
           </div>
           <h2 class="text-2xl sm:text-3xl font-black text-white">Quản Lý Thu Hồi Lô Hàng Khẩn Cấp (Recall)</h2>
           <p class="text-xs sm:text-sm text-rose-100/90 max-w-2xl">
-            Khi phát hiện sự cố an toàn thực phẩm, hệ thống lập tức khoanh vùng toàn bộ cây phả hệ hậu duệ qua mọi tầng tách/gộp (S-34, S-35) và tự động khóa quyền Bàn giao, Tách, Gộp (S-38) để bảo vệ sức khỏe người tiêu dùng.
+            Khi phát hiện sự cố an toàn thực phẩm, hệ thống lập tức khoanh vùng toàn bộ cây phả hệ hậu duệ qua mọi tầng tách/gộp và tự động khóa quyền Bàn giao, Tách, Gộp để bảo vệ sức khỏe người tiêu dùng.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
@@ -1021,7 +1088,7 @@ def generate_spa_html():
             </div>
           </div>
           <p class="text-2xl font-black text-amber-700 mt-2" id="kpiTotalAffectedBatches">0 Lô</p>
-          <p class="text-[11px] text-slate-500 mt-1">Cây phả hệ con/cháu (S-34)</p>
+          <p class="text-[11px] text-slate-500 mt-1">Cây phả hệ con/cháu</p>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -1032,7 +1099,7 @@ def generate_spa_html():
             </div>
           </div>
           <p class="text-2xl font-black text-orange-700 mt-2" id="kpiStockToIsolateKg">0 kg</p>
-          <p class="text-[11px] text-orange-600 font-semibold mt-1">Khóa quyền lưu thông (S-38)</p>
+          <p class="text-[11px] text-orange-600 font-semibold mt-1">Khóa quyền lưu thông</p>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -1043,7 +1110,7 @@ def generate_spa_html():
             </div>
           </div>
           <p class="text-2xl font-black text-purple-700 mt-2" id="kpiSoldToConsumersKg">0 kg</p>
-          <p class="text-[11px] text-purple-600 font-semibold mt-1">Cần thông báo thu hồi (S-35)</p>
+          <p class="text-[11px] text-purple-600 font-semibold mt-1">Cần thông báo thu hồi</p>
         </div>
       </div>
 
@@ -1054,7 +1121,7 @@ def generate_spa_html():
             <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
               <i class="fa-solid fa-clipboard-list text-rose-600"></i> Danh Sách Lệnh Thu Hồi Nông Sản Khẩn Cấp
             </h3>
-            <p class="text-xs text-slate-500">Giám sát tiến độ xác nhận cô lập của từng tổ chức theo thời gian thực (S-36, S-37)</p>
+            <p class="text-xs text-slate-500">Giám sát tiến độ xác nhận cô lập của từng tổ chức theo thời gian thực</p>
           </div>
           <button onclick="renderRecallsTab()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
             <i class="fa-solid fa-arrows-rotate"></i> Làm Mới Dữ Liệu
@@ -1068,7 +1135,7 @@ def generate_spa_html():
                 <th class="p-3.5">Mã Lệnh Thu Hồi</th>
                 <th class="p-3.5">Lô Nguồn & Sản Phẩm</th>
                 <th class="p-3.5">Mức Độ</th>
-                <th class="p-3.5">Tiến Độ Xử Lý Các Tổ Chức (S-37)</th>
+                <th class="p-3.5">Tiến Độ Xử Lý Các Tổ Chức</th>
                 <th class="p-3.5 text-right">Kho / Kệ (kg)</th>
                 <th class="p-3.5 text-right">Đã Bán (kg)</th>
                 <th class="p-3.5">Trạng Thái</th>
@@ -1094,19 +1161,19 @@ def generate_spa_html():
       <div class="bg-gradient-to-r from-cyan-900 via-sky-800 to-teal-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="space-y-2">
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-700/60 border border-cyan-500/30 text-cyan-200 text-xs font-bold">
-            <i class="fa-solid fa-snowflake text-cyan-300"></i> Epic E-07: Giám Sát Chuỗi Lạnh & Cảm Biến Nhiệt Độ IoT
+            <i class="fa-solid fa-snowflake text-cyan-300"></i> Giám Sát Chuỗi Lạnh & Cảm Biến Nhiệt Độ IoT
           </div>
           <h2 class="text-2xl sm:text-3xl font-black text-white">Giám Sát Chuỗi Lạnh & Chuyến Vận Chuyển</h2>
           <p class="text-xs sm:text-sm text-cyan-100/90 max-w-2xl">
-            Quản lý chuyến xe lạnh (S-40), tiếp nhận dữ liệu cảm biến IoT theo thời gian thực (S-41), phát hiện vi phạm sốc nhiệt có độ trễ 30 phút và cơ chế gộp dưới 5 phút (S-43), tự động kích hoạt cảnh báo vào chuỗi Hash SHA-256 của toàn bộ lô hàng (S-45).
+            Quản lý chuyến xe lạnh, tiếp nhận dữ liệu cảm biến IoT theo thời gian thực, phát hiện vi phạm sốc nhiệt có độ trễ 30 phút và cơ chế gộp dưới 5 phút, tự động kích hoạt cảnh báo vào chuỗi Hash SHA-256 của toàn bộ lô hàng.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
           <button id="btnCreateColdTrip" onclick="openCreateTripModal()" class="px-4 py-2.5 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
-            <i class="fa-solid fa-truck-ramp-box"></i> Tạo Chuyến Xe Lạnh (S-40)
+            <i class="fa-solid fa-truck-ramp-box"></i> Tạo Chuyến Xe Lạnh
           </button>
           <button id="btnSimulateTelemetryCold" onclick="openSimulateTelemetryModal()" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2">
-            <i class="fa-solid fa-temperature-arrow-up"></i> Giả Lập Cảm Biến (S-41, S-43)
+            <i class="fa-solid fa-temperature-arrow-up"></i> Giả Lập Cảm Biến
           </button>
         </div>
       </div>
@@ -1121,7 +1188,7 @@ def generate_spa_html():
             </div>
           </div>
           <p class="text-2xl font-black text-slate-900 mt-2" id="kpiActiveTrips">0 Chuyến</p>
-          <p class="text-[11px] text-cyan-600 font-semibold mt-1">Trạng thái IN_TRANSIT (S-40)</p>
+          <p class="text-[11px] text-cyan-600 font-semibold mt-1">Trạng thái IN_TRANSIT</p>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -1143,7 +1210,7 @@ def generate_spa_html():
             </div>
           </div>
           <p class="text-2xl font-black text-rose-700 mt-2" id="kpiColdChainViolations">0 Đợt</p>
-          <p class="text-[11px] text-rose-600 font-semibold mt-1">Độ trễ 30 phút & gộp 5p (S-43)</p>
+          <p class="text-[11px] text-rose-600 font-semibold mt-1">Độ trễ 30 phút & gộp 5p</p>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -1154,7 +1221,7 @@ def generate_spa_html():
             </div>
           </div>
           <p class="text-2xl font-black text-teal-700 mt-2" id="kpiTelemetryReadings">0 Điểm</p>
-          <p class="text-[11px] text-teal-600 font-semibold mt-1">Lọc timestamp cũ (S-41)</p>
+          <p class="text-[11px] text-teal-600 font-semibold mt-1">Lọc timestamp cũ</p>
         </div>
       </div>
 
@@ -1165,7 +1232,7 @@ def generate_spa_html():
             <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
               <i class="fa-solid fa-snowflake text-cyan-600"></i> Danh Sách Chuyến Xe Lạnh & Giám Sát Cảm Biến IoT
             </h3>
-            <p class="text-xs text-slate-500">Mỗi tổ chức vận chuyển chỉ quản lý các chuyến của mình (cô lập đa tổ chức E-02)</p>
+            <p class="text-xs text-slate-500">Mỗi tổ chức vận chuyển chỉ quản lý các chuyến của mình (cô lập đa tổ chức)</p>
           </div>
           <button onclick="renderColdChainTab()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
             <i class="fa-solid fa-arrows-rotate"></i> Làm Mới Dữ Liệu
@@ -1181,8 +1248,8 @@ def generate_spa_html():
                 <th class="p-3.5">Đơn Vị Vận Chuyển</th>
                 <th class="p-3.5">Tài Xế</th>
                 <th class="p-3.5">Ngưỡng Nhiệt Độ</th>
-                <th class="p-3.5">Lô Hàng Đang Chở (S-40)</th>
-                <th class="p-3.5 text-center">Vi Phạm (S-43)</th>
+                <th class="p-3.5">Lô Hàng Đang Chở</th>
+                <th class="p-3.5 text-center">Vi Phạm</th>
                 <th class="p-3.5">Trạng Thái</th>
                 <th class="p-3.5 text-right">Thao Tác</th>
               </tr>
@@ -1207,7 +1274,7 @@ def generate_spa_html():
             <span class="w-8 h-8 rounded-xl bg-indigo-500/30 text-indigo-300 flex items-center justify-center text-sm font-black border border-indigo-400/30">
               <i class="fa-solid fa-clock-rotate-left"></i>
             </span>
-            <h2 class="text-xl font-black tracking-tight">Nhật Ký Thao Tác Hệ Thống (S-31)</h2>
+            <h2 class="text-xl font-black tracking-tight">Nhật Ký Thao Tác Hệ Thống</h2>
             <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-400/20 text-indigo-200 border border-indigo-400/30">Audit Security Logs</span>
           </div>
           <p class="text-xs text-slate-300">Truy vết kiểm toán bất biến các sự kiện bảo mật, đăng nhập, phân quyền và giao dịch trong hệ thống.</p>
@@ -1285,7 +1352,7 @@ def generate_spa_html():
         <div class="flex items-center gap-2">
           <span class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center text-sm font-black"><i class="fa-solid fa-truck-ramp-box"></i></span>
           <div>
-            <h3 class="font-extrabold text-slate-900 text-base">Tạo Chuyến Vận Chuyển Lạnh (S-40)</h3>
+            <h3 class="font-extrabold text-slate-900 text-base">Tạo Chuyến Vận Chuyển Lạnh</h3>
             <p class="text-[11px] text-cyan-700 font-semibold">Ghi nhận xe lạnh, tài xế và các lô hàng đang chở</p>
           </div>
         </div>
@@ -1325,7 +1392,7 @@ def generate_spa_html():
       <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
         <button onclick="closeModal('createTripModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs">Hủy</button>
         <button onclick="submitCreateTrip()" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5">
-          <i class="fa-solid fa-check"></i> Tạo Chuyến Xe (S-40)
+          <i class="fa-solid fa-check"></i> Tạo Chuyến Xe
         </button>
       </div>
     </div>
@@ -1341,8 +1408,8 @@ def generate_spa_html():
         <div class="flex items-center gap-2">
           <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-sm font-black"><i class="fa-solid fa-temperature-arrow-up"></i></span>
           <div>
-            <h3 class="font-extrabold text-slate-900 text-base">Giả Lập Cảm Biến Nhiệt Độ IoT (S-41, S-43)</h3>
-            <p class="text-[11px] text-amber-700 font-semibold">Kiểm thử thuật toán độ trễ 30 phút & ghi Hash Chain (S-45)</p>
+            <h3 class="font-extrabold text-slate-900 text-base">Giả Lập Cảm Biến Nhiệt Độ IoT</h3>
+            <p class="text-[11px] text-amber-700 font-semibold">Kiểm thử thuật toán độ trễ 30 phút & ghi Hash Chain</p>
           </div>
         </div>
         <button onclick="closeModal('simulateTelemetryModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -1365,15 +1432,15 @@ def generate_spa_html():
             </button>
             <button type="button" onclick="applyTelemetryPreset('short_spike')" class="p-2.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl text-left">
               <p class="font-bold text-blue-950 flex items-center gap-1.5"><i class="fa-solid fa-door-open text-blue-600"></i> Mở Cửa 15 Phút</p>
-              <p class="text-[10px] text-blue-800">14°C trong 15p &lt; 30p: KHÔNG vi phạm (S-43)</p>
+              <p class="text-[10px] text-blue-800">14°C trong 15p &lt; 30p: KHÔNG vi phạm</p>
             </button>
             <button type="button" onclick="applyTelemetryPreset('long_violation')" class="p-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-left">
               <p class="font-bold text-rose-950 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Hỏng Máy Lạnh 40p</p>
-              <p class="text-[10px] text-rose-800">&gt; 30p: Kích hoạt vi phạm & ghi Hash (S-45)</p>
+              <p class="text-[10px] text-rose-800">&gt; 30p: Kích hoạt vi phạm & ghi Hash</p>
             </button>
             <button type="button" onclick="applyTelemetryPreset('merge_gap')" class="p-2.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl text-left">
               <p class="font-bold text-purple-950 flex items-center gap-1.5"><i class="fa-solid fa-object-group text-purple-600"></i> Cách Nhau 3 Phút</p>
-              <p class="text-[10px] text-purple-800">Gộp 2 lần cách nhau &lt; 5p thành 1 (S-43)</p>
+              <p class="text-[10px] text-purple-800">Gộp 2 lần cách nhau &lt; 5p thành 1</p>
             </button>
           </div>
         </div>
@@ -1387,7 +1454,7 @@ def generate_spa_html():
       <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
         <button onclick="closeModal('simulateTelemetryModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs">Hủy</button>
         <button onclick="submitSimulateTelemetry()" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5">
-          <i class="fa-solid fa-paper-plane"></i> Gửi Telemetry (S-41)
+          <i class="fa-solid fa-paper-plane"></i> Gửi Telemetry
         </button>
       </div>
     </div>
@@ -1428,7 +1495,7 @@ def generate_spa_html():
         <!-- Danh sách lô hàng đang chở -->
         <div class="border border-slate-200 rounded-2xl p-4 bg-white space-y-2">
           <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
-            <i class="fa-solid fa-boxes-stacked text-blue-600"></i> Danh Sách Lô Hàng Đang Chở (User Story S-40):
+            <i class="fa-solid fa-boxes-stacked text-blue-600"></i> Danh Sách Lô Hàng Đang Chở:
           </p>
           <div id="detailTripBatchesList" class="flex flex-wrap gap-2 pt-1">
             <!-- Dynamic badges -->
@@ -1440,7 +1507,7 @@ def generate_spa_html():
           <div class="flex items-center justify-between">
             <div>
               <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
-                <i class="fa-solid fa-chart-line text-cyan-600"></i> Đồ Thị Cảm Biến Nhiệt Độ IoT Theo Thời Gian Thực (S-41, S-43):
+                <i class="fa-solid fa-chart-line text-cyan-600"></i> Đồ Thị Cảm Biến Nhiệt Độ IoT Theo Thời Gian Thực:
               </p>
               <p class="text-[10px] text-slate-500 mt-0.5">Phát hiện sốc nhiệt độ trễ 30 phút & cơ chế gộp gap 5 phút</p>
             </div>
@@ -1465,7 +1532,7 @@ def generate_spa_html():
         <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-3">
           <div class="flex items-center justify-between">
             <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
-              <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Các Lần Vi Phạm Chuỗi Lạnh Liên Tục &gt; 30 Phút (S-43):
+              <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Các Lần Vi Phạm Chuỗi Lạnh Liên Tục &gt; 30 Phút:
             </p>
             <span id="detailViolationsCountBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">0 Vi phạm</span>
           </div>
@@ -1477,7 +1544,7 @@ def generate_spa_html():
         <!-- Danh sách điểm đo gần nhất -->
         <div class="border border-slate-200 rounded-2xl p-4 bg-white space-y-2">
           <p class="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
-            <i class="fa-solid fa-list-check text-teal-600"></i> Danh Sách Điểm Đo Cảm Biến Telemetry Gần Nhất (S-41):
+            <i class="fa-solid fa-list-check text-teal-600"></i> Danh Sách Điểm Đo Cảm Biến Telemetry Gần Nhất:
           </p>
           <div id="detailTripTelemetryContainer" class="max-h-36 overflow-y-auto space-y-1 font-mono text-[11px]">
             <!-- Dynamic telemetry readings -->
@@ -1505,7 +1572,7 @@ def generate_spa_html():
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-lg font-black tracking-tight">Cửa Hàng & Kho Trực Thuộc</h3>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-400/20 text-teal-200 border border-teal-400/30">User Story S-30</span>
+
             </div>
             <p class="text-xs text-teal-100 font-medium">Khai báo và quản lý các địa điểm, điểm bán lẻ và kho con của tổ chức</p>
           </div>
@@ -1616,7 +1683,7 @@ def generate_spa_html():
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-lg font-black tracking-tight">Chuyển Về Cửa Hàng</h3>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-400/20 text-blue-200 border border-blue-400/30">User Story S-30</span>
+
             </div>
             <p class="text-xs text-blue-100 font-medium">Điều chuyển lô hàng nội bộ về quầy kệ cửa hàng hoặc kho con</p>
           </div>
@@ -1650,8 +1717,8 @@ def generate_spa_html():
           </div>
 
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Khối Lượng Điều Chuyển (kg) *</label>
-            <input type="number" step="0.01" min="0.01" id="transferQuantityInput" required placeholder="Nhập số lượng kg" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-blue-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            <label class="block font-bold text-slate-700 mb-1">Khối Lượng Điều Chuyển (kg) <span class="font-normal text-slate-400">- chuyển toàn bộ lô</span></label>
+            <input type="number" step="0.01" min="0.01" id="transferQuantityInput" readonly title="Máy chủ ghi nhận điều chuyển cả lô về cửa hàng" placeholder="Khối lượng lô" class="w-full p-2.5 bg-slate-100 cursor-not-allowed border border-slate-200 rounded-xl text-xs font-bold text-blue-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
           </div>
 
           <div>
@@ -1691,7 +1758,7 @@ def generate_spa_html():
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-lg font-black tracking-tight">Nhập Dữ Liệu Từ Tệp CSV</h3>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-400/30">User Story S-32</span>
+
             </div>
             <p class="text-xs text-emerald-100 font-medium">Import danh mục sản phẩm hoặc thửa đất vào cơ sở dữ liệu server</p>
           </div>
@@ -1762,7 +1829,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
               Đóng
             </button>
             <button type="submit" id="btnSubmitCsvImport" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
-              <i class="fa-solid fa-cloud-arrow-up"></i> Bắt Đầu Nhập Dữ Liệu (S-32)
+              <i class="fa-solid fa-cloud-arrow-up"></i> Bắt Đầu Nhập Dữ Liệu
             </button>
           </div>
         </form>
@@ -1789,7 +1856,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-lg font-black tracking-tight">Đăng Nhập Chuỗi Cung Ứng</h3>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-400/30">User Story S-04</span>
+
             </div>
             <p class="text-xs text-emerald-100 font-medium">Bảo mật argon2id • Khóa tạm 15 phút sau 5 lần sai • Cookie HttpOnly & Secure</p>
           </div>
@@ -1834,7 +1901,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           <div>
             <label class="block font-bold text-slate-700 mb-1 flex items-center justify-between">
               <span>Mật Khẩu</span>
-              <span class="text-[10px] text-slate-400 font-normal">Băm mật khẩu argon2id (NFR S-04)</span>
+              <span class="text-[10px] text-slate-400 font-normal">Băm mật khẩu argon2id</span>
             </label>
             <div class="relative">
               <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -1878,7 +1945,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         <div class="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 space-y-2.5">
           <div class="flex items-center justify-between">
             <span class="font-extrabold text-amber-900 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-              <i class="fa-solid fa-vial text-amber-600"></i> Công Cụ Kiểm Tra Tiêu Chuẩn S-04 (Task T-10):
+              <i class="fa-solid fa-vial text-amber-600"></i> Công Cụ Kiểm Tra Tiêu Chuẩn:
             </span>
             <span class="text-[10px] text-amber-700 font-bold bg-amber-100 px-2 py-0.5 rounded-full">Khóa Tạm 15 Phút</span>
           </div>
@@ -1890,7 +1957,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
               type="button" 
               onclick="simulateLockoutCurrentEmail()"
               class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl text-[11px] flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
-              <i class="fa-solid fa-lock"></i> Giả lập sai 5 lần (Test S-04)
+              <i class="fa-solid fa-lock"></i> Giả lập sai 5 lần
             </button>
             <button 
               type="button" 
@@ -1934,7 +2001,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 p-6 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
-          <i class="fa-solid fa-shield-virus text-amber-600"></i> Ghi Nhận Vật Tư Cho Lô Hàng (S-62)
+          <i class="fa-solid fa-shield-virus text-amber-600"></i> Ghi Nhận Vật Tư Cho Lô Hàng
         </h3>
         <button onclick="closeModal('recordBatchMaterialModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
@@ -1970,7 +2037,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1">Ngày Bón / Phun Thuốc</label>
-            <input type="date" id="modal_mat_applied_date" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" value="2026-10-15" />
+            <input type="date" id="modal_mat_applied_date" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Số Ngày Cách Ly (PHI)</label>
@@ -2001,7 +2068,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
   <div id="addPlotModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
     <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 p-6 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="font-extrabold text-slate-900 text-base">Khai Báo Thửa Đất Vùng Trồng (S-06)</h3>
+        <h3 id="addPlotModalTitle" class="font-extrabold text-slate-900 text-base">Khai Báo Thửa Đất Vùng Trồng</h3>
         <button onclick="closeModal('addPlotModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
@@ -2051,13 +2118,13 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
   <div id="addBatchModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
     <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 p-6 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="font-extrabold text-slate-900 text-base">Khởi Tạo Lô Nông Sản Thu Hoạch Mới (S-08)</h3>
+        <h3 class="font-extrabold text-slate-900 text-base">Khởi Tạo Lô Nông Sản Thu Hoạch Mới</h3>
         <button onclick="closeModal('addBatchModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Mã Lô Định Danh (8 ký tự ngẫu nhiên an toàn S-08)</label>
+          <label class="block font-bold text-slate-700 mb-1">Mã Lô Định Danh (8 ký tự ngẫu nhiên an toàn)</label>
           <div class="flex gap-2">
             <input type="text" id="batch_code" readonly class="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl font-mono text-emerald-800 font-bold text-sm tracking-widest" value="K7M9P3NX" />
             <button onclick="generateRandomBatchCode()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-xs flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate"></i> Đổi Mã</button>
@@ -2065,7 +2132,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         </div>
         <div>
           <label class="block font-bold text-slate-700 mb-1">Tên Nông Sản</label>
-          <input type="text" id="batch_product" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" value="Cà Chua Beef Hữu Cơ" />
+          <select id="batch_product" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"></select>
+          <p class="text-[10px] text-slate-400 mt-1">Chọn từ danh mục sản phẩm dùng chung do Quản trị hệ thống khai báo.</p>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -2075,9 +2143,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           <div>
             <label class="block font-bold text-slate-700 mb-1">Thửa Đất Canh Tác</label>
             <select id="batch_plot" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
-              <option value="Thửa A1">Thửa A1 - Nhà Màng Cà Chua Beef</option>
-              <option value="Thửa B2">Thửa B2 - Vườn Dâu Tây Hữu Cơ</option>
-              <option value="Thửa C1">Thửa C1 - Khu Dưa Lưới Huỳnh Long</option>
+              <option value="">-- Không gán thửa --</option>
             </select>
           </div>
         </div>
@@ -2167,14 +2233,14 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
-          <i class="fa-solid fa-truck-moving text-emerald-600"></i> Bàn Giao Lô Hàng Sang Đơn Vị Khác (S-15)
+          <i class="fa-solid fa-truck-moving text-emerald-600"></i> Bàn Giao Lô Hàng Sang Đơn Vị Khác
         </h3>
         <button onclick="closeModal('handoverModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
       <div class="space-y-3 text-xs">
         <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-900">
-          <p class="font-bold">Quy định chuyển giao User Story S-15:</p>
+          <p class="font-bold">Quy định chuyển giao:</p>
           <p class="text-[11px] mt-0.5">Khi tạo lệnh, lô chuyển sang trạng thái "chờ xác nhận". Đơn vị bạn vẫn tạm thời giữ quyền sở hữu cho tới khi bên nhận bấm Xác Nhận. Hệ thống chặn tạo lệnh bàn giao thứ hai.</p>
         </div>
 
@@ -2203,7 +2269,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
         <button onclick="closeModal('handoverModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs">Hủy</button>
         <button onclick="submitHandoverCreate()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5">
-          <i class="fa-solid fa-paper-plane"></i> Gửi Lệnh Bàn Giao (S-15)
+          <i class="fa-solid fa-paper-plane"></i> Gửi Lệnh Bàn Giao
         </button>
       </div>
     </div>
@@ -2215,14 +2281,14 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2 text-rose-600">
-          <i class="fa-solid fa-triangle-exclamation"></i> Từ Chối Tiếp Nhận Lô Hàng (S-16)
+          <i class="fa-solid fa-triangle-exclamation"></i> Từ Chối Tiếp Nhận Lô Hàng
         </h3>
         <button onclick="closeModal('rejectHandoverModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
       <div class="space-y-3 text-xs">
         <div class="p-3 bg-rose-50 rounded-2xl border border-rose-200 text-rose-900">
-          <p class="font-bold">Quy định User Story S-16:</p>
+          <p class="font-bold">Quy định:</p>
           <p class="text-[11px] mt-0.5">Bên nhận bắt buộc phải nhập lý do từ chối (tối thiểu 10 ký tự). Lô vẫn thuộc quyền giữ của bên giao và hệ thống ghi nhận sự kiện từ chối kèm lý do vào chuỗi hash.</p>
         </div>
 
@@ -2283,14 +2349,30 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           <div><p class="text-slate-400 uppercase text-[10px]">Tiêu Chuẩn</p><p class="font-bold text-emerald-600" id="modalBatchCert">VietGAP</p></div>
         </div>
 
+        <!-- Cảnh báo công khai: lô đang bị thu hồi / từng vi phạm chuỗi lạnh (S-49) -->
+        <div id="modalBatchPublicAlerts" class="hidden space-y-2"></div>
+
+        <!-- Lô gộp từ nhiều nguồn: hiện mọi vùng trồng gốc (S-47) -->
+        <div id="modalBatchOriginsBox" class="hidden p-3 bg-emerald-50/60 rounded-2xl border border-emerald-200">
+          <p class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider mb-1.5"><i class="fa-solid fa-seedling mr-1"></i> Các vùng trồng gốc của lô</p>
+          <div id="modalBatchOriginsList" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Thông tin nội bộ của lô: chỉ đơn vị trong chuỗi (S-25) -->
+        <div id="modalBatchInternalInfo" class="hidden grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl border border-slate-200 bg-white">
+          <div><p class="text-slate-400 uppercase text-[10px]">Đơn Vị Đang Giữ</p><p class="font-bold text-slate-800" id="modalBatchHolder">--</p></div>
+          <div><p class="text-slate-400 uppercase text-[10px]">Thửa Đất Gốc</p><p class="font-bold text-slate-800" id="modalBatchPlot">--</p></div>
+          <div><p class="text-slate-400 uppercase text-[10px]">Ngày Tạo Lô</p><p class="font-bold text-slate-800" id="modalBatchCreatedAt">--</p></div>
+        </div>
+
         <!-- Khối lượng lưu kho & Khối lượng còn lại theo S-17 -->
-        <div class="bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-200 flex items-center justify-between">
+        <div id="modalBatchStorageBox" class="bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-200 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
               <i class="fa-solid fa-scale-balanced"></i>
             </div>
             <div>
-              <p class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Khối Lượng Lưu Kho (User Story S-17, S-18, S-19)</p>
+              <p class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Khối Lượng Lưu Kho</p>
               <p class="text-sm font-extrabold text-emerald-950">
                 Còn lại: <span id="modalBatchRemainingQty" class="text-emerald-700 font-black">100.0</span> <span id="modalBatchUnit">kg</span> 
                 <span class="text-xs text-slate-400 font-normal">(Ban đầu: <span id="modalBatchInitialQty">100.0</span> <span id="modalBatchUnit2">kg</span>)</span>
@@ -2303,22 +2385,34 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         </div>
 
         <!-- PHI Badge in Modal (S-62) -->
-        <div class="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between">
+        <div id="modalBatchPhiBox" class="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             <i class="fa-solid fa-shield-virus text-emerald-600 text-base"></i>
             <div>
-              <p class="font-bold text-emerald-950">Kiểm Soát Thời Gian Cách Ly (S-62)</p>
+              <p class="font-bold text-emerald-950">Kiểm Soát Thời Gian Cách Ly</p>
               <p class="text-[11px] text-emerald-800" id="modalBatchPhiText">Đã hoàn thành thời gian cách ly thuốc BVTV an toàn thu hoạch.</p>
             </div>
           </div>
-          <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">Đạt Chuẩn VietGAP</span>
+          <span id="modalBatchPhiBadge" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">Đạt Chuẩn VietGAP</span>
+        </div>
+
+        <!-- DÒNG THỜI GIAN SỰ KIỆN CỦA LÔ (S-13) KÈM CẢNH BÁO TOÀN VẸN (S-12) -->
+        <div id="modalBatchTimelineSection" class="hidden border border-slate-200 rounded-2xl p-4 bg-white space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-clock-rotate-left text-emerald-600"></i> Dòng Thời Gian Sự Kiện
+            </h4>
+            <span id="modalBatchTimelineStatus" class="text-[10px] text-slate-400 font-medium">Đang tải...</span>
+          </div>
+          <div id="modalBatchTimelineAlert" class="hidden"></div>
+          <ol id="modalBatchTimelineList" class="space-y-2 max-h-72 overflow-y-auto pr-1"></ol>
         </div>
 
         <!-- CÂY PHẢ HỆ / LỊCH SỬ TÁCH - GỘP (GENEALOGY LINEAGE TREE - S-17, S-18, S-19) -->
         <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-3">
           <div class="flex items-center justify-between">
             <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
-              <i class="fa-solid fa-sitemap text-indigo-600"></i> Cây Phả Hệ Nguồn Gốc (Genealogy Tree - S-17, S-18, S-19)
+              <i class="fa-solid fa-sitemap text-indigo-600"></i> Cây Phả Hệ Nguồn Gốc (Genealogy Tree)
             </h4>
             <span id="modalBatchLineageStatus" class="text-[10px] text-slate-400 font-medium">Đang tải phả hệ...</span>
           </div>
@@ -2337,45 +2431,66 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           </div>
         </div>
 
+        <!-- BẢN ĐỒ HÀNH TRÌNH: VÙNG TRỒNG GỐC -> ĐIỂM PHÂN PHỐI (S-60) -->
+        <div id="modalBatchMapSection" class="hidden space-y-2">
+          <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">
+            <i class="fa-solid fa-map-location-dot text-emerald-600 mr-1.5"></i> Bản Đồ Hành Trình
+          </h4>
+          <div id="modalBatchMap" class="w-full h-64 rounded-2xl border border-slate-200 overflow-hidden z-0"></div>
+          <p class="text-[10px] text-slate-400">Vị trí hiển thị ở mức xã/huyện hoặc trung tâm tỉnh, không phải toạ độ chính xác của thửa đất. Bản đồ © OpenStreetMap.</p>
+        </div>
+
         <!-- Thông báo bảo vệ dữ liệu chống scraping -->
         <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-[11px] text-slate-500 flex items-center gap-2">
           <i class="fa-solid fa-shield-halved text-emerald-600"></i>
-          <span>Hệ thống bảo vệ dữ liệu thương mại nội bộ và chống dò quét tự động (S-48 / E-08).</span>
+          <span>Hệ thống bảo vệ dữ liệu thương mại nội bộ và chống dò quét tự động.</span>
         </div>
       </div>
 
       <!-- Footer Buttons: Nút Tách Lô (S-17), Nút Bàn Giao (S-15) và Nút Đóng -->
       <div class="flex items-center justify-between pt-3 border-t border-slate-100 gap-2 flex-wrap">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <button 
+            id="modalBtnQr" 
+            onclick="openBatchQrModal()" 
+            class="hidden px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-qrcode"></i> Mã QR In Tem
+          </button>
+          <button 
+            id="modalBtnDossier" 
+            onclick="exportInspectionDossier()" 
+            class="hidden px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-file-pdf"></i> Xuất Hồ Sơ Kiểm Tra
+          </button>
           <button 
             id="modalBtnSplit" 
             onclick="openSplitModalForCurrentBatch()" 
             class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
-            <i class="fa-solid fa-scissors"></i> Tách Lô (S-17)
+            <i class="fa-solid fa-scissors"></i> Tách Lô
           </button>
           <button 
             id="modalBtnHandover" 
             onclick="openHandoverForCurrentBatch()" 
             class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
-            <i class="fa-solid fa-truck-moving"></i> Bàn Giao Lô Hàng (S-15)
+            <i class="fa-solid fa-truck-moving"></i> Bàn Giao Lô Hàng
           </button>
           <button 
             id="modalBtnTransferLocation" 
             onclick="openTransferLocationForCurrentBatch()" 
             class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
-            <i class="fa-solid fa-store"></i> Chuyển Cửa Hàng (S-30)
+            <i class="fa-solid fa-store"></i> Chuyển Cửa Hàng
           </button>
           <button 
             id="modalBtnConsume" 
             onclick="confirmConsumeCurrentBatch()" 
             class="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
-            <i class="fa-solid fa-cart-shopping"></i> Ghi Nhận Đã Bán Hết (S-29)
+            <i class="fa-solid fa-cart-shopping"></i> Ghi Nhận Đã Bán Hết
           </button>
           <button 
             id="modalBtnRecall" 
             onclick="openRecallModalForCurrentBatch()" 
             class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
-            <i class="fa-solid fa-triangle-exclamation"></i> Thu Hồi Khẩn Cấp (S-33)
+            <i class="fa-solid fa-triangle-exclamation"></i> Thu Hồi Khẩn Cấp
           </button>
         </div>
         <button onclick="closeModal('batchDetailModal')" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
@@ -2447,7 +2562,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             <i class="fa-solid fa-triangle-exclamation"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-slate-900 text-base">Mở Lệnh Thu Hồi Khẩn Cấp (S-33)</h3>
+            <h3 class="font-extrabold text-slate-900 text-base">Mở Lệnh Thu Hồi Khẩn Cấp</h3>
             <p class="text-[11px] text-slate-500">Kích hoạt khoanh vùng truy xuôi hậu duệ và chặn lan rộng chuỗi cung ứng</p>
           </div>
         </div>
@@ -2501,7 +2616,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
       <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-[11px] text-amber-900 space-y-1">
         <p class="font-bold flex items-center gap-1.5 text-amber-950">
-          <i class="fa-solid fa-lock text-amber-600"></i> Cơ chế Chặn Lan Rộng (S-38):
+          <i class="fa-solid fa-lock text-amber-600"></i> Cơ chế Chặn Lan Rộng:
         </p>
         <p>Hệ thống sẽ <strong>khóa tức thì</strong> quyền Bàn giao, Tách lô và Gộp lô đối với toàn bộ các lô con cháu liên quan.</p>
       </div>
@@ -2540,7 +2655,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
       <!-- Lý do thu hồi -->
       <div class="p-3.5 bg-rose-50 rounded-2xl border border-rose-200 space-y-1">
-        <span class="text-[10px] uppercase font-bold text-rose-800">Lý do thu hồi (S-33):</span>
+        <span class="text-[10px] uppercase font-bold text-rose-800">Lý do thu hồi:</span>
         <p id="recallDetailReason" class="text-xs text-rose-950 font-medium">...</p>
       </div>
 
@@ -2581,7 +2696,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       <!-- DANH SÁCH TOÀN BỘ CÁC LÔ CON CHÁU BỊ KHOANH VÙNG (S-34) -->
       <div class="space-y-2">
         <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
-          <i class="fa-solid fa-network-wired text-rose-600"></i> Danh Sách Lô Bị Khoanh Vùng Qua Mọi Tầng Tách/Gộp (S-34)
+          <i class="fa-solid fa-network-wired text-rose-600"></i> Danh Sách Lô Bị Khoanh Vùng Qua Mọi Tầng Tách/Gộp
         </h4>
         <div class="border border-slate-200 rounded-2xl overflow-hidden max-h-60 overflow-x-auto overflow-y-auto w-full">
           <table class="w-full text-left text-xs">
@@ -2628,7 +2743,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             <i class="fa-solid fa-scissors"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-slate-900 text-base">Tách Lô Nông Sản (S-17, S-18)</h3>
+            <h3 class="font-extrabold text-slate-900 text-base">Tách Lô Nông Sản</h3>
             <p class="text-[11px] text-slate-500">Khóa dòng SELECT ... FOR UPDATE chống race condition khi 2 người cùng tách</p>
           </div>
         </div>
@@ -2690,7 +2805,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
         <button type="button" onclick="closeModal('splitBatchModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold">Hủy</button>
         <button type="button" id="btnSubmitSplit" onclick="submitSplitBatch()" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5">
-          <i class="fa-solid fa-check"></i> Xác Nhận Tách Lô (S-17)
+          <i class="fa-solid fa-check"></i> Xác Nhận Tách Lô
         </button>
       </div>
     </div>
@@ -2709,7 +2824,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             <i class="fa-solid fa-object-group"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-slate-900 text-base">Gộp Lô Nông Sản Cùng Loại (S-19)</h3>
+            <h3 class="font-extrabold text-slate-900 text-base">Gộp Lô Nông Sản Cùng Loại</h3>
             <p class="text-[11px] text-slate-500">Khóa dòng theo thứ tự ID cố định tránh deadlock (ORDER BY id ASC)</p>
           </div>
         </div>
@@ -2723,7 +2838,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           <p id="mergeCommonProduct" class="font-extrabold text-indigo-950 text-sm">...</p>
         </div>
         <span class="px-2.5 py-1 bg-white text-indigo-800 rounded-full font-bold text-[10px] border border-indigo-200">
-          CÙNG LOẠI SẢN PHẨM (S-19)
+          CÙNG LOẠI SẢN PHẨM
         </span>
       </div>
 
@@ -2758,12 +2873,122 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
         <button type="button" onclick="closeModal('mergeBatchModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold">Hủy</button>
         <button type="button" id="btnSubmitMerge" onclick="submitMergeBatches()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5">
-          <i class="fa-solid fa-check"></i> Xác Nhận Gộp Lô (S-19)
+          <i class="fa-solid fa-check"></i> Xác Nhận Gộp Lô
         </button>
       </div>
     </div>
   </div>
 
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: MÃ QR IN TEM CHO LÔ HÀNG (S-46)                                       -->
+  <!-- ============================================================================ -->
+  <div id="batchQrModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h3 class="font-extrabold text-slate-900 text-base">Mã QR In Tem Bao Bì</h3>
+          <p class="text-[11px] text-slate-500">Lô <span id="batchQrCode" class="font-mono font-bold text-emerald-700">--</span></p>
+        </div>
+        <button onclick="closeModal('batchQrModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div id="batchQrImage" class="flex items-center justify-center p-3 bg-white rounded-2xl border border-slate-200"></div>
+      <p class="text-[11px] text-slate-500 break-all">Đường dẫn công khai: <span id="batchQrUrl" class="font-mono text-slate-700">--</span></p>
+      <p class="text-[10px] text-slate-400">In ở kích thước tối thiểu 3 cm × 3 cm để điện thoại quét được.</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="downloadBatchQr('png')" class="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-download"></i> Tải PNG</button>
+        <button onclick="downloadBatchQr('svg')" class="py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-download"></i> Tải SVG</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: HỒ SƠ KIỂM TRA TRUY XUẤT NGUỒN GỐC CHÍNH THỨC (S-52 & S-53)          -->
+  <!-- ============================================================================ -->
+  <div id="inspectionDossierModal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+      <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 px-6 py-4 text-white flex items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-file-shield text-amber-300"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm sm:text-base tracking-tight">Hồ Sơ Kiểm Tra Truy Xuất Nguồn Gốc Chính Thức</h3>
+            <p class="text-[11px] text-indigo-200 font-mono" id="dossierModalSubtitle">Đang tổng hợp dữ liệu chuỗi băm SHA-256...</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button type="button" onclick="downloadInspectionDossierHtml()" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+            <i class="fa-solid fa-download"></i> Tải Hồ Sơ (.html)
+          </button>
+          <button type="button" onclick="printInspectionDossier()" class="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+            <i class="fa-solid fa-print"></i> In / Lưu PDF
+          </button>
+          <button type="button" onclick="openInspectionDossierNewTab()" class="px-3 py-2 bg-white/15 hover:bg-white/25 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer" title="Mở bản hồ sơ độc lập trong tab mới">
+            <i class="fa-solid fa-up-right-from-square"></i> Mở Tab Mới
+          </button>
+          <button type="button" onclick="closeModal('inspectionDossierModal')" class="ml-1 w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="inspectionDossierBody" class="p-6 overflow-y-auto space-y-5 text-xs bg-slate-50 flex-1">
+        <!-- Nội dung hồ sơ kiểm tra được dựng động tại đây -->
+      </div>
+
+      <div class="px-6 py-3.5 bg-white border-t border-slate-200 flex items-center justify-between gap-2 flex-wrap shrink-0">
+        <span class="text-[11px] text-slate-500 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-check text-emerald-600"></i>
+          Hồ sơ kèm chữ ký băm SHA-256 cuối chuỗi phục vụ đối chiếu thanh tra độc lập.
+        </span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="downloadInspectionDossierHtml()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-file-arrow-down"></i> Tải Tệp Hồ Sơ
+          </button>
+          <button type="button" onclick="printInspectionDossier()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-print"></i> In / Lưu PDF
+          </button>
+          <button type="button" onclick="closeModal('inspectionDossierModal')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs cursor-pointer">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <iframe id="dossierPrintFrame" class="hidden" title="Khung in hồ sơ kiểm tra"></iframe>
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: THÊM SẢN PHẨM VÀO DANH MỤC DÙNG CHUNG (S-07) - CHỈ QUẢN TRỊ HỆ THỐNG   -->
+  <!-- ============================================================================ -->
+  <div id="addProductModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-extrabold text-slate-900 text-base">Thêm Sản Phẩm Vào Danh Mục</h3>
+        <button onclick="closeModal('addProductModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Tên Sản Phẩm *</label>
+        <input type="text" id="product_name_input" maxlength="200" placeholder="VD: Cà Chua Beef Hữu Cơ" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" />
+      </div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Đơn Vị Tính *</label>
+        <select id="product_unit_input" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+          <option value="kg">kg</option>
+          <option value="tấn">tấn</option>
+          <option value="thùng">thùng</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Mô Tả</label>
+        <input type="text" id="product_desc_input" maxlength="1000" placeholder="Giống, quy chuẩn..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeModal('addProductModal')" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold">Hủy</button>
+        <button onclick="saveProductSubmit()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md">Lưu Sản Phẩm</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= JAVASCRIPT SUPPLY CHAIN STATE ENGINE ================= -->
   <script>
@@ -2937,6 +3162,12 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
 
 
+      // S-04: phiên hết hạn khi đang đăng nhập -> mời đăng nhập lại và quay về đúng trang đang xem
+      const activeTokenNow = (state.currentUser && state.currentUser.token) || localStorage.getItem("app_access_token");
+      if (res.status === 401 && state.currentUser && token && activeTokenNow === token) {
+        handleSessionExpired();
+      }
+
       if (!res.ok) {
         let errorDetail = `Lỗi máy chủ (${res.status}: ${res.statusText})`;
         try {
@@ -2949,7 +3180,24 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         throw err;
       }
 
-      return await res.json();
+      // 204 No Content (vd. DELETE thành công) không có thân phản hồi: không được gọi res.json()
+      if (res.status === 204) return null;
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    }
+
+    let sessionExpiredNotified = false;
+    function handleSessionExpired() {
+      if (sessionExpiredNotified) return;
+      sessionExpiredNotified = true;
+      state.currentUser = null;
+      localStorage.removeItem("app_access_token");
+      localStorage.removeItem("app_current_user");
+      saveAppState(state);
+      updateAuthHeaderUI();
+      openLoginModal(state.activeTab || 'batches');
+      showToast("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.", "info");
+      setTimeout(() => { sessionExpiredNotified = false; }, 5000);
     }
 
     // State Helper
@@ -2971,13 +3219,42 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     }
 
     let state = getAppState();
+    let loadDataGeneration = 0;
+
+    function getBatchLockState(batchOrCode, recallNotice = null) {
+      const b = typeof batchOrCode === "string"
+        ? (state.batches || []).find(x => (x.code || x.batch_code || "").toLowerCase() === batchOrCode.toLowerCase())
+        : batchOrCode;
+      const code = (b && (b.code || b.batch_code)) || (typeof batchOrCode === "string" ? batchOrCode : "");
+      const st = String((b && b.status) || "").toLowerCase();
+      const remQty = b ? (b.remaining_qty !== undefined ? b.remaining_qty : (b.remaining_quantity !== undefined ? b.remaining_quantity : (b.qty || 0))) : 0;
+      const inActiveRecall = (state.recalls || []).some(r =>
+        ["ACTIVE", "IN_PROGRESS"].includes(String(r.status || "").toUpperCase()) &&
+        (r.root_batch_code === code || (r.affected_batches || []).some(ab => (ab.batch_code || ab.code) === code))
+      );
+      const isRecalled = Boolean(recallNotice) || inActiveRecall || st.includes("thu hồi") || st.includes("recalled") || st.includes("phong tỏa");
+      const isPendingHandover = st.includes("chờ xác nhận") || st.includes("pending") ||
+        (state.handovers || []).some(h => (h.batch_code || "").toLowerCase() === code.toLowerCase() && h.status === "PENDING");
+      const isDepleted = ["consumed", "sold_out"].includes(st) || st.includes("đã bán hết") || remQty <= 0;
+      return { isRecalled, isPendingHandover, isDepleted, remQty, rawStatus: st };
+    }
 
     /**
      * HÀM NẠP TOÀN BỘ DỮ LIỆU THẬT TỪ CƠ SỞ DỮ LIỆU BACKEND
      */
     async function loadServerData() {
+      const myGen = ++loadDataGeneration;
       const roleKey = state.currentRole || "farm";
       const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+
+      // Người tiêu dùng chưa đăng nhập chỉ dùng tra cứu công khai: không gọi các API nội bộ (đều trả 401)
+      if (roleKey === "consumer" && !state.currentUser) {
+        Object.assign(state, { batches: [], plots: [], handovers: [], hashEvents: [], products: [], materialLogs: [], recalls: [] });
+        saveAppState(state);
+        renderOverviewTab();
+        renderRecallAlertBanner();
+        return;
+      }
 
       // 1. Tải danh sách lô hàng thật
       try {
@@ -2998,8 +3275,9 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           status: b.status === "active" ? "Đang lưu kho" : (b.status || "Đang lưu kho"),
           temp: "4.0°C",
           cert: "VietGAP",
-          plot: b.land_plot_name || (b.land_plot_id ? `Thửa #${b.land_plot_id}` : "Thửa liên kết"),
-          land_plot_id: b.land_plot_id
+          plot: b.land_plot_name || null,
+          land_plot_id: b.land_plot_id,
+          created_at: b.created_at || null
         }));
       } catch(err) {
         if (roleKey !== 'consumer') {
@@ -3039,7 +3317,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           status: h.status,
           temp: h.temperature || "4.0°C",
           reject_reason: h.reject_reason,
-          created_at: h.created_at ? h.created_at.replace('T', ' ').substring(0, 16) : ''
+          created_at: h.created_at ? h.created_at.replace('T', ' ').substring(0, 16) : '',
+          created_raw: h.created_at || null,
+          has_cold_chain_violation: !!h.has_cold_chain_violation,
+          cold_chain_warning: h.cold_chain_warning || ''
         }));
       } catch(err) {
         state.handovers = [];
@@ -3049,6 +3330,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       try {
         const rawEvents = await apiFetch("/api/v1/chain-events?limit=100");
         state.hashEvents = rawEvents.map((e, idx) => ({
+          id: e.id,
+          batch_id: e.batch_id,
           index: idx + 1,
           event_type: e.event_type,
           batch_code: e.batch_code || `ID #${e.batch_id}`,
@@ -3068,6 +3351,28 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         state.products = [];
       }
 
+      // 5b. Tải nhật ký sử dụng vật tư / thuốc BVTV thật (phục vụ kiểm tra thời gian cách ly PHI)
+      try {
+        const rawLogs = await apiFetch("/api/v1/batches/materials/all-logs?limit=500");
+        const codeById = {};
+        (state.batches || []).forEach(b => { codeById[b.id] = b.code; });
+        state.materialLogs = (rawLogs || []).map(m => ({
+          id: m.id,
+          batch_id: m.batch_id,
+          batch_code: codeById[m.batch_id] || `Lô #${m.batch_id}`,
+          material_name: m.material_name,
+          category: m.category,
+          dosage: m.dosage,
+          applied_date: m.applied_date,
+          isolation_days: m.isolation_days,
+          safe_harvest_date: m.safe_harvest_date,
+          applied_by: m.applied_by || "",
+          notes: m.notes || ""
+        }));
+      } catch(err) {
+        state.materialLogs = [];
+      }
+
       // 6. Tải danh sách thu hồi thật
       try {
         const rawRecalls = await apiFetch("/api/v1/recalls");
@@ -3078,14 +3383,41 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           reason: r.reason,
           severity: r.severity,
           status: r.status,
-          created_at: r.created_at ? r.created_at.replace('T', ' ').substring(0, 16) : ''
+          created_at: r.created_at ? r.created_at.replace('T', ' ').substring(0, 16) : '',
+          organization_actions: r.organization_actions || [],
+          affected_batches: r.affected_batches || []
         }));
       } catch(err) {
         state.recalls = [];
       }
 
+      if (myGen !== loadDataGeneration) return;
+
+      // Đồng bộ trạng thái lô đang nằm trong lệnh thu hồi hiệu lực hoặc đang chờ xác nhận bàn giao
+      const activeRecalledCodes = new Set();
+      (state.recalls || []).forEach(r => {
+        if (["ACTIVE", "IN_PROGRESS"].includes(String(r.status || "").toUpperCase())) {
+          if (r.root_batch_code) activeRecalledCodes.add(r.root_batch_code);
+          (r.affected_batches || []).forEach(ab => {
+            if (ab.batch_code || ab.code) activeRecalledCodes.add(ab.batch_code || ab.code);
+          });
+        }
+      });
+      const pendingHandoverCodes = new Set(
+        (state.handovers || []).filter(h => h.status === "PENDING").map(h => h.batch_code)
+      );
+      (state.batches || []).forEach(b => {
+        const c = b.code || b.batch_code;
+        if (activeRecalledCodes.has(c)) {
+          b.status = "Bị phong tỏa thu hồi";
+        } else if (pendingHandoverCodes.has(c) && b.status === "Đang lưu kho") {
+          b.status = "chờ xác nhận";
+        }
+      });
+
       saveAppState(state);
       renderOverviewTab();
+      renderRecallAlertBanner();
 
       // Cập nhật tab đang mở
       if (state.activeTab === 'batches') renderBatchesTable();
@@ -3250,11 +3582,25 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         else addPlotBtn.classList.add("hidden");
       }
 
-      // 5. Nút Nhập CSV Lô Hàng (S-32) - CHỈ Vùng Trồng, HTX Sơ Chế & Admin
+      // 5. Nút Nhập CSV danh mục sản phẩm ở tab Lô Hàng - máy chủ CHỈ cho phép Quản trị hệ thống
       const btnCsvBatches = document.getElementById("btnCsvBatches");
       if (btnCsvBatches) {
-        if ((isFarmOrAdmin || activeRole === "coop") && !isReadOnly) btnCsvBatches.classList.remove("hidden");
+        if (isAdmin) btnCsvBatches.classList.remove("hidden");
         else btnCsvBatches.classList.add("hidden");
+      }
+
+      // 5a. Nút thêm sản phẩm vào danh mục dùng chung - CHỈ Quản trị hệ thống (S-07)
+      const btnAddProduct = document.getElementById("btnAddProduct");
+      if (btnAddProduct) {
+        if (isAdmin) btnAddProduct.classList.remove("hidden");
+        else btnAddProduct.classList.add("hidden");
+      }
+
+      // 5b. Nút Nhập Thửa Đất CSV - máy chủ chặn Cán bộ kiểm tra (chỉ đọc)
+      const btnCsvPlots = document.getElementById("btnCsvPlots");
+      if (btnCsvPlots) {
+        if (isFarmOrAdmin && !isReadOnly) btnCsvPlots.classList.remove("hidden");
+        else btnCsvPlots.classList.add("hidden");
       }
 
       // 6. Nút Điểm Bán / Kho (S-30) - Các đơn vị chuỗi (ẩn với Consumer & Inspector)
@@ -3320,30 +3666,51 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const authBtnLabel = document.getElementById("authBtnLabel");
       const authActiveDot = document.getElementById("authActiveDot");
       const authLogoutBtn = document.getElementById("authLogoutBtn");
+      const authLoginBtn = document.getElementById("authLoginBtn");
 
       if (state.currentUser && state.currentUser.email) {
         if (authBtnIcon) authBtnIcon.className = "fa-solid fa-user-check text-xs text-emerald-300";
         if (authBtnLabel) {
           const displayName = state.currentUser.full_name ? state.currentUser.full_name.split(' (')[0] : state.currentUser.email.split('@')[0];
-          authBtnLabel.innerText = `${displayName} (${state.currentUser.email})`;
+          authBtnLabel.innerText = displayName;
         }
+        if (authLoginBtn) authLoginBtn.title = `${state.currentUser.email} - Bấm để đổi tài khoản`;
         if (authActiveDot) authActiveDot.classList.remove("hidden");
         if (authLogoutBtn) authLogoutBtn.classList.remove("hidden");
       } else {
         if (authBtnIcon) authBtnIcon.className = "fa-solid fa-right-to-bracket text-xs";
         if (authBtnLabel) authBtnLabel.innerText = "Đăng Nhập / Đổi TK";
+        if (authLoginBtn) authLoginBtn.title = "Đăng Nhập / Đổi Tài Khoản";
         if (authActiveDot) authActiveDot.classList.add("hidden");
         if (authLogoutBtn) authLogoutBtn.classList.add("hidden");
       }
     }
 
+    /**
+     * Hủy phiên trên máy chủ: cookie httpOnly access_token không xóa được bằng JS,
+     * nếu không gọi API này thì phiên của tài khoản trước vẫn còn hiệu lực.
+     */
+    async function clearServerSession() {
+      try {
+        await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
+      } catch (e) {
+        console.warn("Không thể hủy phiên trên máy chủ:", e);
+      }
+    }
+
     async function selectSupplyChainRole(roleKey) {
       if (!SUPPLY_CHAIN_ROLES[roleKey]) return;
+      loadDataGeneration++;
+      ["batchDetailModal", "inspectionDossierModal", "batchQrModal", "openRecallModal", "splitBatchModal", "mergeBatchModal", "handoverModal", "transferLocationModal"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("hidden");
+      });
       state.currentRole = roleKey;
       state.currentUser = null; // Xóa ngay session user cũ để không rò rỉ quyền
       localStorage.removeItem("app_access_token");
       localStorage.removeItem("app_current_user");
       saveAppState(state);
+      await clearServerSession();
 
       const menu = document.getElementById("roleDropdownMenu");
       if (menu) menu.classList.add("hidden");
@@ -3358,26 +3725,28 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
-      // Tự động gọi API lấy token thật của vai trò từ backend (thử quick-role-token hoặc fallback login)
+      // Tự động gọi API lấy token thật của vai trò từ backend (ưu tiên /api/v1/auth/login để không sinh lỗi 401 console trên staging)
       try {
         let authData = null;
-        const res = await fetch(`/api/v1/auth/quick-role-token?role=${encodeURIComponent(roleKey)}`, {
-          method: "POST"
-        });
-        if (res.ok) {
-          authData = await res.json();
-        } else {
-          // Fallback sang login chuẩn bằng email & mật khẩu demo
-          const cfg = SUPPLY_CHAIN_ROLES[roleKey];
-          if (cfg && cfg.email) {
-            const loginRes = await fetch("/api/v1/auth/login", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email: cfg.email, password: cfg.samplePassword || "pass123" })
-            });
-            if (loginRes.ok) {
-              authData = await loginRes.json();
-            }
+        const cfg = SUPPLY_CHAIN_ROLES[roleKey];
+        if (cfg && cfg.email) {
+          const loginRes = await fetch("/api/v1/auth/login", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: cfg.email, password: cfg.samplePassword || "pass123" })
+          });
+          if (loginRes.ok) {
+            authData = await loginRes.json();
+          }
+        }
+        if (!authData) {
+          const res = await fetch(`/api/v1/auth/quick-role-token?role=${encodeURIComponent(roleKey)}`, {
+            method: "POST",
+            credentials: "include"
+          });
+          if (res.ok) {
+            authData = await res.json();
           }
         }
 
@@ -3528,6 +3897,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     }
 
     function onLoginEmailChanged(val) {
+      const modal = document.getElementById("loginModal");
+      if (modal && modal.classList.contains("hidden")) return;
       if (val && val.includes("@")) {
         checkLockoutStatus(val.trim());
       }
@@ -3555,14 +3926,14 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
       if (statusData.is_locked) {
         alertBox.className = "p-4 rounded-2xl border bg-rose-50 border-rose-300 text-rose-900 text-xs space-y-1 block animate-pulse";
-        alertTitle.innerText = "Tài Khoản Đang Bị Khóa Tạm Thời (S-04)";
+        alertTitle.innerText = "Tài Khoản Đang Bị Khóa Tạm Thời";
         alertIcon.className = "fa-solid fa-lock text-rose-600";
         alertMsg.innerText = `Tài khoản đã nhập sai mật khẩu quá 5 lần liên tiếp. Hệ thống từ chối đăng nhập trong ${statusData.remaining_minutes || 15} phút (KỂ CẢ KHI NHẬP ĐÚNG MẬT KHẨU).`;
         alertCounter.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 font-bold text-[10px]"><i class="fa-solid fa-clock"></i> Thời gian còn lại: ~${statusData.remaining_minutes || 15} phút</span>`;
         alertCounter.classList.remove("hidden");
       } else if (statusData.failed_attempts > 0) {
         alertBox.className = "p-4 rounded-2xl border bg-amber-50 border-amber-300 text-amber-900 text-xs space-y-1 block";
-        alertTitle.innerText = "Cảnh Báo Số Lần Nhập Sai (Task T-10)";
+        alertTitle.innerText = "Cảnh Báo Số Lần Nhập Sai";
         alertIcon.className = "fa-solid fa-triangle-exclamation text-amber-600";
         alertMsg.innerText = "Lưu ý: Nếu nhập sai 5 lần liên tiếp, tài khoản sẽ tự động bị khóa trong 15 phút.";
         alertCounter.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px]"><i class="fa-solid fa-shield-cat"></i> Đã nhập sai: ${statusData.failed_attempts}/5 lần</span>`;
@@ -3611,7 +3982,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           localStorage.setItem("app_current_user", JSON.stringify(state.currentUser));
 
           // Chuyển hướng quay lại đúng trang cũ trước đó (returnUrl / returnTab)
-          const targetTab = state.returnTab || 'overview';
+          const loginRole = getActiveRole();
+          const targetTab = state.returnTab || ((ROLE_TABS[loginRole] || []).includes('batches') ? 'batches' : 'overview');
           state.returnTab = null;
           saveAppState(state);
 
@@ -3637,7 +4009,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             if (status === 423) {
               // Bị khóa tạm 15 phút (S-04, T-10)
               alertBox.className = "p-4 rounded-2xl border bg-rose-50 border-rose-300 text-rose-900 text-xs space-y-1 block animate-pulse";
-              alertTitle.innerText = "Tài Khoản Đang Bị Khóa Tạm Thời (S-04)";
+              alertTitle.innerText = "Tài Khoản Đang Bị Khóa Tạm Thời";
               alertIcon.className = "fa-solid fa-lock text-rose-600";
               alertMsg.innerText = data.detail || "Tài khoản đang bị khóa tạm thời do nhập sai mật khẩu quá nhiều lần.";
               alertCounter.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 font-bold text-[10px]"><i class="fa-solid fa-clock"></i> Thời gian còn lại: ~${remainingHeader || 15} phút</span>`;
@@ -3684,7 +4056,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         });
         const data = await res.json();
         if (res.ok) {
-          showToast(`Đã giả lập khóa tài khoản ${email} trong 15 phút (Test S-04 / T-10)!`, "error");
+          showToast(`Đã giả lập khóa tài khoản ${email} trong 15 phút!`, "error");
           checkLockoutStatus(email);
         } else {
           showToast(data.detail || "Không thể giả lập khóa tài khoản!", "error");
@@ -3734,6 +4106,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       localStorage.removeItem("app_access_token");
       localStorage.removeItem("app_current_user");
       saveAppState(state);
+      await clearServerSession();
       updateRoleUI();
       await loadServerData();
       switchNavTab("public");
@@ -3754,7 +4127,53 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         showToast(`Chỉ Tổ chức Vùng Trồng (Farm) hoặc Quản Trị Viên mới có quyền khởi tạo lô thu hoạch! (${cfg.name} không có quyền)`, "warning");
         return;
       }
+
+      // Mỗi lần mở form sinh mã lô mới để không trùng với lô vừa tạo trước đó
+      generateRandomBatchCode();
+
+      // S-07: sản phẩm chọn từ danh mục dùng chung (đơn vị tính theo danh mục)
+      const productSel = document.getElementById("batch_product");
+      if (productSel) {
+        const products = [...(state.products || [])].sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+        productSel.innerHTML = products.length
+          ? products.map(pr => `<option value="${pr.name}" data-unit="${pr.unit || 'kg'}">${pr.name} (${pr.unit || 'kg'})</option>`).join('')
+          : `<option value="">-- Danh mục trống: nhờ Quản trị hệ thống thêm sản phẩm --</option>`;
+      }
+
+      // Thửa đất canh tác thật của tổ chức (Admin thấy tất cả)
+      const plotSel = document.getElementById("batch_plot");
+      if (plotSel) {
+        let plots = state.plots || [];
+        if (!cfg.canAccessAllOrgs && cfg.orgId !== null) {
+          plots = plots.filter(p => !p.org_id || p.org_id === cfg.orgId);
+        }
+        plotSel.innerHTML = `<option value="">-- Không gán thửa --</option>` +
+          plots.map(p => `<option value="${p.id}">${p.name} (${p.area} ${p.unit})</option>`).join('');
+        if (plots.length > 0) plotSel.value = String(plots[0].id);
+      }
+
       openModal('addBatchModal');
+    }
+
+    let editingPlotId = null;
+
+    /**
+     * S-06: sửa thông tin thửa đất; lô đã gắn vẫn trỏ đúng thửa vì liên kết theo id
+     */
+    function openEditPlot(id) {
+      const plot = (state.plots || []).find(pl => pl.id === id);
+      if (!plot) return;
+      handleAddPlotClick();
+      if (document.getElementById("addPlotModal").classList.contains("hidden")) return; // không có quyền
+      editingPlotId = id;
+      const title = document.getElementById("addPlotModalTitle");
+      if (title) title.innerText = `Sửa Thửa Đất: ${plot.name}`;
+      document.getElementById("plot_name").value = plot.name || "";
+      document.getElementById("plot_area").value = plot.area;
+      document.getElementById("plot_unit").value = plot.unit || "m2";
+      document.getElementById("plot_lat").value = plot.lat ?? "";
+      document.getElementById("plot_lng").value = plot.lng ?? "";
+      document.getElementById("plot_address").value = plot.address || "";
     }
 
     function handleAddPlotClick() {
@@ -3768,6 +4187,9 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         showToast(`Chỉ Tổ chức Vùng Trồng (Farm) mới có quyền quản lý và khai báo thửa đất canh tác!`, "warning");
         return;
       }
+      editingPlotId = null;
+      const title = document.getElementById("addPlotModalTitle");
+      if (title) title.innerText = "Khai Báo Thửa Đất Vùng Trồng";
       openModal('addPlotModal');
     }
 
@@ -3782,6 +4204,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         showToast(`Chỉ Tổ chức Vùng Trồng (Farm) mới có nhật ký sử dụng vật tư & phân thuốc nông nghiệp!`, "warning");
         return;
       }
+      // Nạp danh sách lô của tổ chức và ngày mặc định trước khi mở form (mở được từ trang Tổng quan)
+      renderMaterialsPhiTab();
       openModal('recordBatchMaterialModal');
     }
 
@@ -3799,7 +4223,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         state.returnTab = tabId;
         saveAppState(state);
         openLoginModal(tabId);
-        showToast("Trang nội bộ yêu cầu đăng nhập. Vui lòng đăng nhập tài khoản đơn vị để tiếp tục (S-04).", "info");
+        showToast("Trang nội bộ yêu cầu đăng nhập. Vui lòng đăng nhập tài khoản đơn vị để tiếp tục.", "info");
         return;
       }
 
@@ -3877,16 +4301,155 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       if (elB) elB.innerText = `${bCount} Lô`;
       if (elP) elP.innerText = `${pCount} Thửa`;
       if (elH) elH.innerText = `${hCount} Phiếu`;
+
+      // Tổng diện tích thửa đất thật
+      const elArea = document.getElementById("kpiPlotsArea");
+      if (elArea) {
+        const totalArea = (state.plots || []).reduce((sum, p) => sum + (parseFloat(p.area) || 0), 0);
+        elArea.innerText = `${totalArea.toLocaleString('vi-VN')} m2 diện tích canh tác`;
+      }
+
+      // Tỷ lệ lô đã có nhật ký vật tư và đã qua thời gian cách ly
+      const elPhi = document.getElementById("kpiPhiCompliant");
+      const elPhiSub = document.getElementById("kpiPhiCompliantSub");
+      const trackedCodes = Array.from(new Set((state.materialLogs || []).map(m => m.batch_code)))
+        .filter(code => list.some(b => b.code === code));
+      if (elPhi) {
+        if (trackedCodes.length === 0) {
+          elPhi.innerText = "Chưa có dữ liệu";
+          if (elPhiSub) elPhiSub.innerText = "Chưa ghi nhận vật tư cho lô nào";
+        } else {
+          const safeCount = trackedCodes.filter(code => getBatchPhiStatus(code).isSafe).length;
+          const pct = Math.round(safeCount * 100 / trackedCodes.length);
+          elPhi.innerText = `${pct}% Đạt Chuẩn`;
+          if (elPhiSub) elPhiSub.innerText = `${safeCount}/${trackedCodes.length} lô đã qua thời gian cách ly`;
+        }
+      }
+
+      renderOverviewColdChainKpi();
+    }
+
+    /**
+     * KPI chuỗi lạnh trên trang Tổng Quan: lấy nhiệt độ hiện tại và số vi phạm từ các chuyến xe thật
+     */
+    async function renderOverviewColdChainKpi() {
+      const elTemp = document.getElementById("kpiColdChainTemp");
+      const elSub = document.getElementById("kpiColdChainSub");
+      if (!elTemp) return;
+      if (getActiveRole() === "consumer" && !state.currentUser) {
+        elTemp.innerText = "--";
+        if (elSub) elSub.innerText = "Đăng nhập để xem dữ liệu chuyến xe";
+        return;
+      }
+      try {
+        const trips = await enrichTripsWithCurrentTemp(await apiFetch("/api/v1/cold-chain/trips"));
+        const active = (trips || []).filter(t => t.status === "IN_TRANSIT");
+        const temps = (active.length ? active : (trips || []))
+          .map(t => t.current_temperature)
+          .filter(v => v !== null && v !== undefined && !isNaN(v));
+        const violations = (trips || []).reduce((s, t) => s + (t.violations_count !== undefined ? t.violations_count : (t.violation_count || 0)), 0);
+        if (temps.length === 0) {
+          elTemp.innerText = "Chưa có dữ liệu";
+        } else {
+          const min = Math.min(...temps), max = Math.max(...temps);
+          elTemp.innerText = min === max ? `${min.toFixed(1)}°C` : `${min.toFixed(1)}°C - ${max.toFixed(1)}°C`;
+        }
+        if (elSub) {
+          elSub.innerText = violations > 0 ? `${violations} đợt vi phạm sốc nhiệt` : "Không vi phạm sốc nhiệt";
+          elSub.className = violations > 0 ? "text-[11px] text-rose-600 font-semibold mt-1" : "text-[11px] text-teal-600 font-semibold mt-1";
+        }
+      } catch (e) {
+        elTemp.innerText = "--";
+        if (elSub) elSub.innerText = "Không tải được dữ liệu chuyến xe";
+      }
     }
 
     /**
      * RENDER BATCHES TABLE (S-08, S-14)
      */
-    function renderBatchesTable(filterText = "", productFilter = "all") {
+    /**
+     * Danh sách tên sản phẩm thật: danh mục sản phẩm trên máy chủ + tên sản phẩm của các lô hiện có
+     */
+    function getKnownProductNames() {
+      const names = new Set();
+      (state.products || []).forEach(p => { if (p && p.name) names.add(p.name); });
+      (state.batches || []).forEach(b => { if (b.product) names.add(b.product); });
+      return Array.from(names).sort((a, b) => a.localeCompare(b, 'vi'));
+    }
+
+    function populateProductFilter() {
+      const sel = document.getElementById("batchProductFilter");
+      if (!sel) return;
+      const current = sel.value || "all";
+      const names = getKnownProductNames();
+      sel.innerHTML = `<option value="all">Tất cả sản phẩm</option>` +
+        names.map(n => `<option value="${n}">${n}</option>`).join('');
+      sel.value = names.includes(current) ? current : "all";
+    }
+
+    function renderProductCatalog() {
+      const grid = document.getElementById("productCatalogGrid");
+      const countEl = document.getElementById("productCatalogCount");
+      const products = state.products || [];
+      if (countEl) countEl.innerText = products.length;
+      if (!grid) return;
+
+      if (products.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full p-6 text-center text-slate-400 text-xs">
+            <i class="fa-solid fa-tags text-2xl mb-1 text-slate-300"></i>
+            <p class="font-bold">Chưa có sản phẩm nào trong danh mục.</p>
+            <p class="text-[11px] mt-0.5">Bấm "Nhập CSV" ở trên để nhập danh mục sản phẩm.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const sorted = [...products].sort((a, b) => (b.id || 0) - (a.id || 0));
+      grid.innerHTML = sorted.map(p => {
+        const batchCount = (state.batches || []).filter(b => b.product === p.name).length;
+        return `
+          <div class="p-3 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-emerald-50/60 hover:border-emerald-200 transition-colors">
+            <div class="flex items-start justify-between gap-2">
+              <p class="font-bold text-slate-800 text-xs leading-snug">${p.name}</p>
+              <span class="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-white border border-slate-200 text-slate-600">${p.unit || 'kg'}</span>
+            </div>
+            ${p.description ? `<p class="text-[11px] text-slate-500 mt-1 line-clamp-2">${p.description}</p>` : ''}
+            <p class="text-[10px] text-slate-400 mt-1.5 font-semibold">${batchCount > 0 ? `${batchCount} lô hàng` : 'Chưa có lô hàng'}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /**
+     * Trạng thái cách ly (PHI) của một lô dựa trên nhật ký vật tư thật
+     */
+    function getBatchPhiStatus(batchCode) {
+      const logs = (state.materialLogs || []).filter(m => m.batch_code === batchCode);
+      if (logs.length === 0) return { hasLogs: false };
+      const maxSafe = logs.reduce((max, l) => (l.safe_harvest_date > max ? l.safe_harvest_date : max), logs[0].safe_harvest_date);
+      const today = new Date().toISOString().split('T')[0];
+      return { hasLogs: true, isSafe: today >= maxSafe, maxSafe };
+    }
+
+    function renderBatchesTable(filterText, productFilter) {
       const tbody = document.getElementById("batchesTableBody");
       if (!tbody) return;
 
-      const roleKey = state.currentRole || "farm";
+      populateProductFilter();
+      renderProductCatalog();
+      populateOrgFilter();
+      // Giữ nguyên bộ lọc người dùng đang nhập khi bảng được vẽ lại sau mỗi thao tác
+      if (filterText === undefined) {
+        const fi = document.getElementById("batchFilterInput");
+        filterText = fi ? fi.value : "";
+      }
+      if (productFilter === undefined) {
+        const ps = document.getElementById("batchProductFilter");
+        productFilter = ps ? ps.value : "all";
+      }
+
+      const roleKey = getActiveRole();
       const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
 
       // Epic E-02: Cô lập dữ liệu theo Organization ID:
@@ -3905,68 +4468,114 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         list = list.filter(b => (b.product || b.product_name) === productFilter);
       }
 
+      // S-52: lọc theo tổ chức đang giữ và khoảng ngày tạo lô
+      const orgSel = document.getElementById("batchOrgFilter");
+      const orgFilter = orgSel && !orgSel.classList.contains("hidden") ? orgSel.value : "all";
+      if (orgFilter !== "all") {
+        list = list.filter(b => String(b.org_id) === orgFilter);
+      }
+      const dateFrom = (document.getElementById("batchDateFrom") || {}).value || "";
+      const dateTo = (document.getElementById("batchDateTo") || {}).value || "";
+      if (dateFrom) list = list.filter(b => (b.created_at || "").slice(0, 10) >= dateFrom);
+      if (dateTo) list = list.filter(b => (b.created_at || "").slice(0, 10) <= dateTo);
+
+      // S-14: lô mới nhất lên trước, mỗi trang 20 lô
+      list = [...list].sort((a, b) => {
+        const ca = a.created_at || "", cb = b.created_at || "";
+        if (ca !== cb) return ca < cb ? 1 : -1;
+        return (b.id || 0) - (a.id || 0);
+      });
+      const totalCount = list.length;
+      const totalPages = Math.max(1, Math.ceil(totalCount / BATCHES_PAGE_SIZE));
+      if (batchesPage > totalPages) batchesPage = totalPages;
+      if (batchesPage < 1) batchesPage = 1;
+      const pageList = list.slice((batchesPage - 1) * BATCHES_PAGE_SIZE, batchesPage * BATCHES_PAGE_SIZE);
+      renderBatchesPagination(totalCount, totalPages);
+
       if (list.length === 0) {
         tbody.innerHTML = `
           <tr>
             <td colspan="8" class="p-8 text-center text-slate-400">
               <i class="fa-solid fa-box-open text-3xl mb-2 text-slate-300"></i>
               <p class="font-bold text-xs">Không có lô hàng nào thuộc quyền quản lý của ${cfg.orgName}</p>
-              <p class="text-[11px] text-slate-400 mt-1">Dữ liệu được cô lập chặt chẽ theo Organization ID (Epic E-02)</p>
+              <p class="text-[11px] text-slate-400 mt-1">Dữ liệu được cô lập chặt chẽ theo Organization ID</p>
             </td>
           </tr>
         `;
+        const pager = document.getElementById("batchesPagination");
+        if (pager) pager.innerHTML = "";
         handleBatchSelectChange();
         return;
       }
 
-      tbody.innerHTML = list.map(b => {
+      tbody.innerHTML = pageList.map(b => {
         const bCode = b.code || b.batch_code;
         const bProduct = b.product || b.product_name;
         // PHI check status for this batch
-        const logs = state.materialLogs ? state.materialLogs.filter(m => m.batch_code === bCode) : [];
+        const phi = getBatchPhiStatus(bCode);
         let phiBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">Chưa ghi nhận</span>';
-        if (logs.length > 0) {
+        if (phi.hasLogs && phi.isSafe) {
           phiBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check mr-1"></i> Đã cách ly an toàn</span>`;
+        } else if (phi.hasLogs) {
+          phiBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800" title="Ngày an toàn thu hoạch sớm nhất"><i class="fa-solid fa-hourglass-half mr-1"></i> Cách ly đến ${phi.maxSafe}</span>`;
         }
 
         const remQty = b.remaining_qty !== undefined ? b.remaining_qty : b.qty;
         const initQty = b.initial_qty !== undefined ? b.initial_qty : b.qty;
-        const isDepleted = remQty <= 0;
+        const lockState = getBatchLockState(b);
+        const isDepleted = lockState.isDepleted;
+        const isLockedForMerge = isDepleted || lockState.isRecalled || lockState.isPendingHandover;
+        const lockReason = lockState.isRecalled
+          ? "Lô đang bị phong tỏa thu hồi"
+          : lockState.isPendingHandover
+            ? "Lô đang chờ xác nhận bàn giao"
+            : isDepleted
+              ? "Lô đã hết số lượng"
+              : "";
         const qtyDisplay = isDepleted 
-          ? `<span class="text-rose-600 font-bold line-through text-xs">${remQty} kg</span> <span class="text-[10px] text-slate-400 block font-normal">(Đã tách/gộp hết)</span>`
+          ? `<span class="text-rose-600 font-bold line-through text-xs">${remQty} kg</span> <span class="text-[10px] text-slate-400 block font-normal">(Đã tách/gộp/bán hết)</span>`
           : `<span class="text-emerald-700 font-black text-xs">${remQty} kg</span> ${remQty < initQty ? `<span class="text-[10px] text-slate-400 block font-normal">(gốc: ${initQty} kg)</span>` : ''}`;
 
+        let statusBadgeHtml = "";
+        if (lockState.isRecalled) {
+          statusBadgeHtml = `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200"><i class="fa-solid fa-triangle-exclamation"></i> Bị phong tỏa thu hồi</span>`;
+        } else if (lockState.isPendingHandover) {
+          statusBadgeHtml = `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-clock"></i> Chờ xác nhận bàn giao</span>`;
+        } else if (isDepleted) {
+          statusBadgeHtml = `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600"><i class="fa-solid fa-box-archive"></i> Đã xuất / bán hết</span>`;
+        } else {
+          statusBadgeHtml = `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${b.status === 'Đang vận chuyển' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}"><i class="fa-solid fa-temperature-half"></i> ${b.status} (${b.temp})</span>`;
+        }
+
+        const isRowOwnerOrAdmin = roleKey === 'system_admin' || (cfg.orgId !== null && b.org_id === cfg.orgId);
+
         return `
-          <tr class="hover:bg-slate-50 transition-colors ${isDepleted ? 'bg-slate-50/50' : ''}">
+          <tr class="hover:bg-slate-50 transition-colors ${isDepleted ? 'bg-slate-50/50' : lockState.isRecalled ? 'bg-rose-50/30' : ''}">
             <td class="p-3.5 text-center">
               <input type="checkbox" 
                 class="batch-select-checkbox rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
                 data-code="${bCode}" 
                 data-product="${bProduct}" 
                 data-qty="${remQty}"
-                ${isDepleted ? 'disabled title="Lô đã hết số lượng"' : ''}
+                ${isLockedForMerge ? `disabled title="${lockReason}"` : ''}
                 onchange="handleBatchSelectChange()"/>
             </td>
             <td class="p-3.5 font-mono font-black text-emerald-800 text-xs">${bCode}</td>
             <td class="p-3.5 font-bold text-slate-800">${bProduct}</td>
-            <td class="p-3.5 text-slate-600 font-semibold">${b.plot || (b.land_plot_id ? 'Thửa #' + b.land_plot_id : 'Chưa gán thửa')}</td>
+            <td class="p-3.5 text-slate-600 font-semibold">${b.plot || (b.land_plot_id ? (((state.plots || []).find(p => p.id === b.land_plot_id) || {}).name || 'Thửa #' + b.land_plot_id) : '<span class="text-slate-400 font-normal">Kế thừa lô gốc</span>')}</td>
             <td class="p-3.5">${qtyDisplay}</td>
-            <td class="p-3.5">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${b.status === 'Đang vận chuyển' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
-                <i class="fa-solid fa-temperature-half"></i> ${b.status} (${b.temp})
-              </span>
-            </td>
+            <td class="p-3.5">${statusBadgeHtml}</td>
             <td class="p-3.5">${phiBadge}</td>
             <td class="p-3.5 text-right whitespace-nowrap">
               <div class="flex items-center justify-end gap-1.5 flex-wrap">
                 <button onclick="handleQuickSearch('${bCode}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold cursor-pointer" title="Xem chi tiết & phả hệ">
                   Chi Tiết
                 </button>
-                ${(roleKey === 'distributor' || roleKey === 'system_admin') && !isDepleted ? `
-                  <button onclick="openTransferLocationForBatch('${bCode}', '${bProduct}', ${remQty})" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold cursor-pointer" title="Chuyển về cửa hàng/kho (S-30)">
+                ${(roleKey === 'distributor' || roleKey === 'system_admin') && isRowOwnerOrAdmin && !isLockedForMerge ? `
+                  <button onclick="openTransferLocationForBatch('${bCode}', '${bProduct}', ${remQty})" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold cursor-pointer" title="Chuyển về cửa hàng/kho">
                     <i class="fa-solid fa-store mr-0.5"></i> Cửa hàng
                   </button>
-                  <button onclick="confirmConsumeBatch('${bCode}')" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[11px] font-bold cursor-pointer" title="Đánh dấu đã bán hết cho người tiêu dùng (S-29)">
+                  <button onclick="confirmConsumeBatch('${bCode}')" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[11px] font-bold cursor-pointer" title="Đánh dấu đã bán hết cho người tiêu dùng">
                     <i class="fa-solid fa-cart-shopping mr-0.5"></i> Bán hết
                   </button>
                 ` : ''}
@@ -3979,11 +4588,64 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       handleBatchSelectChange();
     }
 
+    const BATCHES_PAGE_SIZE = 20;
+    let batchesPage = 1;
+
+    function renderBatchesPagination(totalCount, totalPages) {
+      const el = document.getElementById("batchesPagination");
+      if (!el) return;
+      if (totalCount <= BATCHES_PAGE_SIZE) {
+        el.innerHTML = totalCount > 0 ? `<span class="text-slate-500">Hiển thị ${totalCount} lô</span>` : "";
+        return;
+      }
+      const from = (batchesPage - 1) * BATCHES_PAGE_SIZE + 1;
+      const to = Math.min(batchesPage * BATCHES_PAGE_SIZE, totalCount);
+      const btn = (label, page, disabled) => `<button ${disabled ? "disabled" : ""} onclick="goToBatchesPage(${page})" class="px-3 py-1.5 rounded-xl border border-slate-200 font-bold ${disabled ? "text-slate-300 cursor-not-allowed" : "bg-white text-slate-700 hover:bg-slate-50"}">${label}</button>`;
+      el.innerHTML = `
+        <span class="text-slate-500">Lô ${from}–${to} / ${totalCount}</span>
+        <div class="flex items-center gap-1.5">
+          ${btn('<i class="fa-solid fa-chevron-left"></i> Trước', batchesPage - 1, batchesPage <= 1)}
+          <span class="px-2 font-bold text-slate-700">Trang ${batchesPage}/${totalPages}</span>
+          ${btn('Sau <i class="fa-solid fa-chevron-right"></i>', batchesPage + 1, batchesPage >= totalPages)}
+        </div>
+      `;
+    }
+
+    function goToBatchesPage(page) {
+      batchesPage = page;
+      renderBatchesTable();
+      const view = document.getElementById("view_batches");
+      if (view) view.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function populateOrgFilter() {
+      const sel = document.getElementById("batchOrgFilter");
+      if (!sel) return;
+      const cfg = SUPPLY_CHAIN_ROLES[getActiveRole()] || SUPPLY_CHAIN_ROLES.farm;
+      const showAll = !!cfg.canAccessAllOrgs;
+      sel.classList.toggle("hidden", !showAll);
+      if (!showAll) return;
+      const current = sel.value || "all";
+      const orgs = new Map();
+      (state.batches || []).forEach(b => { if (b.org_id !== undefined && b.org_id !== null) orgs.set(String(b.org_id), b.farm); });
+      sel.innerHTML = `<option value="all">Mọi tổ chức</option>` +
+        Array.from(orgs.entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'vi'))
+          .map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+      sel.value = orgs.has(current) ? current : "all";
+    }
+
+    function onBatchFiltersChanged() {
+      batchesPage = 1;
+      renderBatchesTable();
+    }
+
     function filterBatchesTable(val) {
+      batchesPage = 1;
       renderBatchesTable(val, document.getElementById("batchProductFilter").value);
     }
 
     function filterBatchesByProduct(val) {
+      batchesPage = 1;
       renderBatchesTable(document.getElementById("batchFilterInput").value, val);
     }
 
@@ -4008,7 +4670,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           <div class="col-span-full p-8 text-center text-slate-400 bg-white rounded-3xl border border-slate-200">
             <i class="fa-solid fa-map-location-dot text-3xl mb-2 text-slate-300"></i>
             <p class="font-bold text-xs">Không có thửa đất nào thuộc quyền quản lý của ${cfg.orgName}</p>
-            <p class="text-[11px] text-slate-400 mt-1">Mỗi tổ chức chỉ xem và khai báo thửa đất thuộc quyền quản lý của mình (S-06, Epic E-02)</p>
+            <p class="text-[11px] text-slate-400 mt-1">Mỗi tổ chức chỉ xem và khai báo thửa đất thuộc quyền quản lý của mình</p>
           </div>
         `;
         return;
@@ -4036,9 +4698,14 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           </div>
           <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
             <span class="text-[11px] text-emerald-600 font-semibold"><i class="fa-solid fa-check"></i> Thuộc tổ chức mình</span>
-            <button onclick="deletePlotItem(${p.id})" class="text-rose-600 hover:text-rose-800 font-bold text-xs">
+            <div class="flex items-center gap-3">
+              <button onclick="openEditPlot(${p.id})" class="text-blue-600 hover:text-blue-800 font-bold text-xs">
+                <i class="fa-solid fa-pen-to-square mr-1"></i> Sửa
+              </button>
+  <button onclick="deletePlotItem(${p.id})" class="text-rose-600 hover:text-rose-800 font-bold text-xs">
               <i class="fa-solid fa-trash-can mr-1"></i> Xóa Thửa
             </button>
+            </div>
           </div>
         </div>
       `).join('');
@@ -4074,9 +4741,26 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const phiSelect = document.getElementById("phiCheckBatchSelect");
       const modalSelect = document.getElementById("modal_mat_batch_code");
       
-      const batchOptions = state.batches.map(b => `<option value="${b.code}">${b.code} - ${b.product}</option>`).join('');
-      if (phiSelect) phiSelect.innerHTML = batchOptions;
+      // Vùng trồng chỉ kiểm tra / khai vật tư cho lô của tổ chức mình; Cán bộ kiểm tra & Quản trị xem mọi lô
+      const phiCfg = SUPPLY_CHAIN_ROLES[getActiveRole()] || SUPPLY_CHAIN_ROLES.farm;
+      let phiBatches = state.batches || [];
+      if (!phiCfg.canAccessAllOrgs && phiCfg.orgId !== null) {
+        phiBatches = phiBatches.filter(b => b.org_id === phiCfg.orgId);
+      }
+      const batchOptions = phiBatches.length
+        ? phiBatches.map(b => `<option value="${b.code}">${b.code} - ${b.product}</option>`).join('')
+        : `<option value="">(Chưa có lô hàng nào của tổ chức)</option>`;
+      const prevPhi = phiSelect ? phiSelect.value : "";
+      if (phiSelect) {
+        phiSelect.innerHTML = batchOptions;
+        if (phiBatches.some(b => b.code === prevPhi)) phiSelect.value = prevPhi;
+      }
       if (modalSelect) modalSelect.innerHTML = batchOptions;
+      const todayStr = new Date().toISOString().split('T')[0];
+      const phiDate = document.getElementById("phiCheckHarvestDate");
+      if (phiDate && !phiDate.value) phiDate.value = todayStr;
+      const matDate = document.getElementById("modal_mat_applied_date");
+      if (matDate && !matDate.value) matDate.value = todayStr;
 
       // 2. Render Material Logs Table
       const tbody = document.getElementById("materialLogsTableBody");
@@ -4109,10 +4793,24 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     /**
      * PHI COMPLIANCE CHECKER ENGINE (S-62)
      */
+    // Đổi lô hoặc ngày thì ẩn kết quả cũ để không hiện kết quả của lô khác
+    function clearPhiCheckResult() {
+      const box = document.getElementById("phiCheckResult");
+      if (box) {
+        box.className = "hidden p-4 rounded-2xl text-xs font-medium border transition-all";
+        box.innerHTML = "";
+      }
+    }
+
     function executePhiCheck() {
       const batchCode = document.getElementById("phiCheckBatchSelect").value;
       const harvestDate = document.getElementById("phiCheckHarvestDate").value;
       const resultBox = document.getElementById("phiCheckResult");
+
+      if (!batchCode) {
+        showToast("Vui lòng chọn lô hàng cần kiểm tra", "error");
+        return;
+      }
 
       if (!harvestDate) {
         showToast("Vui lòng chọn ngày thu hoạch dự kiến", "error");
@@ -4173,8 +4871,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     /**
      * SUBMIT MATERIAL USAGE LOG (S-62)
      */
-    function submitBatchMaterialLog() {
-      const roleKey = state.currentRole || "farm";
+    async function submitBatchMaterialLog() {
+      const roleKey = getActiveRole();
       const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
       if (cfg.isReadOnly) {
         showToast("HTTP 403 Forbidden: Cán bộ kiểm tra chỉ có quyền Read-only! Hành vi ghi đã bị chặn và ghi log an ninh.", "error");
@@ -4195,42 +4893,35 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
-      // Calculate safe harvest date: appliedDate + isoDays
-      const appliedDt = new Date(appliedDate);
-      appliedDt.setDate(appliedDt.getDate() + isoDays);
-      const safeHarvestDate = appliedDt.toISOString().split('T')[0];
+      const batch = (state.batches || []).find(b => b.code === batchCode);
+      if (!batch) {
+        showToast("Không tìm thấy lô hàng đã chọn trên máy chủ!", "error");
+        return;
+      }
 
-      const newLog = {
-        id: Date.now(),
-        batch_code: batchCode,
-        material_name: matName,
-        category: category,
-        dosage: dosage,
-        applied_date: appliedDate,
-        isolation_days: isoDays,
-        safe_harvest_date: safeHarvestDate,
-        applied_by: appliedBy || "Kỹ sư nông nghiệp",
-        notes: notes
-      };
+      // Lưu nhật ký vật tư vào cơ sở dữ liệu thật; máy chủ tự tính ngày an toàn thu hoạch
+      try {
+        const saved = await apiFetch(`/api/v1/batches/${batch.id}/materials`, {
+          method: "POST",
+          body: JSON.stringify({
+            material_name: matName,
+            category: category,
+            dosage: dosage,
+            applied_date: appliedDate,
+            isolation_days: isoDays,
+            applied_by: appliedBy || null,
+            notes: notes || null
+          })
+        });
 
-      state.materialLogs.unshift(newLog);
-
-      // Append Event to Hash Chain (S-10)
-      const prevHash = state.hashEvents[state.hashEvents.length - 1].curr_hash;
-      state.hashEvents.push({
-        index: state.hashEvents.length + 1,
-        event_type: "MATERIAL_APPLIED_PHI",
-        batch_code: batchCode,
-        org_name: "HTX Thắng Lợi",
-        prev_hash: prevHash,
-        curr_hash: "sha256_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-        valid: true
-      });
-
-      saveAppState(state);
-      closeModal("recordBatchMaterialModal");
-      renderMaterialsPhiTab();
-      showToast(`Đã ghi nhận vật tư cho lô ${batchCode}. Ngày an toàn: ${safeHarvestDate}`, "success");
+        closeModal("recordBatchMaterialModal");
+        await loadServerData();
+        switchNavTab('materials_phi');
+        showToast(`Đã ghi nhận vật tư cho lô ${batchCode}. Ngày an toàn: ${saved.safe_harvest_date}`, "success");
+      } catch (err) {
+        console.error("Lỗi ghi nhận vật tư:", err);
+        showToast(`Không thể ghi nhận vật tư: ${err.message}`, "error");
+      }
     }
 
     /**
@@ -4239,6 +4930,26 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     let currentRejectHandoverId = null;
     let currentDetailBatchCode = null;
     let handoverViewFilter = 'incoming'; // incoming, outgoing, all
+
+    const HANDOVER_OVERDUE_HOURS = 48;
+
+    // S-24: bàn giao chờ xác nhận quá 48 giờ được đánh dấu cho cả hai bên
+    function isHandoverOverdue(h) {
+      if (h.status !== 'PENDING' || !h.created_raw) return false;
+      const created = new Date(h.created_raw);
+      return !isNaN(created) && (Date.now() - created.getTime()) > HANDOVER_OVERDUE_HOURS * 3600 * 1000;
+    }
+
+    function handoverFlagsHtml(h) {
+      let html = '';
+      if (isHandoverOverdue(h)) {
+        html += `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300 ml-1" title="Chờ xác nhận quá ${HANDOVER_OVERDUE_HOURS} giờ"><i class="fa-solid fa-clock"></i> Quá hạn</span>`;
+      }
+      if (h.has_cold_chain_violation) {
+        html += `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 ml-1" title="${(h.cold_chain_warning || 'Lô từng vi phạm chuỗi lạnh').replace(/"/g, '&quot;')}"><i class="fa-solid fa-temperature-arrow-up"></i> Vi phạm chuỗi lạnh</span>`;
+      }
+      return html;
+    }
 
     function filterHandoversView(filterType) {
       handoverViewFilter = filterType;
@@ -4277,11 +4988,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         if (!cfg.canAccessAllOrgs && currentOrgId !== null) {
           myBatches = myBatches.filter(b => b.org_id === currentOrgId);
         }
-        // S-29: Loại bỏ các lô đã bán hết / tiêu thụ (consumed / sold_out) hoặc số lượng còn lại <= 0
+        // S-29 & S-38: Loại bỏ các lô đã bán hết / tiêu thụ, đang bị thu hồi hoặc đang có lệnh bàn giao chờ xác nhận
         myBatches = myBatches.filter(b => {
-          const st = (b.status || "").toLowerCase();
-          const rem = b.remaining_qty !== undefined ? b.remaining_qty : b.qty;
-          return !["consumed", "sold_out"].includes(st) && rem > 0;
+          const ls = getBatchLockState(b);
+          return !ls.isDepleted && !ls.isRecalled && !ls.isPendingHandover;
         });
 
         if (myBatches.length === 0) {
@@ -4351,7 +5061,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         } else {
           incomingTbody.innerHTML = incomingList.map(h => `
             <tr class="hover:bg-amber-50/50 transition-colors">
-              <td class="p-3.5 font-mono font-black text-amber-950 text-xs">${h.batch_code}</td>
+              <td class="p-3.5 font-mono font-black text-amber-950 text-xs">${h.batch_code}${handoverFlagsHtml(h)}</td>
               <td class="p-3.5 font-bold text-slate-800">${h.from_org}</td>
               <td class="p-3.5 font-mono font-bold text-teal-700">${h.temp || '4.0°C'}</td>
               <td class="p-3.5 text-slate-500 font-medium">${h.created_at || 'Vừa tạo'}</td>
@@ -4424,7 +5134,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
         return `
           <tr class="hover:bg-slate-50 transition-colors">
-            <td class="p-3.5 font-mono font-bold text-slate-800">${h.batch_code}</td>
+            <td class="p-3.5 font-mono font-bold text-slate-800">${h.batch_code}${handoverFlagsHtml(h)}</td>
             <td class="p-3.5 text-slate-700 font-semibold">${h.from_org}</td>
             <td class="p-3.5 text-emerald-800 font-bold">${h.to_org}</td>
             <td class="p-3.5">${badge}</td>
@@ -4459,12 +5169,19 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
-      // S-29: Kiểm tra nếu lô đã tiêu thụ hết / bán hết hoặc số lượng khả dụng <= 0
+      // S-29 & S-38: Kiểm tra nếu lô đã tiêu thụ hết, đang bị thu hồi hoặc đang chờ xác nhận bàn giao
       if (targetBatch) {
-        const st = (targetBatch.status || "").toLowerCase();
-        const rem = targetBatch.remaining_qty !== undefined ? targetBatch.remaining_qty : targetBatch.qty;
-        if (["consumed", "sold_out"].includes(st) || rem <= 0) {
-          showToast("Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao (S-29).", "error");
+        const ls = getBatchLockState(targetBatch);
+        if (ls.isRecalled) {
+          showToast(`Lô hàng ${batchCode} đang bị phong tỏa thu hồi khẩn cấp, không thể tạo phiếu bàn giao!`, "error");
+          return;
+        }
+        if (ls.isPendingHandover) {
+          showToast(`Lô hàng ${batchCode} đang có phiếu bàn giao chờ xác nhận!`, "warning");
+          return;
+        }
+        if (ls.isDepleted) {
+          showToast("Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao.", "error");
           return;
         }
       }
@@ -4516,7 +5233,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       // TIÊU CHÍ S-15: Chặn không cho tạo lệnh bàn giao thứ hai khi đang có lệnh chờ
       const pendingExists = state.handovers.find(h => (h.batch_code || '').toLowerCase() === code.toLowerCase() && h.status === 'PENDING');
       if (pendingExists) {
-        showToast(`CHẶN BÀN GIAO (S-15): Lô ${code} đang có một lệnh bàn giao chờ xác nhận!`, "error");
+        showToast(`CHẶN BÀN GIAO: Lô ${code} đang có một lệnh bàn giao chờ xác nhận!`, "error");
         return;
       }
 
@@ -4526,7 +5243,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         const st = (batchObj.status || "").toLowerCase();
         const rem = batchObj.remaining_qty !== undefined ? batchObj.remaining_qty : (batchObj.qty !== undefined ? batchObj.qty : 0);
         if (["consumed", "sold_out"].includes(st) || rem <= 0) {
-          showToast("Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao (S-29).", "error");
+          showToast("Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao.", "error");
           return;
         }
       }
@@ -4547,7 +5264,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         closeModal("handoverModal");
         renderHandoversTable();
         renderBatchesTable();
-        showToast(`Đã tạo lệnh bàn giao lô ${code} tới ${orgMap[targetOrgId] || `Tổ chức #${targetOrgId}`}. Lô đang ở trạng thái Chờ xác nhận (S-15)!`, "success");
+        showToast(`Đã tạo lệnh bàn giao lô ${code} tới ${orgMap[targetOrgId] || `Tổ chức #${targetOrgId}`}. Lô đang ở trạng thái Chờ xác nhận!`, "success");
         return;
       } catch (e) {
         console.warn("Lỗi gọi API bàn giao:", e);
@@ -4570,6 +5287,11 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const h = state.handovers.find(x => x.id === id);
       if (!h) return;
 
+      if (h.has_cold_chain_violation) {
+        const ok = confirm(`CẢNH BÁO CHUỖI LẠNH - Lô ${h.batch_code}\n\n${h.cold_chain_warning || 'Lô hàng này từng vi phạm nhiệt độ bảo quản trong quá trình vận chuyển.'}\n\nBạn vẫn muốn xác nhận tiếp nhận lô hàng?`);
+        if (!ok) return;
+      }
+
       // Gọi API Backend
       try {
         await apiFetch(`/api/v1/handovers/${id}/accept`, {
@@ -4578,7 +5300,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         await loadServerData();
         renderHandoversTable();
         renderBatchesTable();
-        showToast(`ĐÃ XÁC NHẬN THÀNH CÔNG! Quyền giữ lô ${h.batch_code} đã chính thức chuyển sang ${h.to_org} (S-16).`, "success");
+        showToast(`ĐÃ XÁC NHẬN THÀNH CÔNG! Quyền giữ lô ${h.batch_code} đã chính thức chuyển sang ${h.to_org}.`, "success");
         return;
       } catch (err) {
         if (err.status === 403 || (err.message && err.message.includes("403"))) {
@@ -4647,7 +5369,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       // RÀNG BUỘC S-16: Bắt buộc nhập lý do tối thiểu 10 ký tự
       if (reason.length < 10) {
         if (errMsg) errMsg.classList.remove("hidden");
-        showToast("Lý do từ chối bắt buộc phải có tối thiểu 10 ký tự (S-16)!", "error");
+        showToast("Lý do từ chối bắt buộc phải có tối thiểu 10 ký tự!", "error");
         return;
       }
 
@@ -4746,10 +5468,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
 
       const productName = products[0];
-      document.getElementById('mergeTargetProduct').value = productName;
+      document.getElementById('mergeCommonProduct').innerText = productName;
 
       // Render danh sách các lô nguồn
-      const container = document.getElementById('mergeSourceBatchesList');
+      const container = document.getElementById('mergeSourcesContainer');
       container.innerHTML = selectedBoxes.map((cb, idx) => {
         const code = cb.dataset.code;
         const maxQty = parseFloat(cb.dataset.qty) || 0;
@@ -4799,7 +5521,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         total += val;
       });
 
-      const totalEl = document.getElementById('mergeTotalWeight');
+      const totalEl = document.getElementById('mergeTotalNewBatchQty');
       if (totalEl) totalEl.innerText = total.toFixed(2);
 
       const submitBtn = document.getElementById('btnSubmitMerge');
@@ -4817,8 +5539,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     // 3. Thực Hiện Gộp Lô (S-19)
     async function submitMergeBatches() {
       const inputs = Array.from(document.querySelectorAll('.merge-source-qty'));
-      const productName = document.getElementById('mergeTargetProduct').value;
-      const notes = document.getElementById('mergeNotes').value || "Gộp lô nông sản chuỗi cung ứng";
+      const productName = document.getElementById('mergeCommonProduct').innerText;
+      const notes = document.getElementById('mergeNotesInput').value || "Gộp lô nông sản chuỗi cung ứng";
 
       const sourceBatches = [];
       let totalQty = 0;
@@ -4856,7 +5578,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         renderBatchesTable();
         renderTraceabilityTab();
         const newCode = (mergeRes && mergeRes.merged_batch && mergeRes.merged_batch.batch_code) || "MỚI";
-        showToast(`GỘP LÔ THÀNH CÔNG (S-19)! Mã lô mới: ${newCode} (${totalQty} kg)`, "success");
+        showToast(`GỘP LÔ THÀNH CÔNG! Mã lô mới: ${newCode} (${totalQty} kg)`, "success");
         return;
       } catch (e) {
         console.warn("Lỗi API gộp lô:", e);
@@ -4898,7 +5620,16 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
-      const remQty = batch.remaining_qty !== undefined ? batch.remaining_qty : (batch.remaining_quantity !== undefined ? batch.remaining_quantity : (batch.qty || 0));
+      const lockState = getBatchLockState(batch);
+      if (lockState.isRecalled) {
+        showToast(`Lô ${batch.code || parentCode} đang bị phong tỏa thu hồi khẩn cấp, mọi thao tác tách lô đều bị khóa!`, "error");
+        return;
+      }
+      if (lockState.isPendingHandover) {
+        showToast(`Lô ${batch.code || parentCode} đang có phiếu bàn giao chờ xác nhận, không thể tách lô!`, "warning");
+        return;
+      }
+      const remQty = lockState.remQty;
       if (remQty <= 0) {
         showToast("Lô này đã hết số lượng khả dụng, không thể tách thêm!", "warning");
         return;
@@ -5098,7 +5829,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         renderTraceabilityTab();
         
         const childCodes = (res && res.child_batches) ? res.child_batches.map(c => c.batch_code).join(', ') : `${children.length} lô con`;
-        showToast(`TÁCH LÔ THÀNH CÔNG (S-17)! Đã sinh các lô con: ${childCodes}`, "success");
+        showToast(`TÁCH LÔ THÀNH CÔNG! Đã sinh các lô con: ${childCodes}`, "success");
         return;
       } catch (e) {
         console.warn("Lỗi API tách lô:", e);
@@ -5106,7 +5837,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Xác Nhận Tách Lô (S-17)';
+          submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Xác Nhận Tách Lô';
         }
       }
     }
@@ -5116,6 +5847,19 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const container = document.getElementById('modalBatchLineageContainer');
       const statusEl = document.getElementById('modalBatchLineageStatus');
       if (!container) return;
+
+      // API phả hệ là API nội bộ: người tiêu dùng chưa đăng nhập không gọi được, tránh hiển thị số liệu giả
+      if (getActiveRole() === "consumer" && !state.currentUser) {
+        if (statusEl) statusEl.innerText = "Dành cho đơn vị trong chuỗi";
+        container.innerHTML = `
+          <p class="text-[11px] text-slate-500 p-2">
+            <i class="fa-solid fa-lock text-slate-400 mr-1"></i>
+            Cây phả hệ tách/gộp chi tiết chỉ hiển thị cho các đơn vị trong chuỗi cung ứng đã đăng nhập.
+            Nguồn gốc vùng trồng và hành trình công khai của lô được hiển thị ở các mục bên trên.
+          </p>
+        `;
+        return;
+      }
 
       if (statusEl) {
         statusEl.innerHTML = '<span class="text-indigo-600 font-bold"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải phả hệ từ máy chủ...</span>';
@@ -5130,6 +5874,18 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           apiFetch(`/api/v1/batches/${encodeURIComponent(batchCode)}/descendants`),
           apiFetch(`/api/v1/batches/${encodeURIComponent(batchCode)}/dag-graph`)
         ]);
+
+        if (originsRes.status === 'rejected' && descendantsRes.status === 'rejected' && dagRes.status === 'rejected') {
+          const rejReason = (originsRes.reason && originsRes.reason.message) || "Không có quyền truy cập phả hệ nội bộ của tổ chức khác.";
+          if (statusEl) statusEl.innerText = "Bảo mật phả hệ theo tổ chức";
+          container.innerHTML = `
+            <p class="text-[11px] text-slate-500 p-2">
+              <i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i>
+              ${escHtml(rejReason)} Nguồn gốc vùng trồng và hành trình công khai của lô vẫn hiển thị đầy đủ ở mục bên trên.
+            </p>
+          `;
+          return;
+        }
 
         const originsData = originsRes.status === 'fulfilled' ? originsRes.value : { roots: [], root_origins: [] };
         const descendantsData = descendantsRes.status === 'fulfilled' ? descendantsRes.value : { descendants: [] };
@@ -5185,7 +5941,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             <div class="bg-amber-50/70 p-3 rounded-2xl border border-amber-200 space-y-2">
               <div class="flex items-center justify-between pb-1 border-b border-amber-200">
                 <span class="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <i class="fa-solid fa-seedling text-amber-600"></i> 1. Tổ Tiên & Gốc (S-21)
+                  <i class="fa-solid fa-seedling text-amber-600"></i> 1. Tổ Tiên & Gốc
                 </span>
                 <span class="text-[10px] bg-amber-200/70 text-amber-950 font-bold px-2 py-0.5 rounded-full">${roots.length} Lô Gốc</span>
               </div>
@@ -5256,7 +6012,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
               </div>
 
               <div class="text-[10px] text-emerald-800 bg-emerald-100/60 p-2 rounded-lg text-center font-medium">
-                <i class="fa-solid fa-arrows-left-right text-emerald-600 mr-1"></i> Đồ thị DAG: ${(dagData.nodes || []).length} đỉnh, ${(dagData.edges || []).length} cạnh (S-28)
+                <i class="fa-solid fa-arrows-left-right text-emerald-600 mr-1"></i> Đồ thị DAG: ${(dagData.nodes || []).length} đỉnh, ${(dagData.edges || []).length} cạnh
               </div>
             </div>
 
@@ -5264,7 +6020,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             <div class="bg-indigo-50/70 p-3 rounded-2xl border border-indigo-200 space-y-2">
               <div class="flex items-center justify-between pb-1 border-b border-indigo-200">
                 <span class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <i class="fa-solid fa-network-wired text-indigo-600"></i> 3. Hậu Duệ (S-26, S-27)
+                  <i class="fa-solid fa-network-wired text-indigo-600"></i> 3. Hậu Duệ
                 </span>
                 <span class="text-[10px] bg-indigo-200/70 text-indigo-950 font-bold px-2 py-0.5 rounded-full">${descendantsList.length} Lô Con/Cháu</span>
               </div>
@@ -5318,6 +6074,29 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
      */
     let coldChainTripsCache = [];
 
+    /**
+     * Danh sách chuyến của máy chủ không kèm nhiệt độ hiện tại:
+     * lấy điểm đo mới nhất từ API chi tiết chuyến (chỉ chuyến đang chạy khi có nhiều chuyến).
+     */
+    async function enrichTripsWithCurrentTemp(trips) {
+      const list = trips || [];
+      const targets = list.filter(t =>
+        (t.current_temperature === undefined || t.current_temperature === null) &&
+        (t.readings_count || 0) > 0 &&
+        (list.length <= 20 || t.status === "IN_TRANSIT")
+      );
+      await Promise.all(targets.map(async t => {
+        try {
+          const d = await apiFetch(`/api/v1/cold-chain/trips/${t.id}`);
+          const tel = (d.telemetry || d.recent_telemetry || [])
+            .filter(r => r && r.temperature !== null && r.temperature !== undefined)
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+          if (tel.length) t.current_temperature = Number(tel[tel.length - 1].temperature);
+        } catch (e) {}
+      }));
+      return list;
+    }
+
     async function renderColdChainTab() {
       const tbody = document.getElementById("coldChainTripsTableBody");
       const kpiActive = document.getElementById("kpiActiveTrips");
@@ -5337,7 +6116,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
 
       try {
-        const trips = await apiFetch("/api/v1/cold-chain/trips");
+        const trips = await enrichTripsWithCurrentTemp(await apiFetch("/api/v1/cold-chain/trips"));
         coldChainTripsCache = trips || [];
 
         const roleKey = state.currentRole || "farm";
@@ -5370,7 +6149,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
               <td colspan="9" class="p-8 text-center text-slate-400">
                 <i class="fa-solid fa-truck-ramp-box text-3xl mb-2 text-slate-300"></i>
                 <p class="font-bold text-xs text-slate-600">Chưa có chuyến vận chuyển lạnh nào trong hệ thống.</p>
-                <p class="text-[11px] text-slate-400 mt-1">Bấm nút "Tạo Chuyến Xe Lạnh (S-40)" ở trên để bắt đầu hành trình mới.</p>
+                <p class="text-[11px] text-slate-400 mt-1">Bấm nút "Tạo Chuyến Xe Lạnh" ở trên để bắt đầu hành trình mới.</p>
               </td>
             </tr>
           `;
@@ -5507,7 +6286,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
       const checkedBoxes = Array.from(document.querySelectorAll(".trip-batch-checkbox:checked"));
       if (checkedBoxes.length === 0) {
-        showToast("Vui lòng chọn ít nhất 1 lô hàng để xếp lên xe (S-40)!", "error");
+        showToast("Vui lòng chọn ít nhất 1 lô hàng để xếp lên xe!", "error");
         return;
       }
 
@@ -5518,14 +6297,21 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
       const tripCode = "TRIP-COOL-" + Date.now().toString().slice(-6);
       
-      const batchIds = checkedBoxes.map(cb => {
-        const val = cb.value;
-        const found = (state.batches || []).find(b => b.code === val || b.id == val);
-        return found ? (found.id || 1) : 1;
-      });
+      const batchIds = checkedBoxes
+        .map(cb => {
+          const val = cb.value;
+          const found = (state.batches || []).find(b => b.code === val || b.id == val);
+          return found ? found.id : null;
+        })
+        .filter(id => id !== null && id !== undefined);
+      if (batchIds.length === 0) {
+        showToast("Không xác định được lô hàng đã chọn, vui lòng tải lại trang!", "error");
+        return;
+      }
 
       const payload = {
         trip_code: tripCode,
+        vehicle_code: vehicleCode,
         driver_name: driverName || "Nguyễn Văn Lái Xe",
         license_plate: vehicleCode,
         origin_location: "Kho HTX Rau Quả Đà Lạt",
@@ -5543,7 +6329,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
         closeModal("createTripModal");
         await renderColdChainTab();
-        showToast(`Tạo chuyến xe ${tripCode} thành công (S-40)! Đã ghi sự kiện khởi hành vào Hash Chain.`, "success");
+        showToast(`Tạo chuyến xe ${tripCode} thành công! Đã ghi sự kiện khởi hành vào Hash Chain.`, "success");
       } catch (err) {
         console.error("Lỗi tạo chuyến xe:", err);
         showToast("Không thể tạo chuyến xe: " + err.message, "error");
@@ -5645,10 +6431,16 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         closeModal("simulateTelemetryModal");
         await renderColdChainTab();
 
-        if (res.violations_detected && res.violations_detected > 0) {
-          showToast(`CẢNH BÁO: Đã phát hiện ${res.violations_detected} vi phạm chuỗi lạnh liên tục > 30p (S-43)! Đã ghi vào Hash Chain (S-45).`, "error");
+        // Máy chủ trả violations_detected là MẢNG các đợt vi phạm mới và accepted_count / ignored_count
+        const violationCount = Array.isArray(res.violations_detected)
+          ? res.violations_detected.length
+          : (Number(res.violations_detected) || 0);
+        const accepted = res.accepted_count !== undefined ? res.accepted_count : (res.saved_readings || readingsPayload.length);
+        const ignoredNote = res.ignored_count ? ` (bỏ qua ${res.ignored_count} điểm có thời gian cũ)` : "";
+        if (violationCount > 0) {
+          showToast(`CẢNH BÁO: Đã phát hiện ${violationCount} vi phạm chuỗi lạnh liên tục > 30p! Đã ghi vào Hash Chain.`, "error");
         } else {
-          showToast(`Đã nạp ${res.saved_readings || readingsPayload.length} điểm đo cảm biến thành công (S-41)!`, "success");
+          showToast(`Đã nạp ${accepted} điểm đo cảm biến thành công${ignoredNote}!`, "success");
         }
       } catch (err) {
         console.error("Lỗi gửi telemetry:", err);
@@ -5859,7 +6651,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
                     Nhiệt độ đỉnh: <strong class="text-rose-700 font-mono">${v.peak_temperature || 15.5}°C</strong> (Vượt trần quy định ${trip.max_temperature}°C)
                   </div>
                   <div class="text-[10px] text-slate-500 font-mono flex items-center gap-1 mt-1">
-                    <i class="fa-solid fa-lock text-emerald-600"></i> Đã tự động khóa hash SHA-256 và thông báo cho mọi bên sở hữu lô hàng (S-45)
+                    <i class="fa-solid fa-lock text-emerald-600"></i> Đã tự động khóa hash SHA-256 và thông báo cho mọi bên sở hữu lô hàng
                   </div>
                 </div>
               `;
@@ -5909,7 +6701,11 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return;
       }
 
-      if (!confirm(`Bạn có chắc chắn muốn ghi nhận lô hàng [${code}] đã BÁN HẾT cho người tiêu dùng (S-29)?\n\n- Khối lượng khả dụng sẽ đưa về 0 kg.\n- Trạng thái lô sẽ chuyển thành CONSUMED.\n- Sự kiện sẽ được ghi nhận bất biến vào Hash Chain.`)) {
+      if (!confirm(`Bạn có chắc chắn muốn ghi nhận lô hàng [${code}] đã BÁN HẾT cho người tiêu dùng?
+
+- Khối lượng khả dụng sẽ đưa về 0 kg.
+- Trạng thái lô sẽ chuyển thành CONSUMED.
+- Sự kiện sẽ được ghi nhận bất biến vào Hash Chain.`)) {
         return;
       }
 
@@ -5921,7 +6717,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         await loadServerData();
         renderBatchesTable();
         closeModal("batchDetailModal");
-        showToast(`Đã ghi nhận lô ${code} BÁN HẾT cho người tiêu dùng (S-29: CONSUMED, 0 kg)!`, "success");
+        showToast(`Đã ghi nhận lô ${code} BÁN HẾT cho người tiêu dùng (CONSUMED, 0 kg)!`, "success");
       } catch (err) {
         console.error("Lỗi ghi nhận bán hết:", err);
         showToast(`Không thể ghi nhận bán hết: ${err.message}`, "error");
@@ -5999,7 +6795,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
         document.getElementById("createLocationForm").reset();
         await renderOrgLocationsList();
-        showToast(`Đã lưu địa điểm / cửa hàng [${name}] thành công (S-30)!`, "success");
+        showToast(`Đã lưu địa điểm / cửa hàng [${name}] thành công!`, "success");
       } catch (err) {
         showToast(`Không thể tạo địa điểm: ${err.message}`, "error");
       }
@@ -6066,11 +6862,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
 
       try {
-        await apiFetch(`/api/v1/organizations/batches/${encodeURIComponent(currentTransferBatchCode)}/transfer-location`, {
+        const res = await apiFetch(`/api/v1/organizations/batches/${encodeURIComponent(currentTransferBatchCode)}/transfer-location`, {
           method: "POST",
           body: JSON.stringify({
             location_id: locationId,
-            quantity: qty,
             notes: notes
           })
         });
@@ -6078,7 +6873,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         closeModal("transferLocationModal");
         await loadServerData();
         renderBatchesTable();
-        showToast(`Đã chuyển ${qty} kg của lô ${currentTransferBatchCode} về cửa hàng thành công (S-30)!`, "success");
+        showToast((res && res.message) || `Đã chuyển lô ${currentTransferBatchCode} về cửa hàng thành công!`, "success");
       } catch (err) {
         showToast(`Lỗi chuyển lô về cửa hàng: ${err.message}`, "error");
       }
@@ -6173,11 +6968,17 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
      */
     let currentCsvType = 'products';
 
-    function openCsvImportModal() {
-      currentCsvType = 'products';
-      const radProducts = document.querySelector('input[name="csvTypeRadio"][value="products"]');
-      if (radProducts) radProducts.checked = true;
-      onCsvTypeRadioChanged('products');
+    function openCsvImportModal(type = 'products') {
+      // Máy chủ chỉ cho Quản trị hệ thống nhập danh mục sản phẩm; các đơn vị khác chỉ nhập thửa đất
+      const isAdmin = getActiveRole() === 'system_admin';
+      currentCsvType = (type === 'land_plots' || !isAdmin) ? 'land_plots' : 'products';
+      const prodRadio = document.querySelector('input[name="csvTypeRadio"][value="products"]');
+      const prodLabel = document.getElementById("labelCsvProducts");
+      if (prodRadio) prodRadio.disabled = !isAdmin;
+      if (prodLabel) prodLabel.title = isAdmin ? "" : "Chỉ Quản trị hệ thống (Admin) được nhập danh mục sản phẩm";
+      const radio = document.querySelector(`input[name="csvTypeRadio"][value="${currentCsvType}"]`);
+      if (radio) radio.checked = true;
+      onCsvTypeRadioChanged(currentCsvType);
       const resBox = document.getElementById("csvImportResultBox");
       if (resBox) resBox.classList.add("hidden");
       openModal("csvImportModal");
@@ -6191,14 +6992,21 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const resBox = document.getElementById("csvImportResultBox");
       if (resBox) resBox.className = "hidden";
 
+      const prodDisabled = getActiveRole() !== 'system_admin';
       if (type === 'products') {
         if (lblProd) lblProd.className = "p-3 border-2 border-emerald-500 rounded-2xl bg-emerald-50/50 flex items-center gap-2 cursor-pointer transition-all hover:bg-emerald-50";
         if (lblPlot) lblPlot.className = "p-3 border-2 border-slate-200 rounded-2xl bg-white flex items-center gap-2 cursor-pointer transition-all hover:bg-slate-50";
-        if (preview) preview.innerText = `code,name,variety,category,default_unit,description\nSP-001,Cà Chua Beef Hữu Cơ,Beef Beef F1,Rau ăn quả,kg,Cà chua tiêu chuẩn VietGAP\nSP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy canh công nghệ cao`;
+        if (preview) preview.innerText = `code,name,variety,category,default_unit,description
+SP-001,Cà Chua Beef Hữu Cơ,Beef Beef F1,Rau ăn quả,kg,Cà chua tiêu chuẩn VietGAP
+SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy canh công nghệ cao`;
       } else {
-        if (lblProd) lblProd.className = "p-3 border-2 border-slate-200 rounded-2xl bg-white flex items-center gap-2 cursor-pointer transition-all hover:bg-slate-50";
+        if (lblProd) lblProd.className = prodDisabled
+          ? "p-3 border-2 border-slate-200 rounded-2xl bg-slate-50 flex items-center gap-2 cursor-not-allowed opacity-50 transition-all"
+          : "p-3 border-2 border-slate-200 rounded-2xl bg-white flex items-center gap-2 cursor-pointer transition-all hover:bg-slate-50";
         if (lblPlot) lblPlot.className = "p-3 border-2 border-emerald-500 rounded-2xl bg-emerald-50/50 flex items-center gap-2 cursor-pointer transition-all hover:bg-emerald-50";
-        if (preview) preview.innerText = `name,area,unit,latitude,longitude,address,cadastral_number\nThửa Rau Quả VietGAP A1,2500,m2,11.9404,108.4583,Đà Lạt Lâm Đồng,TB-2026-A1\nThửa Thủy Canh Công Nghệ B2,1800,m2,11.9420,108.4600,Đà Lạt Lâm Đồng,TB-2026-B2`;
+        if (preview) preview.innerText = `name,area,unit,latitude,longitude,address,cadastral_number
+Thửa Rau Quả VietGAP A1,2500,m2,11.9404,108.4583,Đà Lạt Lâm Đồng,TB-2026-A1
+Thửa Thủy Canh Công Nghệ B2,1800,m2,11.9420,108.4600,Đà Lạt Lâm Đồng,TB-2026-B2`;
       }
     }
 
@@ -6296,7 +7104,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
               msgEl.innerText = `Hoàn tất xử lý: 0 bản ghi mới (${data.skipped_count || 0} dòng đã có sẵn hoặc lỗi)`;
             } else {
               resBox.className = "p-3 rounded-2xl border bg-emerald-50 border-emerald-200 text-emerald-900 text-xs space-y-1 block";
-              msgEl.innerText = `Xử lý thành công ${data.imported_count || 0} bản ghi (S-32)!`;
+              msgEl.innerText = `Xử lý thành công ${data.imported_count || 0} bản ghi!`;
             }
             detEl.innerHTML = `
               <div>• Tổng số dòng hợp lệ / cập nhật: <b>${data.imported_count || 0}</b></div>
@@ -6305,8 +7113,21 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             `;
           }
           await loadServerData();
-          if (currentCsvType === 'land_plots') renderPlotsGrid();
           showToast(`Nhập thành công ${data.imported_count || 0} bản ghi từ file CSV!`, "success");
+
+          // Nhập xong: đóng hộp thoại và đưa người dùng về màn hình chứa dữ liệu vừa nhập
+          const importedType = currentCsvType;
+          const hasErrors = data.errors && data.errors.length > 0;
+          setTimeout(() => {
+            closeModal("csvImportModal");
+            if (importedType === 'land_plots') {
+              switchNavTab('plots');
+            } else {
+              switchNavTab('batches');
+              const catalog = document.getElementById("productCatalogSection");
+              if (catalog) catalog.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, hasErrors ? 4000 : 1200);
         } else {
           let errorText = "Lỗi khi xử lý file CSV";
           if (typeof data.detail === "string") {
@@ -6333,7 +7154,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       } finally {
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Bắt Đầu Nhập Dữ Liệu (S-32)';
+          btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Bắt Đầu Nhập Dữ Liệu';
         }
       }
     }
@@ -6361,32 +7182,89 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         return `
           <tr class="hover:bg-slate-50 transition-colors">
             <td class="p-3 font-bold text-slate-500">#${e.index}</td>
-            <td class="p-3 font-sans font-bold text-slate-800">${e.event_type}</td>
+            <td class="p-3 font-sans font-bold text-slate-800">${EVENT_TYPE_LABELS[e.event_type] || e.event_type} <span class="text-[10px] font-mono font-normal text-slate-400 block">${e.event_type}</span></td>
             <td class="p-3 text-emerald-800 font-bold">${e.batch_code}</td>
             <td class="p-3 font-sans text-slate-600">${e.org_name}</td>
             <td class="p-3 text-slate-400 text-[10px]" title="${pHash}">${pHash.slice(0, 16)}...</td>
             <td class="p-3 text-emerald-700 text-[10px] font-bold" title="${cHash}">${cHash.slice(0, 16)}...</td>
             <td class="p-3 text-right">
+              ${e.valid === false ? `
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800" title="Chuỗi hash của lô này không khớp khi kiểm tra">
+                <i class="fa-solid fa-triangle-exclamation"></i> Nghi Vấn
+              </span>` : `
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
                 <i class="fa-solid fa-check"></i> Hợp Lệ
-              </span>
+              </span>`}
             </td>
           </tr>
         `;
       }).join('');
     }
 
+    function setIntegrityBadge(kind, text) {
+      const badge = document.getElementById("integrityStatusBadge");
+      if (!badge) return;
+      const styles = {
+        ok: ["bg-emerald-100 text-emerald-800", "fa-circle-check"],
+        bad: ["bg-rose-100 text-rose-800", "fa-triangle-exclamation"],
+        pending: ["bg-slate-100 text-slate-600", "fa-spinner fa-spin"],
+        idle: ["bg-slate-100 text-slate-600", "fa-circle-question"]
+      };
+      const [cls, icon] = styles[kind] || styles.idle;
+      badge.className = `px-3 py-1 ${cls} rounded-full text-xs font-bold flex items-center gap-1.5`;
+      badge.innerHTML = `<i class="fa-solid ${icon}"></i> ${text}`;
+    }
+
+    /**
+     * Kiểm tra toàn vẹn: API verify của máy chủ hoạt động theo từng lô,
+     * nên gọi lần lượt cho mọi lô có sự kiện trong sổ và tổng hợp kết quả.
+     */
     async function runHashIntegrityCheck() {
-      showToast("Đang băm lại SHA-256 đối chiếu toàn bộ sự kiện...", "info");
-      try {
-        const res = await apiFetch("/api/v1/chain-events/verify");
-        if (res.valid) {
-          showToast(`Kiểm tra toàn vẹn thành công: ${res.total_events || state.hashEvents.length} sự kiện hợp lệ 100% (S-12)!`, "success");
-        } else {
-          showToast(`CẢNH BÁO PHÁT HIỆN SỰ CỐ: ${res.message || 'Chuỗi hash bị can thiệp!'}`, "error");
+      const codes = Array.from(new Set((state.hashEvents || []).map(e => e.batch_code)))
+        .filter(code => (state.batches || []).some(b => b.code === code));
+      if (codes.length === 0) {
+        showToast("Chưa có sự kiện nào gắn với lô hàng để kiểm tra.", "info");
+        return;
+      }
+
+      showToast(`Đang băm lại SHA-256 đối chiếu chuỗi sự kiện của ${codes.length} lô...`, "info");
+      setIntegrityBadge("pending", `Đang kiểm tra ${codes.length} lô...`);
+
+      const results = [];
+      const queue = [...codes];
+      const worker = async () => {
+        while (queue.length) {
+          const code = queue.shift();
+          try {
+            const res = await apiFetch(`/api/v1/chain-events/verify?batch_code=${encodeURIComponent(code)}`);
+            const badIds = (res.events || []).filter(ev => ev.status && ev.status !== 'valid').map(ev => ev.id);
+            results.push({ code, ok: res.valid !== false, total: res.total_events || 0, message: res.message, badIds });
+          } catch (err) {
+            results.push({ code, ok: null, error: err.message });
+          }
         }
-      } catch (err) {
-        showToast("Lỗi kiểm tra toàn vẹn: " + err.message, "error");
+      };
+      await Promise.all(Array.from({ length: Math.min(6, codes.length) }, worker));
+
+      const broken = results.filter(r => r.ok === false);
+      const failed = results.filter(r => r.ok === null);
+      const totalEvents = results.reduce((s, r) => s + (r.total || 0), 0);
+      // Chỉ đánh dấu sự kiện bị sửa / đứt mạch và các sự kiện phía sau nó (máy chủ trả trạng thái từng sự kiện)
+      const badIds = new Set(broken.flatMap(r => r.badIds || []));
+      const brokenCodes = new Set(broken.filter(r => !(r.badIds || []).length).map(r => r.code));
+      (state.hashEvents || []).forEach(e => { e.valid = !(badIds.has(e.id) || brokenCodes.has(e.batch_code)); });
+      renderTraceabilityTab();
+
+      if (broken.length > 0) {
+        setIntegrityBadge("bad", `Phát hiện ${broken.length} lô bị can thiệp`);
+        showToast(`CẢNH BÁO: Chuỗi hash bị can thiệp ở lô ${broken.map(r => r.code).join(", ")}! ${broken[0].message || ''}`, "error");
+      } else if (failed.length === results.length) {
+        setIntegrityBadge("idle", "Không kiểm tra được");
+        showToast("Lỗi kiểm tra toàn vẹn: " + failed[0].error, "error");
+      } else {
+        setIntegrityBadge("ok", `Chuỗi Hash Hợp Lệ 100% (${totalEvents} sự kiện)`);
+        const note = failed.length ? ` (${failed.length} lô không có quyền kiểm tra)` : "";
+        showToast(`Kiểm tra toàn vẹn thành công: ${totalEvents} sự kiện của ${results.length - failed.length} lô hợp lệ 100%!${note}`, "success");
       }
     }
 
@@ -6400,12 +7278,71 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     }
 
     let cameraStream = null;
+    let qrScanLoopId = null;
+    const qrDecodeCanvas = document.createElement('canvas');
+
+    /**
+     * Tem QR có thể chứa đường dẫn tra cứu (.../public/batches/MÃ_LÔ) hoặc chính mã lô
+     */
+    function extractBatchCodeFromQr(text) {
+      const t = (text || '').trim();
+      const loParam = t.match(/[?&](?:lo|public_batch)=([^&#\s]+)/);
+      if (loParam) return decodeURIComponent(loParam[1]);
+      const m = t.match(/batches\/([A-Za-z0-9-]+)/);
+      if (m) return m[1];
+      try {
+        const u = new URL(t);
+        const last = u.pathname.split('/').filter(Boolean).pop();
+        if (last) return decodeURIComponent(last);
+      } catch (e) {}
+      return t;
+    }
+
+    function decodeQrFrom(source, width, height) {
+      if (typeof jsQR !== 'function' || !width || !height) return null;
+      const scale = Math.min(1, 1000 / Math.max(width, height));
+      const w = Math.round(width * scale), h = Math.round(height * scale);
+      qrDecodeCanvas.width = w;
+      qrDecodeCanvas.height = h;
+      const ctx = qrDecodeCanvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(source, 0, 0, w, h);
+      const img = ctx.getImageData(0, 0, w, h);
+      const result = jsQR(img.data, w, h, { inversionAttempts: 'attemptBoth' });
+      return result && result.data ? result.data : null;
+    }
+
+    function traceScannedQr(rawText) {
+      const code = extractBatchCodeFromQr(rawText);
+      const inp = document.getElementById('heroSearchInput');
+      if (inp) inp.value = code;
+      showToast("Đã đọc mã QR: " + code, "success");
+      handleQuickSearch(code);
+    }
+
+    function startQrScanLoop(video) {
+      const tick = () => {
+        if (!cameraStream) return;
+        if (video.readyState >= 2 && video.videoWidth) {
+          const text = decodeQrFrom(video, video.videoWidth, video.videoHeight);
+          if (text) {
+            closeQrCameraScanner();
+            traceScannedQr(text);
+            return;
+          }
+        }
+        qrScanLoopId = requestAnimationFrame(tick);
+      };
+      qrScanLoopId = requestAnimationFrame(tick);
+    }
 
     async function openQrCameraScanner() {
       openModal('qrCameraModal');
       const video = document.getElementById('qrCameraVideo');
       const statusEl = document.getElementById('cameraStatusText');
-      
+      if (typeof jsQR !== 'function' && statusEl) {
+        statusEl.innerText = "Không tải được bộ đọc mã QR. Vui lòng kiểm tra mạng hoặc nhập mã lô thủ công.";
+      }
+
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
           cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -6416,6 +7353,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             video.classList.remove('hidden');
             await video.play();
             if (statusEl) statusEl.innerText = "Camera đang hoạt động. Hãy hướng về mã QR trên bao bì.";
+            startQrScanLoop(video);
           }
         } catch (err) {
           console.warn("Không thể mở webcam/camera trực tiếp:", err);
@@ -6427,6 +7365,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     }
 
     function closeQrCameraScanner() {
+      if (qrScanLoopId) {
+        cancelAnimationFrame(qrScanLoopId);
+        qrScanLoopId = null;
+      }
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
         cameraStream = null;
@@ -6439,26 +7381,58 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       closeModal('qrCameraModal');
     }
 
+    /**
+     * "Quét tem mẫu" (demo): tra cứu một mã lô có thật — lô đầu tiên trong danh sách,
+     * hoặc mã đã tra cứu thành công gần nhất (người tiêu dùng không được xem danh sách lô).
+     */
     function simulateQrScan() {
       closeQrCameraScanner();
-      const sampleCode = (state.batches && state.batches.length > 0) ? (state.batches[0].code || state.batches[0].batch_code) : "VK89XPT2";
+      let sampleCode = (state.batches && state.batches.length > 0) ? (state.batches[0].code || state.batches[0].batch_code) : null;
+      if (!sampleCode) {
+        try { sampleCode = localStorage.getItem("last_traced_batch_code"); } catch (e) {}
+      }
+      if (!sampleCode) {
+        showToast("Chưa có mã tem mẫu. Vui lòng nhập mã lô in trên tem hoặc chọn ảnh tem QR.", "info");
+        const inp = document.getElementById('heroSearchInput');
+        if (inp) inp.focus();
+        return;
+      }
       const inp = document.getElementById('heroSearchInput');
       if (inp) inp.value = sampleCode;
-      showToast("Đã quét thành công mã QR: " + sampleCode, "success");
+      showToast("Đang tra cứu tem mẫu: " + sampleCode, "info");
       handleQuickSearch(sampleCode);
     }
 
     function handleQrFileUpload(event) {
-      const file = event.target.files[0];
+      const input = event.target;
+      const file = input.files[0];
       if (!file) return;
       closeQrCameraScanner();
-      const sampleCode = (state.batches && state.batches.length > 1) 
-        ? (state.batches[1].code || state.batches[1].batch_code) 
-        : ((state.batches && state.batches.length > 0) ? (state.batches[0].code || state.batches[0].batch_code) : "VK89XPT2");
-      const inp = document.getElementById('heroSearchInput');
-      if (inp) inp.value = sampleCode;
-      showToast("Đã nhận diện mã tem QR từ ảnh chụp: " + sampleCode, "success");
-      handleQuickSearch(sampleCode);
+
+      if (typeof jsQR !== 'function') {
+        showToast("Không tải được bộ đọc mã QR. Vui lòng nhập mã lô thủ công.", "error");
+        input.value = "";
+        return;
+      }
+
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const text = decodeQrFrom(img, img.naturalWidth, img.naturalHeight);
+        URL.revokeObjectURL(url);
+        input.value = "";
+        if (text) {
+          traceScannedQr(text);
+        } else {
+          showToast("Không tìm thấy mã QR trong ảnh. Hãy chụp rõ nét, đủ sáng và để tem QR chiếm phần lớn khung hình.", "error");
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        input.value = "";
+        showToast("Không đọc được tệp ảnh đã chọn!", "error");
+      };
+      img.src = url;
     }
 
     async function handleQuickSearch(code) {
@@ -6466,7 +7440,9 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         showToast("Vui lòng nhập mã lô hàng in trên tem QR!", "error");
         return;
       }
-      const cleanCode = code.trim();
+      const rawInput = code.trim();
+      // Mã lô trong hệ thống luôn viết hoa: chuẩn hóa để người dùng gõ chữ thường vẫn tìm được
+      const cleanCode = rawInput.toUpperCase();
 
       // Gọi API Backend công khai (S-48 / E-08)
       try {
@@ -6474,12 +7450,38 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         if (!resp.ok && resp.status === 404) {
           resp = await fetch(`/api/v1/batches/public/${encodeURIComponent(cleanCode)}`);
         }
+        if (resp.status === 429) {
+          let detail = "Bạn đã tra cứu quá nhiều mã lô trong thời gian ngắn. Vui lòng thử lại sau 1 phút.";
+          try { detail = (await resp.json()).detail || detail; } catch (e) {}
+          showToast(detail, "error");
+          return;
+        }
         if (resp.ok) {
           const apiData = await resp.json();
+          try { localStorage.setItem("last_traced_batch_code", apiData.batch_code || cleanCode); } catch (e) {}
           renderPublicTraceModal(apiData);
           return;
         } else if (resp.status === 404) {
-          showToast(`Mã lô '${cleanCode}' không tồn tại trong cơ sở dữ liệu thật (HTTP 404).`, "error");
+          // Không khớp mã chính xác: tìm gần đúng theo một phần mã lô hoặc tên sản phẩm trong danh sách lô đang quản lý
+          const lower = rawInput.toLowerCase();
+          const matches = (state.batches || []).filter(b =>
+            (b.code || '').toLowerCase().includes(lower) || (b.product || '').toLowerCase().includes(lower)
+          );
+          if (matches.length === 1 && (matches[0].code || '').toUpperCase() !== cleanCode) {
+            return handleQuickSearch(matches[0].code);
+          }
+          const allowedTabs = ROLE_TABS[getActiveRole()] || [];
+          if (matches.length > 1 && allowedTabs.includes('batches')) {
+            switchNavTab('batches');
+            const filterInput = document.getElementById("batchFilterInput");
+            if (filterInput) filterInput.value = rawInput;
+            const productSel = document.getElementById("batchProductFilter");
+            if (productSel) productSel.value = 'all';
+            renderBatchesTable(rawInput, 'all');
+            showToast(`Tìm thấy ${matches.length} lô hàng khớp với '${rawInput}'.`, "info");
+            return;
+          }
+          showToast(`Không tìm thấy lô hàng nào khớp với '${rawInput}'.`, "error");
           return;
         } else {
           showToast(`Lỗi khi tra cứu mã lô '${cleanCode}' (HTTP ${resp.status}).`, "error");
@@ -6490,6 +7492,637 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         showToast(`Không thể kết nối máy chủ để tra cứu lô '${cleanCode}'.`, "error");
         return;
       }
+    }
+
+    /**
+     * S-60: bản đồ Leaflet + OpenStreetMap, nối các điểm theo thứ tự vùng trồng -> điểm phân phối
+     */
+    let batchJourneyMap = null;
+
+    function renderBatchJourneyMap(points) {
+      const section = document.getElementById("modalBatchMapSection");
+      const el = document.getElementById("modalBatchMap");
+      if (!section || !el) return;
+      if (!points.length || typeof L === "undefined") {
+        section.classList.add("hidden");
+        return;
+      }
+      section.classList.remove("hidden");
+      if (batchJourneyMap) {
+        batchJourneyMap.remove();
+        batchJourneyMap = null;
+      }
+      batchJourneyMap = L.map(el, { scrollWheelZoom: false });
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 12,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+      }).addTo(batchJourneyMap);
+
+      const latlngs = points.map(pt => [pt.latitude, pt.longitude]);
+      points.forEach((pt, idx) => {
+        const isOrigin = pt.kind === "origin";
+        L.circleMarker([pt.latitude, pt.longitude], {
+          radius: 9,
+          weight: 2,
+          color: "#ffffff",
+          fillColor: isOrigin ? "#059669" : "#2563eb",
+          fillOpacity: 0.95
+        }).addTo(batchJourneyMap).bindTooltip(`${idx + 1}. ${pt.label}`, { direction: "top" });
+      });
+      if (latlngs.length > 1) {
+        L.polyline(latlngs, { color: "#059669", weight: 3, dashArray: "6 6" }).addTo(batchJourneyMap);
+      }
+      const fit = () => {
+        batchJourneyMap.invalidateSize();
+        if (latlngs.length === 1) batchJourneyMap.setView(latlngs[0], 9);
+        else batchJourneyMap.fitBounds(latlngs, { padding: [30, 30], maxZoom: 9 });
+      };
+      // Modal vừa mở: đợi bố cục xong rồi mới tính kích thước bản đồ
+      setTimeout(fit, 80);
+    }
+
+    const EVENT_TYPE_LABELS = {
+      BATCH_INITIALIZED: "Khởi tạo lô nông sản",
+      BATCH_SEED_INITIALIZED: "Khởi tạo lô nông sản",
+      BATCH_CREATED: "Khởi tạo lô nông sản",
+      HARVEST: "Thu hoạch nông sản",
+      HARVESTED: "Thu hoạch nông sản",
+      PROCESSING: "Sơ chế & đóng gói",
+      HANDOVER_CREATED: "Khởi tạo phiếu bàn giao",
+      HANDOVER_INITIATED: "Tạo lệnh bàn giao",
+      HANDOVER_ACCEPTED: "Xác nhận tiếp nhận bàn giao",
+      HANDOVER_REJECTED: "Từ chối tiếp nhận bàn giao",
+      BATCH_SPLIT: "Tách lô",
+      BATCH_SPLIT_PARENT: "Tách lô (lô mẹ)",
+      BATCH_SPLIT_CHILD: "Sinh từ tách lô",
+      BATCH_SPLIT_CREATED: "Tách lô (tạo lô con)",
+      BATCH_MERGE_PARENT: "Gộp lô (lô nguồn)",
+      BATCH_MERGED: "Sinh từ gộp lô",
+      BATCH_MERGE_CREATED: "Gộp lô (tạo lô mới)",
+      BATCH_DISTRIBUTED: "Phân phối ra điểm bán lẻ",
+      BATCH_STORE_ASSIGNED: "Điều chuyển về cửa hàng",
+      BATCH_CONSUMED: "Đã bán hết",
+      CONSUMED_ALL: "Đã bán hết (tiêu thụ toàn bộ)",
+      MATERIAL_APPLIED: "Ghi nhận sử dụng vật tư",
+      MATERIAL_APPLIED_PHI: "Ghi nhận vật tư & cách ly (PHI)",
+      EMERGENCY_RECALL_TRIGGERED: "Mở lệnh thu hồi khẩn cấp",
+      RECALL_DECLARED: "Mở lệnh thu hồi khẩn cấp",
+      RECALL_APPLIED: "Đưa vào diện phong tỏa thu hồi",
+      RECALL_ORGANIZATION_CONFIRMED: "Xác nhận cô lập thu hồi",
+      COLD_CHAIN_DISPATCH: "Xuất chuyến vận chuyển lạnh",
+      COLD_CHAIN_VIOLATION: "Vi phạm ngưỡng nhiệt độ chuỗi lạnh",
+      TRIP_DEPARTED: "Lên xe vận chuyển lạnh",
+      TRIP_ARRIVED: "Hoàn tất chuyến xe lạnh"
+    };
+
+    const RECALL_SEVERITY_LABELS = {
+      CRITICAL: "Khẩn cấp (Nguy hại nghiêm trọng)",
+      HIGH: "Mức độ cao",
+      MEDIUM: "Mức độ trung bình",
+      LOW: "Mức độ thấp"
+    };
+
+    const RECALL_STATUS_LABELS = {
+      ACTIVE: "Đang hiệu lực phong tỏa",
+      IN_PROGRESS: "Đang xử lý cô lập",
+      COMPLETED: "Đã hoàn tất thu hồi",
+      RESOLVED: "Đã xử lý xong",
+      CANCELLED: "Đã hủy"
+    };
+
+    function formatVnDateTime(val) {
+      if (!val) return "--";
+      const s = String(val).trim();
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        const pad = n => String(n).padStart(2, "0");
+        return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+      return s.replace("T", " ").substring(0, 16);
+    }
+
+    function formatBatchStatusLabel(rawStatus, isRecalled = false) {
+      const st = String(rawStatus || "").trim();
+      const low = st.toLowerCase();
+      if (isRecalled || low.includes("thu hồi") || low.includes("phong tỏa") || low.includes("recalled")) {
+        return "Bị phong tỏa thu hồi";
+      }
+      if (low === "active" || low === "đang lưu kho") return "Đang lưu kho";
+      if (low === "consumed" || low === "sold_out" || low.includes("bán hết")) return "Đã bán hết (tiêu thụ toàn bộ)";
+      if (low.includes("chờ xác nhận") || low === "pending") return "Chờ xác nhận bàn giao";
+      if (low === "in_transit" || low.includes("vận chuyển")) return "Đang vận chuyển lạnh";
+      return st || "Đang lưu kho";
+    }
+
+    function describeEventData(raw) {
+      if (!raw) return "";
+      let d = raw;
+      if (typeof raw === "string") {
+        try { d = JSON.parse(raw); } catch (e) { return raw; }
+      }
+      if (typeof d !== "object" || d === null) return String(d);
+      if (d.message) return d.message;
+      const parts = [];
+      if (d.product_name) parts.push(`Sản phẩm: ${d.product_name}`);
+      if (d.material_name) {
+        parts.push(`${d.material_name}${d.dosage ? ` (${d.dosage})` : ""}${d.isolation_days !== undefined ? `, cách ly ${d.isolation_days} ngày` : ""}${d.safe_harvest_date ? `, an toàn từ ${d.safe_harvest_date}` : ""}`);
+      }
+      if (d.quantity !== undefined) parts.push(`Khối lượng: ${d.quantity} ${d.unit || "kg"}`);
+      if (d.split_quantity !== undefined) parts.push(`Khối lượng tách: ${d.split_quantity} ${d.unit || "kg"}`);
+      if (d.total_quantity !== undefined) parts.push(`Tổng khối lượng gộp: ${d.total_quantity} ${d.unit || "kg"}`);
+      if (d.parent_batch_code || d.parent_code) parts.push(`Lô mẹ: ${d.parent_batch_code || d.parent_code}`);
+      if (d.parent_codes && Array.isArray(d.parent_codes)) parts.push(`Gộp từ: ${d.parent_codes.join(", ")}`);
+      if (d.child_codes) parts.push(`Lô con: ${[].concat(d.child_codes).join(", ")}`);
+      if (d.from_org || d.to_org) {
+        parts.push(`${d.from_org ? `Từ: ${d.from_org}` : ""}${d.to_org ? `${d.from_org ? " → " : ""}Đến: ${d.to_org}` : ""}`);
+      }
+      if (d.destination || d.location_name) parts.push(`Điểm đến: ${d.destination || d.location_name}`);
+      if (d.trip_code) parts.push(`Chuyến: ${d.trip_code}${d.vehicle_code ? ` (${d.vehicle_code})` : ""}`);
+      if (d.peak_temperature !== undefined) {
+        parts.push(`Nhiệt độ đỉnh: ${d.peak_temperature}°C (vượt ngưỡng ${d.threshold ?? 8}°C trong ${d.duration_minutes ?? 0} phút)`);
+      } else if (d.temperature !== undefined) {
+        parts.push(`Nhiệt độ: ${d.temperature}`);
+      }
+      if (d.recall_code) {
+        const sev = d.severity ? (RECALL_SEVERITY_LABELS[d.severity] || d.severity) : "";
+        parts.push(`Mã lệnh: ${d.recall_code}${sev ? ` (${sev})` : ""}`);
+      }
+      if (d.harvest_date) parts.push(`Ngày thu hoạch: ${d.harvest_date}`);
+      if (d.reason) parts.push(`Lý do: ${d.reason}`);
+      if (d.reject_reason) parts.push(`Lý do từ chối: ${d.reject_reason}`);
+      if (d.notes) parts.push(`Ghi chú: ${d.notes}`);
+      return parts.join(" · ");
+    }
+
+    /**
+     * S-13 & S-12: dòng thời gian sự kiện của lô, cảnh báo ở đầu nếu chuỗi hash không toàn vẹn
+     */
+    async function fetchAndRenderBatchTimeline(batch, isInternalUser) {
+      const section = document.getElementById("modalBatchTimelineSection");
+      const listEl = document.getElementById("modalBatchTimelineList");
+      const statusEl = document.getElementById("modalBatchTimelineStatus");
+      const alertEl = document.getElementById("modalBatchTimelineAlert");
+      if (!section || !listEl) return;
+      if (!batch || !isInternalUser) {
+        section.classList.add("hidden");
+        return;
+      }
+      section.classList.remove("hidden");
+      listEl.innerHTML = "";
+      if (alertEl) alertEl.classList.add("hidden");
+      if (statusEl) statusEl.innerText = "Đang tải...";
+      const requestedCode = batch.code;
+
+      try {
+        const [events, verify] = await Promise.all([
+          apiFetch(`/api/v1/chain-events?batch_id=${batch.id}&limit=200`),
+          apiFetch(`/api/v1/chain-events/verify?batch_id=${batch.id}`).catch(() => null)
+        ]);
+        if (currentDetailBatchCode !== requestedCode) return; // người dùng đã mở lô khác
+
+        const statusById = {};
+        ((verify && verify.events) || []).forEach(ev => { statusById[ev.id] = ev.status; });
+        const sorted = [...(events || [])].sort((a, b) => (a.created_at || "").localeCompare(b.created_at || "") || (a.id - b.id));
+
+        if (verify && verify.valid === false && alertEl) {
+          alertEl.className = "p-3 rounded-xl border-2 border-rose-400 bg-rose-50 text-rose-900 text-[11px] font-semibold flex items-start gap-2";
+          alertEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-600 mt-0.5"></i>
+            <span><b>Chuỗi sự kiện của lô không toàn vẹn.</b> ${verify.first_failure_reason || verify.message || ""} Các sự kiện bị đánh dấu dưới đây không còn đáng tin cậy.</span>`;
+          alertEl.classList.remove("hidden");
+        }
+
+        if (sorted.length === 0) {
+          listEl.innerHTML = `<li class="text-[11px] text-slate-400 p-2">Chưa có sự kiện nào được ghi cho lô này.</li>`;
+        } else {
+          listEl.innerHTML = sorted.map(ev => {
+            const st = statusById[ev.id];
+            const suspect = st && st !== "valid";
+            const time = ev.created_at ? ev.created_at.replace("T", " ").substring(0, 16) : "";
+            return `
+              <li class="relative pl-5 border-l-2 ${suspect ? "border-rose-400" : "border-emerald-300"}">
+                <span class="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full ${suspect ? "bg-rose-500" : "bg-emerald-500"}"></span>
+                <div class="p-2.5 rounded-xl ${suspect ? "bg-rose-50 border border-rose-200" : "bg-slate-50 border border-slate-100"}">
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <span class="font-bold text-slate-800 text-[11px]">${EVENT_TYPE_LABELS[ev.event_type] || ev.event_type}</span>
+                    <span class="text-[10px] text-slate-400 font-mono">${time}</span>
+                  </div>
+                  <p class="text-[10px] text-emerald-700 font-semibold mt-0.5"><i class="fa-solid fa-building mr-1"></i>${ev.org_name || `Tổ chức #${ev.organization_id}`}</p>
+                  ${describeEventData(ev.event_data) ? `<p class="text-[11px] text-slate-600 mt-0.5">${describeEventData(ev.event_data)}</p>` : ""}
+                  ${suspect ? `<p class="text-[10px] text-rose-700 font-bold mt-1"><i class="fa-solid fa-circle-exclamation mr-1"></i>${st === "broken_link" ? "Đứt mạch liên kết hash" : "Nội dung bị sửa / nghi vấn"}</p>` : ""}
+                </div>
+              </li>`;
+          }).join("");
+        }
+        if (statusEl) {
+          statusEl.innerText = verify
+            ? (verify.valid === false ? `${sorted.length} sự kiện · CÓ VẤN ĐỀ TOÀN VẸN` : `${sorted.length} sự kiện · hash toàn vẹn`)
+            : `${sorted.length} sự kiện`;
+          statusEl.className = verify && verify.valid === false ? "text-[10px] text-rose-600 font-bold" : "text-[10px] text-slate-400 font-medium";
+        }
+      } catch (err) {
+        if (statusEl) statusEl.innerText = "Không tải được dòng thời gian";
+        listEl.innerHTML = `<li class="text-[11px] text-rose-500 p-2">${err.message}</li>`;
+      }
+    }
+
+    /**
+     * S-46: mã QR trỏ tới trang tra cứu công khai của lô (dùng mã lô, không dùng id tự tăng)
+     */
+    let currentQrObject = null;
+
+    function batchPublicUrl(code) {
+      return `${location.origin}/app/?lo=${encodeURIComponent(code)}`;
+    }
+
+    function openBatchQrModal() {
+      const code = currentDetailBatchCode;
+      if (!code) return;
+      if (typeof qrcode !== "function") {
+        showToast("Không tải được thư viện sinh mã QR. Vui lòng kiểm tra kết nối mạng.", "error");
+        return;
+      }
+      const url = batchPublicUrl(code);
+      const qr = qrcode(0, "M");
+      qr.addData(url);
+      qr.make();
+      currentQrObject = { qr, code, url };
+      document.getElementById("batchQrCode").innerText = code;
+      document.getElementById("batchQrUrl").innerText = url;
+      document.getElementById("batchQrImage").innerHTML = qr.createSvgTag({ cellSize: 6, margin: 4, scalable: false });
+      openModal("batchQrModal");
+    }
+
+    function downloadBatchQr(format) {
+      if (!currentQrObject) return;
+      const { qr, code } = currentQrObject;
+      const link = document.createElement("a");
+      if (format === "svg") {
+        const svg = qr.createSvgTag({ cellSize: 10, margin: 4, scalable: true });
+        link.href = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+        link.download = `QR-${code}.svg`;
+      } else {
+        // PNG độ phân giải cao (≈ 1000px) để in sắc nét ở cỡ 3 cm
+        const count = qr.getModuleCount(), margin = 4;
+        const cell = Math.max(8, Math.floor(1000 / (count + margin * 2)));
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = (count + margin * 2) * cell;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#000000";
+        for (let r = 0; r < count; r++) {
+          for (let c = 0; c < count; c++) {
+            if (qr.isDark(r, c)) ctx.fillRect((c + margin) * cell, (r + margin) * cell, cell, cell);
+          }
+        }
+        link.href = canvas.toDataURL("image/png");
+        link.download = `QR-${code}.png`;
+      }
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+
+    /**
+     * S-53: xuất hồ sơ truy xuất ra bản xem trực tiếp trong ứng dụng, tải tệp HTML hoặc in / lưu PDF không chặn luồng
+     */
+    function escHtml(v) {
+      return String(v ?? "").replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+    }
+
+    let currentDossierCache = null;
+
+    function buildInspectionDossierHtml(d, standalone = true) {
+      const b = d.batch_info || {};
+      const iv = d.integrity_verification || {};
+      const meta = d.export_metadata || {};
+      const lin = d.lineage || {};
+      const cc = d.cold_chain || {};
+      const rc = d.recalls || {};
+      const fo = d.farmer_origin || {};
+
+      const ancestors = lin.ancestors || [];
+      const descendants = lin.descendants || [];
+      const timeline = d.event_timeline || [];
+      const trips = cc.trips || [];
+      const violations = cc.violations || [];
+      const recallsList = rc.recalls || [];
+
+      const ancestorPlots = ancestors
+        .map(a => a.land_plot_name)
+        .filter(p => p && p !== "Chưa gán thửa đất" && p !== "Chưa xác định");
+      const effectivePlot = b.land_plot_name || (ancestorPlots.length ? Array.from(new Set(ancestorPlots)).join(", ") : "Kế thừa từ vùng trồng liên kết");
+      const statusVn = formatBatchStatusLabel(b.status, rc.is_recalled);
+      const exportedAtVn = formatVnDateTime(meta.exported_at);
+      const checkedAtVn = formatVnDateTime(iv.checked_at);
+      const createdAtVn = formatVnDateTime(b.created_at);
+
+      const rows = (arr, cols) => (arr || []).length
+        ? (arr || []).map(x => `<tr>${cols.map(c => `<td>${escHtml(typeof c === "function" ? c(x) : x[c])}</td>`).join("")}</tr>`).join("")
+        : `<tr><td colspan="${cols.length}" class="muted">Không có dữ liệu</td></tr>`;
+
+      const innerContent = `
+        <div class="dossier-doc">
+          <div class="doc-header">
+            <div>
+              <div class="doc-org">${escHtml(meta.issuer_authority || "HỆ THỐNG TRUY XUẤT NGUỒN GỐC NÔNG SẢN LÀNH")}</div>
+              <h1>HỒ SƠ KIỂM TRA TRUY XUẤT NGUỒN GỐC LÔ ${escHtml(b.batch_code)}</h1>
+              <div class="muted">
+                Mã hồ sơ: <b>${escHtml(meta.official_dossier_code)}</b> ·
+                Xuất lúc: <b>${escHtml(exportedAtVn)}</b> ·
+                Người xuất: <b>${escHtml(meta.inspector_name)}</b> (${escHtml(SUPPLY_CHAIN_ROLES[meta.inspector_role]?.name || meta.inspector_role || "Kiểm tra")})
+              </div>
+            </div>
+            <div class="badge-box ${iv.valid ? "badge-ok" : "badge-bad"}">
+              ${iv.valid ? "✓ HASH SHA-256 TOÀN VẸN 100%" : "⚠ CẢNH BÁO ĐỨT GÃY HASH"}
+            </div>
+          </div>
+
+          <h2>1. Thông tin định danh lô nông sản</h2>
+          <table>
+            <tr>
+              <th style="width:18%">Mã lô định danh</th><td><b>${escHtml(b.batch_code)}</b> (ID #${escHtml(b.id)})</td>
+              <th style="width:18%">Tên nông sản</th><td><b>${escHtml(b.product_name)}</b></td>
+            </tr>
+            <tr>
+              <th>Tổ chức đang giữ</th><td>${escHtml(b.organization_name)}</td>
+              <th>Thửa đất / Nguồn gốc</th><td>${escHtml(effectivePlot)}</td>
+            </tr>
+            <tr>
+              <th>Khối lượng ban đầu</th><td>${escHtml(Number(b.initial_quantity || 0).toLocaleString("vi-VN"))} ${escHtml(b.unit || "kg")}</td>
+              <th>Khối lượng còn lại</th><td><b>${escHtml(Number(b.remaining_quantity || 0).toLocaleString("vi-VN"))} ${escHtml(b.unit || "kg")}</b></td>
+            </tr>
+            <tr>
+              <th>Trạng thái hiện tại</th><td><b>${escHtml(statusVn)}</b></td>
+              <th>Thời điểm khởi tạo</th><td>${escHtml(createdAtVn)}</td>
+            </tr>
+          </table>
+
+          <h2>2. Xác thực tính toàn vẹn chuỗi băm mật mã (SHA-256 Hash Chain)</h2>
+          <table>
+            <tr>
+              <th style="width:22%">Kết quả thẩm định</th>
+              <td class="${iv.valid ? "ok" : "bad"}">${escHtml(iv.status_label)} — ${escHtml(iv.message)}</td>
+            </tr>
+            <tr>
+              <th>Tổng số sự kiện</th>
+              <td>${escHtml(iv.total_events)} sự kiện trong sổ cái · Kiểm tra lúc: ${escHtml(checkedAtVn)}</td>
+            </tr>
+            <tr>
+              <th>Hash khởi nguyên (Genesis)</th>
+              <td class="hash">${escHtml(iv.genesis_hash)}</td>
+            </tr>
+            <tr>
+              <th>Hash cuối chuỗi (Terminal)</th>
+              <td class="hash"><b>${escHtml(iv.terminal_current_hash)}</b></td>
+            </tr>
+          </table>
+
+          <h2>3. Nguồn gốc nông hộ & vùng trồng (Tuân thủ Nghị định 13/2023/NĐ-CP)</h2>
+          <table>
+            <tr>
+              <th style="width:22%">Đơn vị / Nông hộ</th>
+              <td><b>${escHtml(fo.display_name || "HTX Nông Nghiệp Thắng Lợi")}</b> ${fo.farmer_ref_id ? `(Mã nông hộ: ${escHtml(fo.farmer_ref_id)})` : ""}</td>
+              <th style="width:18%">Tỉnh / Thành phố</th>
+              <td>${escHtml(fo.province || "Lâm Đồng")}</td>
+            </tr>
+            <tr>
+              <th>Địa chỉ vùng trồng</th>
+              <td>${escHtml(fo.detail_address || "Xã Đạ Sar, Huyện Lạc Dương, Tỉnh Lâm Đồng")}</td>
+              <th>Bảo vệ dữ liệu cá nhân</th>
+              <td>${fo.is_anonymized ? "Đã ẩn danh theo NĐ 13/2023/NĐ-CP" : "Đầy đủ hồ sơ liên kết vùng trồng"}</td>
+            </tr>
+          </table>
+
+          <h2>4. Phả hệ nguồn gốc tách / gộp (Lineage DAG)</h2>
+          <p style="margin:4px 0"><b>Lô tổ tiên / Nguồn gốc (${escHtml(lin.ancestor_count ?? ancestors.length)}):</b></p>
+          <table>
+            <tr><th>Mã lô gốc</th><th>Sản phẩm</th><th>Đơn vị vùng trồng</th><th>Thửa đất canh tác</th><th>Khối lượng gốc</th></tr>
+            ${rows(ancestors, [
+              "batch_code",
+              "product_name",
+              x => x.farm_name || x.organization_name || "HTX Nông Nghiệp Thắng Lợi",
+              x => x.land_plot_name || effectivePlot,
+              x => `${Number(x.initial_quantity ?? x.remaining_quantity ?? 0).toLocaleString("vi-VN")} ${x.unit || b.unit || "kg"}`
+            ])}
+          </table>
+          <p style="margin:8px 0 4px"><b>Lô hậu duệ phát sinh từ tách / gộp (${escHtml(lin.descendant_count ?? descendants.length)}):</b></p>
+          <table>
+            <tr><th>Mã lô con</th><th>Sản phẩm</th><th>Đơn vị nắm giữ</th><th>Khối lượng còn lại</th><th>Trạng thái</th></tr>
+            ${rows(descendants, [
+              "batch_code",
+              "product_name",
+              x => (x.holding_organization && x.holding_organization.name) || x.organization_name || x.farm_name || "Đơn vị chuỗi",
+              x => `${Number(x.remaining_quantity ?? 0).toLocaleString("vi-VN")} ${x.unit || b.unit || "kg"}`,
+              x => formatBatchStatusLabel(x.status)
+            ])}
+          </table>
+
+          <h2>5. Dòng thời gian sự kiện bất biến (${escHtml(timeline.length)} sự kiện)</h2>
+          <table>
+            <tr><th style="width:5%">#</th><th style="width:16%">Thời gian</th><th style="width:20%">Sự kiện</th><th style="width:20%">Tổ chức thực hiện</th><th>Chi tiết nghiệp vụ</th><th style="width:14%">Mã băm SHA-256</th></tr>
+            ${rows(timeline, [
+              "index",
+              x => formatVnDateTime(x.created_at),
+              x => EVENT_TYPE_LABELS[x.event_type] || x.event_type,
+              "organization_name",
+              x => describeEventData(x.event_data) || "Ghi nhận sự kiện chuỗi cung ứng",
+              x => (x.current_hash || "").slice(0, 16) + "…"
+            ])}
+          </table>
+
+          <h2>6. Giám sát vận chuyển chuỗi lạnh IoT (${escHtml(cc.trips_count ?? trips.length)} chuyến · ${escHtml(cc.violations_count ?? violations.length)} vi phạm)</h2>
+          ${trips.length ? `
+          <p style="margin:4px 0"><b>Danh sách chuyến xe lạnh vận chuyển lô hàng:</b></p>
+          <table>
+            <tr><th>Mã chuyến</th><th>Phương tiện</th><th>Đơn vị vận tải</th><th>Tài xế</th><th>Ngưỡng chuẩn</th><th>Khởi hành</th></tr>
+            ${rows(trips, [
+              "trip_code",
+              "vehicle_code",
+              "carrier_name",
+              "driver_name",
+              "temp_range",
+              x => formatVnDateTime(x.start_time)
+            ])}
+          </table>` : ""}
+          <p style="margin:6px 0 4px"><b>Biên bản vi phạm ngưỡng nhiệt độ:</b></p>
+          <table>
+            <tr><th>Mã chuyến / Xe</th><th>Bắt đầu</th><th>Kết thúc</th><th>Thời lượng</th><th>Nhiệt độ đỉnh</th></tr>
+            ${rows(violations, [
+              x => `${x.trip_code || "--"}${x.vehicle_code ? ` (${x.vehicle_code})` : ""}`,
+              x => formatVnDateTime(x.started_at || x.start_time),
+              x => formatVnDateTime(x.ended_at || x.end_time),
+              x => `${x.duration_minutes ?? 0} phút`,
+              x => `${x.peak_temperature ?? "--"}°C (ngưỡng ${x.threshold ?? 8}°C)`
+            ])}
+          </table>
+
+          <h2>7. Tình trạng lệnh thu hồi khẩn cấp</h2>
+          <table>
+            <tr><th style="width:18%">Mã lệnh thu hồi</th><th style="width:20%">Mức độ nghiêm trọng</th><th style="width:18%">Trạng thái</th><th style="width:16%">Ngày ban hành</th><th>Lý do thu hồi & phong tỏa</th></tr>
+            ${rows(recallsList, [
+              "recall_code",
+              x => RECALL_SEVERITY_LABELS[x.severity] || x.severity,
+              x => RECALL_STATUS_LABELS[x.status] || x.status,
+              x => formatVnDateTime(x.created_at),
+              "reason"
+            ])}
+          </table>
+
+          <div class="doc-footer">
+            <div>
+              <b>Cơ quan xác thực:</b> ${escHtml(meta.issuer_authority || "Chi Cục Quản Lý Chất Lượng Nông Lâm Sản & Thủy Sản")}<br/>
+              <span class="muted">Đối chiếu chữ ký băm SHA-256 cuối chuỗi (Terminal Hash) với hệ thống để kiểm chứng hồ sơ không bị chỉnh sửa sau khi xuất.</span>
+            </div>
+            <div style="text-align:right">
+              <b>Người trích xuất hồ sơ</b><br/>
+              <span>${escHtml(meta.inspector_name)}</span>
+            </div>
+          </div>
+        </div>`;
+
+      const styles = `
+        .dossier-doc { font-family: 'Inter', Arial, Helvetica, sans-serif; font-size: 12px; color: #0f172a; background: #ffffff; padding: 24px; border-radius: 16px; border: 1px solid #cbd5e1; line-height: 1.45; }
+        .dossier-doc .doc-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 14px; }
+        .dossier-doc .doc-org { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; color: #047857; text-transform: uppercase; }
+        .dossier-doc h1 { font-size: 18px; font-weight: 900; margin: 4px 0; color: #0f172a; }
+        .dossier-doc h2 { font-size: 13px; font-weight: 800; margin: 16px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #94a3b8; color: #1e293b; text-transform: uppercase; }
+        .dossier-doc table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 11.5px; }
+        .dossier-doc td, .dossier-doc th { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
+        .dossier-doc th { background: #f1f5f9; font-weight: 700; color: #334155; }
+        .dossier-doc .muted { color: #64748b; font-size: 11px; }
+        .dossier-doc .ok { color: #047857; font-weight: 800; }
+        .dossier-doc .bad { color: #be123c; font-weight: 800; }
+        .dossier-doc .badge-box { padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+        .dossier-doc .badge-ok { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .dossier-doc .badge-bad { background: #ffe4e6; color: #9f1239; border: 1px solid #fda4af; }
+        .dossier-doc .hash { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-all; color: #1e293b; }
+        .dossier-doc .doc-footer { margin-top: 20px; padding-top: 12px; border-top: 1px dashed #94a3b8; display: flex; justify-content: space-between; gap: 16px; font-size: 11px; }
+      `;
+
+      if (!standalone) {
+        return `<style>${styles}</style>${innerContent}`;
+      }
+
+      return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Hồ sơ kiểm tra lô ${escHtml(b.batch_code)} - ${escHtml(meta.official_dossier_code)}</title>
+        <style>
+          body { font-family: Arial, Helvetica, sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #0f172a; }
+          .toolbar { max-width: 960px; margin: 0 auto 12px; display: flex; justify-content: flex-end; gap: 8px; }
+          .toolbar button { padding: 8px 14px; border-radius: 8px; border: 1px solid #1e293b; background: #1e293b; color: #fff; font-weight: bold; cursor: pointer; font-size: 12px; }
+          .toolbar button:hover { background: #334155; }
+          .dossier-doc { max-width: 960px; margin: 0 auto; }
+          ${styles}
+          @media print {
+            body { background: #fff; padding: 0; }
+            .toolbar { display: none !important; }
+            .dossier-doc { border: none; padding: 0; max-width: 100%; }
+          }
+        </style></head><body>
+        <div class="toolbar">
+          <button onclick="window.print()">🖨️ In / Lưu PDF</button>
+        </div>
+        ${innerContent}
+        </body></html>`;
+    }
+
+    async function exportInspectionDossier() {
+      const code = currentDetailBatchCode;
+      if (!code) {
+        showToast("Không xác định được mã lô cần xuất hồ sơ!", "error");
+        return;
+      }
+      const subtitleEl = document.getElementById("dossierModalSubtitle");
+      const bodyEl = document.getElementById("inspectionDossierBody");
+      if (subtitleEl) subtitleEl.innerText = `Đang trích xuất hồ sơ kiểm tra cho lô ${code}...`;
+      if (bodyEl) {
+        bodyEl.innerHTML = `
+          <div class="p-12 text-center space-y-3">
+            <i class="fa-solid fa-spinner fa-spin text-3xl text-indigo-600"></i>
+            <p class="font-bold text-slate-700 text-sm">Đang thẩm định chuỗi băm SHA-256 và tổng hợp hồ sơ lô ${escHtml(code)}...</p>
+          </div>`;
+      }
+      openModal("inspectionDossierModal");
+
+      try {
+        const d = await apiFetch(`/api/v1/batches/${encodeURIComponent(code)}/inspection-dossier`);
+        const standaloneHtml = buildInspectionDossierHtml(d, true);
+        const inlineHtml = buildInspectionDossierHtml(d, false);
+        currentDossierCache = {
+          code: d.batch_info.batch_code || code,
+          dossierCode: d.export_metadata.official_dossier_code || `HSKT-${code}`,
+          standaloneHtml,
+          data: d
+        };
+        if (subtitleEl) {
+          subtitleEl.innerText = `Mã hồ sơ: ${currentDossierCache.dossierCode} · Lô: ${currentDossierCache.code} · Chuỗi Hash: ${d.integrity_verification.valid ? "TOÀN VẸN 100%" : "CẢNH BÁO"}`;
+        }
+        if (bodyEl) {
+          bodyEl.innerHTML = inlineHtml;
+        }
+        showToast(`Đã tổng hợp Hồ sơ kiểm tra #${currentDossierCache.dossierCode} cho lô ${currentDossierCache.code}!`, "success");
+      } catch (err) {
+        closeModal("inspectionDossierModal");
+        showToast(`Không thể xuất hồ sơ kiểm tra: ${err.message}`, "error");
+      }
+    }
+
+    function downloadInspectionDossierHtml() {
+      if (!currentDossierCache || !currentDossierCache.standaloneHtml) {
+        showToast("Hồ sơ đang được tạo, vui lòng đợi giây lát...", "info");
+        return;
+      }
+      const blob = new Blob([currentDossierCache.standaloneHtml], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Ho-So-Kiem-Tra-${currentDossierCache.code}-${currentDossierCache.dossierCode}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      showToast(`Đã tải xuống tệp Hồ sơ kiểm tra lô ${currentDossierCache.code}!`, "success");
+    }
+
+    function printInspectionDossier() {
+      if (!currentDossierCache || !currentDossierCache.standaloneHtml) {
+        showToast("Hồ sơ đang được tạo, vui lòng đợi giây lát...", "info");
+        return;
+      }
+      const frame = document.getElementById("dossierPrintFrame");
+      if (!frame) {
+        downloadInspectionDossierHtml();
+        return;
+      }
+      const doc = frame.contentWindow || frame.contentDocument;
+      const targetDoc = doc.document || doc;
+      targetDoc.open();
+      targetDoc.write(currentDossierCache.standaloneHtml);
+      targetDoc.close();
+      setTimeout(() => {
+        try {
+          frame.contentWindow.focus();
+          frame.contentWindow.print();
+        } catch (e) {
+          downloadInspectionDossierHtml();
+        }
+      }, 250);
+    }
+
+    function openInspectionDossierNewTab() {
+      if (!currentDossierCache || !currentDossierCache.standaloneHtml) {
+        showToast("Hồ sơ đang được tạo, vui lòng đợi giây lát...", "info");
+        return;
+      }
+      const blob = new Blob([currentDossierCache.standaloneHtml], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     }
 
     function renderPublicTraceModal(data) {
@@ -6503,36 +8136,96 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       document.getElementById("modalBatchPhiText").innerText = data.phi_message || "Đạt chuẩn an toàn thời gian cách ly thuốc BVTV.";
 
       const roleKey = state.currentRole || "farm";
-      const cfg = SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
+      const activeRole = getActiveRole();
+      const cfg = SUPPLY_CHAIN_ROLES[activeRole] || SUPPLY_CHAIN_ROLES[roleKey] || SUPPLY_CHAIN_ROLES.farm;
 
       const foundBatch = state.batches.find(b => b.code === data.batch_code);
+      const lockState = getBatchLockState(foundBatch || data.batch_code, data.recall_notice);
       const remQty = foundBatch ? (foundBatch.remaining_qty !== undefined ? foundBatch.remaining_qty : foundBatch.qty) : (data.remaining_quantity !== undefined ? data.remaining_quantity : (data.qty || 0));
       const bStatus = (data.status || (foundBatch && foundBatch.status) || "").toLowerCase();
-      const isConsumedOrEmpty = ["consumed", "sold_out"].includes(bStatus) || remQty <= 0;
+      const isAlreadyRecalled = lockState.isRecalled || bStatus.includes("thu hồi") || bStatus.includes("recalled") || bStatus.includes("phong tỏa");
+      const isPendingHandover = lockState.isPendingHandover || bStatus.includes("chờ xác nhận") || bStatus.includes("pending");
+      const isConsumedOrEmpty = lockState.isDepleted || ["consumed", "sold_out"].includes(bStatus) || remQty <= 0;
+      const isSystemAdmin = activeRole === "system_admin";
+      const isInspector = activeRole === "inspector";
+      const isBatchOwner = cfg.orgId !== null && foundBatch && (foundBatch.org_id === cfg.orgId || foundBatch.organization_id === cfg.orgId);
+      const canMutateBatch = !cfg.isReadOnly && activeRole !== "consumer" && activeRole !== "inspector" && (isSystemAdmin || isBatchOwner);
 
-      // Điều khiển hiển thị nút Bàn Giao (S-15): Ẩn nếu là Consumer/Inspector; Vô hiệu hóa kèm tooltip nếu đã bán hết (S-29)
+      // Khối lượng lưu kho thật của lô (chỉ hiển thị cho đơn vị nội bộ; người tiêu dùng không thấy khối lượng)
+      const storageBox = document.getElementById("modalBatchStorageBox");
+      if (storageBox) {
+        if (foundBatch && activeRole !== "consumer") {
+          storageBox.classList.remove("hidden");
+          const unit = foundBatch.unit || "kg";
+          const initQty = foundBatch.initial_qty !== undefined ? foundBatch.initial_qty : foundBatch.qty;
+          document.getElementById("modalBatchRemainingQty").innerText = Number(remQty || 0).toLocaleString('vi-VN');
+          document.getElementById("modalBatchInitialQty").innerText = Number(initQty || 0).toLocaleString('vi-VN');
+          document.getElementById("modalBatchUnit").innerText = unit;
+          document.getElementById("modalBatchUnit2").innerText = unit;
+          const statusBadge = document.getElementById("modalBatchStatusBadge");
+          if (statusBadge) {
+            if (isAlreadyRecalled) {
+              statusBadge.innerText = "Bị phong tỏa thu hồi";
+              statusBadge.className = "px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full font-bold text-[10px] border border-rose-300";
+            } else if (isPendingHandover) {
+              statusBadge.innerText = "Chờ xác nhận bàn giao";
+              statusBadge.className = "px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full font-bold text-[10px] border border-amber-300";
+            } else if (isConsumedOrEmpty) {
+              statusBadge.innerText = "Đã xuất / bán hết";
+              statusBadge.className = "px-2.5 py-1 bg-slate-200 text-slate-700 rounded-full font-bold text-[10px] border border-slate-300";
+            } else {
+              statusBadge.innerText = formatBatchStatusLabel(foundBatch.status);
+              statusBadge.className = "px-2.5 py-1 bg-white text-emerald-800 rounded-full font-bold text-[10px] border border-emerald-300";
+            }
+          }
+        } else {
+          storageBox.classList.add("hidden");
+        }
+      }
+
+      // Nhãn cách ly theo kết quả thật từ máy chủ
+      const phiBox = document.getElementById("modalBatchPhiBox");
+      const phiBadge = document.getElementById("modalBatchPhiBadge");
+      const phiSafe = data.is_safe_phi !== false;
+      if (phiBox) {
+        phiBox.className = phiSafe
+          ? "p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between"
+          : "p-3.5 bg-amber-50 rounded-2xl border border-amber-300 flex items-center justify-between";
+      }
+      if (phiBadge) {
+        phiBadge.innerText = phiSafe ? "An toàn thu hoạch" : "Đang cách ly";
+        phiBadge.className = phiSafe
+          ? "px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]"
+          : "px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full font-bold text-[10px]";
+      }
+
+      // Điều khiển hiển thị nút Bàn Giao (S-15): Ẩn nếu không phải chủ sở hữu lô hoặc Consumer/Inspector; Khóa nếu bị thu hồi / chờ xác nhận / đã bán hết
       const hoBtn = document.getElementById("modalBtnHandover");
       if (hoBtn) {
-        if (roleKey === "consumer" || cfg.isReadOnly) {
+        if (!canMutateBatch) {
           hoBtn.classList.add("hidden");
-        } else if (isConsumedOrEmpty) {
+        } else if (isAlreadyRecalled || isPendingHandover || isConsumedOrEmpty) {
           hoBtn.classList.remove("hidden");
           hoBtn.disabled = true;
           hoBtn.classList.add("opacity-50", "cursor-not-allowed", "bg-slate-400");
           hoBtn.classList.remove("bg-emerald-600", "hover:bg-emerald-700");
-          hoBtn.title = "Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao (S-29).";
+          hoBtn.title = isAlreadyRecalled
+            ? "Lô hàng đang bị phong tỏa thu hồi khẩn cấp, mọi thao tác bàn giao bị khóa."
+            : isPendingHandover
+              ? "Lô hàng đang có lệnh bàn giao chờ bên nhận xác nhận."
+              : "Lô hàng đã tiêu thụ hết (bán hết), không thể tạo phiếu bàn giao.";
         } else {
           hoBtn.classList.remove("hidden", "opacity-50", "cursor-not-allowed", "bg-slate-400");
           hoBtn.classList.add("bg-emerald-600", "hover:bg-emerald-700");
           hoBtn.disabled = false;
-          hoBtn.title = "Bàn giao lô hàng sang đơn vị khác (S-15)";
+          hoBtn.title = "Bàn giao lô hàng sang đơn vị khác";
         }
       }
 
-      // Điều khiển hiển thị nút Tách Lô (S-17): Ẩn nếu là Consumer/Inspector hoặc hết khối lượng
+      // Điều khiển hiển thị nút Tách Lô (S-17): Ẩn nếu không phải chủ lô, đã bị thu hồi, đang chờ bàn giao hoặc hết khối lượng
       const splitBtn = document.getElementById("modalBtnSplit");
       if (splitBtn) {
-        if (roleKey === "consumer" || cfg.isReadOnly || remQty <= 0) {
+        if (!canMutateBatch || isAlreadyRecalled || isPendingHandover || isConsumedOrEmpty) {
           splitBtn.classList.add("hidden");
         } else {
           splitBtn.classList.remove("hidden");
@@ -6540,41 +8233,99 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       }
 
       // Điều khiển hiển thị nút Chuyển Cửa Hàng (S-30) & Bán Hết (S-29):
-      const canManageRetail = (roleKey === "distributor" || roleKey === "system_admin");
+      const canManageRetail = canMutateBatch && (activeRole === "distributor" || activeRole === "system_admin") && !isAlreadyRecalled && !isPendingHandover && !isConsumedOrEmpty;
       const transferLocBtn = document.getElementById("modalBtnTransferLocation");
       if (transferLocBtn) {
-        if (canManageRetail && remQty > 0) {
-          transferLocBtn.classList.remove("hidden");
-        } else {
-          transferLocBtn.classList.add("hidden");
-        }
+        transferLocBtn.classList.toggle("hidden", !canManageRetail);
       }
 
       const consumeBtn = document.getElementById("modalBtnConsume");
       if (consumeBtn) {
-        if (canManageRetail && remQty > 0) {
-          consumeBtn.classList.remove("hidden");
-        } else {
-          consumeBtn.classList.add("hidden");
-        }
+        consumeBtn.classList.toggle("hidden", !canManageRetail);
       }
 
       // Điều khiển hiển thị nút Thu Hồi Khẩn Cấp (S-33):
-      const activeRole = getActiveRole();
       const recallBtn = document.getElementById("modalBtnRecall");
       if (recallBtn) {
-        const isSystemAdmin = activeRole === "system_admin";
-        const isInspector = activeRole === "inspector";
-        const isBatchOwner = cfg.orgId !== null && foundBatch && (foundBatch.org_id === cfg.orgId || foundBatch.organization_id === cfg.orgId);
         const canTriggerRecall = isSystemAdmin || isInspector || isBatchOwner;
-        const isAlreadyRecalled = bStatus.includes("thu hồi") || bStatus.includes("recalled") || bStatus.includes("phong tỏa");
-
         if (canTriggerRecall && !isAlreadyRecalled && activeRole !== "consumer") {
           recallBtn.classList.remove("hidden");
         } else {
           recallBtn.classList.add("hidden");
         }
       }
+
+      const isInternalUser = !!state.currentUser && activeRole !== "consumer";
+
+      // S-49: cảnh báo công khai (thu hồi / vi phạm chuỗi lạnh) - không lộ số đo
+      const alertsBox = document.getElementById("modalBatchPublicAlerts");
+      if (alertsBox) {
+        let html = "";
+        const recallNoticeText = data.recall_notice || (isAlreadyRecalled ? "Lô hàng này hiện đang nằm trong lệnh thu hồi khẩn cấp và bị phong tỏa lưu thông." : "");
+        if (recallNoticeText) {
+          html += `<div class="p-3.5 rounded-2xl border-2 border-rose-400 bg-rose-50 text-rose-900 flex items-start gap-2.5">
+            <i class="fa-solid fa-triangle-exclamation text-rose-600 text-lg mt-0.5"></i>
+            <div><p class="font-black text-sm">LÔ HÀNG ĐANG BỊ THU HỒI</p><p class="text-[11px] mt-0.5">${escHtml(recallNoticeText)}</p></div>
+          </div>`;
+        }
+        if (data.cold_chain_notice) {
+          html += `<div class="p-3 rounded-2xl border border-slate-300 bg-slate-50 text-slate-700 flex items-start gap-2.5">
+            <i class="fa-solid fa-temperature-half text-slate-500 mt-0.5"></i>
+            <p class="text-[11px]">${escHtml(data.cold_chain_notice)}</p>
+          </div>`;
+        }
+        alertsBox.innerHTML = html;
+        alertsBox.classList.toggle("hidden", !html);
+      }
+
+      // S-47: lô gộp từ nhiều nguồn hiện mọi vùng trồng gốc
+      const originsBox = document.getElementById("modalBatchOriginsBox");
+      const originsList = document.getElementById("modalBatchOriginsList");
+      const origins = data.origins || [];
+      if (originsBox && originsList) {
+        if (origins.length > 1) {
+          originsList.innerHTML = origins.map(o => `
+            <span class="px-2.5 py-1 rounded-full bg-white border border-emerald-200 text-[11px] font-semibold text-emerald-900">
+              <i class="fa-solid fa-location-dot text-emerald-600 mr-1"></i>${o.farm_name}${o.province ? ` · ${o.province}` : ""}
+            </span>`).join("");
+          originsBox.classList.remove("hidden");
+        } else {
+          originsBox.classList.add("hidden");
+        }
+      }
+
+      // S-25: thông tin nội bộ của lô (đơn vị đang giữ, thửa gốc, ngày tạo)
+      const internalBox = document.getElementById("modalBatchInternalInfo");
+      if (internalBox) {
+        if (foundBatch && isInternalUser) {
+          const plotObj = (state.plots || []).find(pl => pl.id === foundBatch.land_plot_id);
+          const originFarmFallback = (origins[0] && origins[0].farm_name) || data.farm_name || "Kế thừa từ vùng trồng gốc";
+          document.getElementById("modalBatchHolder").innerText = foundBatch.farm || "--";
+          document.getElementById("modalBatchPlot").innerText = foundBatch.plot || (plotObj ? plotObj.name : (foundBatch.land_plot_id ? `Thửa #${foundBatch.land_plot_id}` : originFarmFallback));
+          document.getElementById("modalBatchCreatedAt").innerText = foundBatch.created_at ? formatVnDateTime(foundBatch.created_at) : "--";
+          internalBox.classList.remove("hidden");
+        } else {
+          internalBox.classList.add("hidden");
+        }
+      }
+
+      // S-46: mã QR in tem - đơn vị nội bộ đang xem được lô
+      const qrBtn = document.getElementById("modalBtnQr");
+      if (qrBtn) qrBtn.classList.toggle("hidden", !(foundBatch && isInternalUser));
+
+      // S-53: xuất hồ sơ kiểm tra - Cán bộ kiểm tra, Quản trị hoặc tổ chức đang giữ lô
+      const dossierBtn = document.getElementById("modalBtnDossier");
+      if (dossierBtn) {
+        const isOwner = foundBatch && cfg.orgId !== null && foundBatch.org_id === cfg.orgId;
+        const canExport = isInternalUser && (["inspector", "system_admin"].includes(getActiveRole()) || isOwner);
+        dossierBtn.classList.toggle("hidden", !canExport);
+      }
+
+      // S-60: bản đồ hành trình
+      renderBatchJourneyMap(data.map_points || []);
+
+      // S-13: dòng thời gian sự kiện của lô (chỉ đơn vị trong chuỗi)
+      fetchAndRenderBatchTimeline(foundBatch, isInternalUser);
 
       // Dựng cây phả hệ (S-17, S-18, S-19)
       fetchAndRenderLineage(data.batch_code);
@@ -6596,6 +8347,9 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             </div>
           </div>
         `).join('');
+      } else if (listEl) {
+        // Không để sót hành trình của lô xem trước đó
+        listEl.innerHTML = `<p class="text-[11px] text-slate-400 p-2">Chưa có mốc hành trình nào được ghi nhận cho lô này.</p>`;
       }
 
       openModal("batchDetailModal");
@@ -6650,10 +8404,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         eligibleBatches = eligibleBatches.filter(b => b.org_id === cfg.orgId || b.organization_id === cfg.orgId);
       }
 
-      // Loại các lô đã bị phong tỏa / thu hồi
+      // Loại các lô đã bị phong tỏa / thu hồi (kể cả kiểm tra danh sách lệnh thu hồi đang ACTIVE)
       eligibleBatches = eligibleBatches.filter(b => {
-        const st = (b.status || "").toLowerCase();
-        return !st.includes("thu hồi") && !st.includes("recalled") && !st.includes("phong tỏa");
+        const ls = getBatchLockState(b);
+        return !ls.isRecalled;
       });
 
       if (eligibleBatches.length === 0) {
@@ -6705,12 +8459,12 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const isBatchOwner = cfg.orgId !== null && (b.org_id === cfg.orgId || b.organization_id === cfg.orgId);
 
       if (!isInspector && !isSystemAdmin && !isBatchOwner) {
-        showToast("Chỉ Cán bộ kiểm tra (Inspector), Quản trị hệ thống hoặc Đơn vị sở hữu lô mới có quyền mở lệnh thu hồi (S-33)!", "error");
+        showToast("Chỉ Cán bộ kiểm tra (Inspector), Quản trị hệ thống hoặc Đơn vị sở hữu lô mới có quyền mở lệnh thu hồi!", "error");
         return;
       }
 
-      const bStatus = (b.status || "").toLowerCase();
-      if (bStatus.includes("thu hồi") || bStatus.includes("recalled") || bStatus.includes("phong tỏa")) {
+      const ls = getBatchLockState(b);
+      if (ls.isRecalled) {
         showToast(`Lô ${b.code} hiện đã nằm trong diện phong tỏa thu hồi!`, "warning");
         return;
       }
@@ -6736,7 +8490,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const severity = document.getElementById("recallSeveritySelect").value;
 
       if (reason.length < 20) {
-        showToast("Lý do thu hồi bắt buộc phải có ít nhất 20 ký tự mô tả cụ thể sự cố (S-33)!", "error");
+        showToast("Lý do thu hồi bắt buộc phải có ít nhất 20 ký tự mô tả cụ thể sự cố!", "error");
         return;
       }
 
@@ -6832,9 +8586,36 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       saveAppState(state);
 
       closeModal("openRecallModal");
-      showToast(`Đã kích hoạt lệnh thu hồi #${mockCode}. Toàn bộ các lô con cháu đã bị khóa quyền (S-38)!`, "success");
+      showToast(`Đã kích hoạt lệnh thu hồi #${mockCode}. Toàn bộ các lô con cháu đã bị khóa quyền!`, "success");
       displayRecallDetailModal(mockRecall);
       renderRecallsTab();
+    }
+
+    function renderRecallAlertBanner() {
+      const banner = document.getElementById("recallAlertBanner");
+      if (!banner) return;
+      const role = getActiveRole();
+      const orgId = state.currentUser ? (state.currentUser.organization_id ?? (SUPPLY_CHAIN_ROLES[role] || {}).orgId) : null;
+      if (!state.currentUser || orgId === null || orgId === undefined) {
+        banner.classList.add("hidden");
+        return;
+      }
+      const pending = (state.recalls || []).filter(r =>
+        ["ACTIVE", "IN_PROGRESS"].includes(r.status) &&
+        (r.organization_actions || []).some(a => a.organization_id === orgId && a.status === "PENDING")
+      );
+      if (pending.length === 0) {
+        banner.classList.add("hidden");
+        return;
+      }
+      const myBatches = pending.flatMap(r => (r.affected_batches || []).filter(b => b.organization_id === orgId).map(b => b.batch_code));
+      const text = document.getElementById("recallAlertText");
+      if (text) {
+        text.innerHTML = `<strong>Lệnh thu hồi ${pending.map(r => r.recall_code).join(", ")}</strong> liên quan tới ${myBatches.length} lô của tổ chức bạn` +
+          (myBatches.length ? `: <span class="font-mono">${myBatches.slice(0, 6).join(", ")}${myBatches.length > 6 ? "…" : ""}</span>` : "") +
+          `. Vui lòng gom hàng và xác nhận đã xử lý.`;
+      }
+      banner.classList.remove("hidden");
     }
 
     async function renderRecallsTab() {
@@ -7017,7 +8798,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
             <button 
               onclick="confirmRecallIsolation(${data.id})" 
               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md flex items-center gap-2 transition-all">
-              <i class="fa-solid fa-lock"></i> Xác Nhận Đã Cô Lập/Thu Hồi Hàng Của ${cfg.orgName} (S-36)
+              <i class="fa-solid fa-lock"></i> Xác Nhận Đã Cô Lập/Thu Hồi Hàng Của ${cfg.orgName}
             </button>
           `;
         }
@@ -7027,7 +8808,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
     }
 
     async function confirmRecallIsolation(recallId) {
-      const notes = prompt("Nhập ghi chú biện pháp niêm phong / cô lập lô hàng:", "Đã hoàn tất cô lập, niêm phong toàn bộ hàng trong kho theo quy định S-36");
+      const notes = prompt("Nhập ghi chú biện pháp niêm phong / cô lập lô hàng:", "Đã hoàn tất cô lập, niêm phong toàn bộ hàng trong kho theo quy định");
       if (notes === null) return;
 
       try {
@@ -7103,11 +8884,15 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
       const code = document.getElementById("batch_code").value.trim() || generateSecureBatchCode();
       const product = document.getElementById("batch_product").value.trim();
-      const qty = parseInt(document.getElementById("batch_quantity").value) || 0;
-      const plot = document.getElementById("batch_plot").value;
+      const productSelEl = document.getElementById("batch_product");
+      const productUnit = (productSelEl && productSelEl.selectedIndex >= 0 && productSelEl.options[productSelEl.selectedIndex].dataset.unit) || "kg";
+      const qty = parseFloat(document.getElementById("batch_quantity").value) || 0;
+      const plotSel = document.getElementById("batch_plot");
+      const plotId = plotSel && plotSel.value ? parseInt(plotSel.value) : null;
+      const plot = plotSel && plotSel.selectedIndex >= 0 && plotSel.value ? plotSel.options[plotSel.selectedIndex].text : "";
 
       if (!product || qty <= 0) {
-        showToast("Vui lòng nhập tên nông sản và số lượng > 0", "error");
+        showToast("Vui lòng chọn sản phẩm từ danh mục và nhập khối lượng > 0", "error");
         return;
       }
 
@@ -7117,7 +8902,8 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           product_name: product,
           initial_quantity: qty,
           remaining_quantity: qty,
-          unit: "kg",
+          unit: productUnit,
+          land_plot_id: plotId,
           organization_id: cfg.orgId || 1
         };
         const res = await apiFetch("/api/v1/batches", {
@@ -7131,12 +8917,14 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         const prodDisplay = document.getElementById("successBatchProductName");
         if (prodDisplay) prodDisplay.innerText = res.product_name || product;
         const qtyDisplay = document.getElementById("successBatchQtyDisplay");
-        if (qtyDisplay) qtyDisplay.innerText = qty.toLocaleString('vi-VN') + " kg";
+        if (qtyDisplay) qtyDisplay.innerText = qty.toLocaleString('vi-VN') + " " + productUnit;
         const plotDisplay = document.getElementById("successBatchPlotDisplay");
-        if (plotDisplay) plotDisplay.innerText = plot || "Thửa liên kết";
+        if (plotDisplay) plotDisplay.innerText = plot || "Không gán thửa";
 
         await loadServerData();
         closeModal("addBatchModal");
+        // Đưa người dùng về danh sách lô (lô mới nằm trong bảng) phía sau hộp thoại thông báo mã lô
+        switchNavTab('batches');
         openModal("batchSuccessModal");
         showToast(`Đã khởi tạo lô hàng ${lastCreatedBatchCode} thành công trên DB thật!`, "success");
       } catch (err) {
@@ -7161,7 +8949,7 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       const address = document.getElementById("plot_address").value.trim();
 
       if (!name || isNaN(area) || area <= 0) {
-        showToast("Diện tích thửa đất phải lớn hơn 0 (S-06)!", "error");
+        showToast("Diện tích thửa đất phải lớn hơn 0!", "error");
         return;
       }
 
@@ -7175,17 +8963,63 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
           address: address || "Lâm Đồng",
           organization_id: cfg.orgId || 1
         };
-        await apiFetch("/api/v1/land-plots", {
-          method: "POST",
+        const isEdit = editingPlotId !== null;
+        await apiFetch(isEdit ? `/api/v1/land-plots/${editingPlotId}` : "/api/v1/land-plots", {
+          method: isEdit ? "PUT" : "POST",
           body: JSON.stringify(payload)
         });
 
         await loadServerData();
         closeModal("addPlotModal");
-        showToast("Khai báo thửa đất mới thành công trên DB thật!", "success");
+        switchNavTab('plots');
+        showToast(isEdit ? "Đã cập nhật thửa đất thành công!" : "Khai báo thửa đất mới thành công trên DB thật!", "success");
+        editingPlotId = null;
       } catch (err) {
         console.error("Lỗi tạo thửa đất:", err);
         showToast(`Không thể khai báo thửa đất: ${err.message}`, "error");
+      }
+    }
+
+    /**
+     * S-07: Quản trị hệ thống thêm sản phẩm vào danh mục dùng chung (đơn vị tính từ danh sách đóng)
+     */
+    function openAddProductModal() {
+      if (getActiveRole() !== 'system_admin') {
+        showToast("Chỉ Quản trị hệ thống được thêm sản phẩm vào danh mục.", "error");
+        return;
+      }
+      document.getElementById("product_name_input").value = "";
+      document.getElementById("product_unit_input").value = "kg";
+      document.getElementById("product_desc_input").value = "";
+      openModal("addProductModal");
+    }
+
+    async function saveProductSubmit() {
+      const name = document.getElementById("product_name_input").value.trim();
+      const unit = document.getElementById("product_unit_input").value;
+      const description = document.getElementById("product_desc_input").value.trim();
+      if (!name) {
+        showToast("Vui lòng nhập tên sản phẩm!", "error");
+        return;
+      }
+      const duplicate = (state.products || []).some(pr => (pr.name || "").trim().toLowerCase() === name.toLowerCase());
+      if (duplicate) {
+        showToast(`Sản phẩm "${name}" đã có trong danh mục, không thể thêm trùng tên.`, "error");
+        return;
+      }
+      try {
+        await apiFetch("/api/v1/products", {
+          method: "POST",
+          body: JSON.stringify({ name, unit, description: description || null })
+        });
+        closeModal("addProductModal");
+        await loadServerData();
+        switchNavTab('batches');
+        const catalog = document.getElementById("productCatalogSection");
+        if (catalog) catalog.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showToast(`Đã thêm sản phẩm "${name}" (${unit}) vào danh mục dùng chung!`, "success");
+      } catch (err) {
+        showToast(`Không thể thêm sản phẩm: ${err.message}`, "error");
       }
     }
 
@@ -7214,6 +9048,32 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
       if (tr) tr.innerText = (3.7 + Math.random() * 0.5).toFixed(1) + "°C";
     }, 4000);
 
+    // S-09: bấm lưu hai lần liên tiếp chỉ tạo một bản ghi - lần bấm khi đang gửi bị bỏ qua
+    const inFlightSubmits = new Set();
+    [
+      "saveBatchSubmit", "savePlotSubmit", "saveProductSubmit", "submitBatchMaterialLog",
+      "submitHandoverCreate", "confirmHandover", "submitRejectHandoverConfirm",
+      "submitSplitBatch", "submitMergeBatches", "submitCreateTrip", "submitSimulateTelemetry",
+      "submitTriggerRecall", "confirmRecallIsolation", "submitCreateLocation", "submitTransferLocation",
+      "confirmConsumeBatch", "submitCsvImport", "deletePlotItem"
+    ].forEach(name => {
+      const original = window[name];
+      if (typeof original !== "function") return;
+      window[name] = async function (...args) {
+        if (inFlightSubmits.has(name)) {
+          // Form đang gửi: vẫn chặn trình duyệt tự submit/tải lại trang
+          if (args[0] && typeof args[0].preventDefault === "function") args[0].preventDefault();
+          return;
+        }
+        inFlightSubmits.add(name);
+        try {
+          return await original.apply(this, args);
+        } finally {
+          inFlightSubmits.delete(name);
+        }
+      };
+    });
+
     // Initial Load
     document.addEventListener("DOMContentLoaded", async () => {
       updateRoleUI();
@@ -7224,6 +9084,15 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
         await loadServerData();
         switchNavTab(state.activeTab || 'overview');
       }
+
+      // S-47: mở từ tem QR (đường dẫn .../app/?lo=MÃ_LÔ) thì hiện ngay hành trình của lô
+      const qrParams = new URLSearchParams(location.search);
+      const qrCode = qrParams.get("lo") || qrParams.get("public_batch");
+      if (qrCode) {
+        const inp = document.getElementById("heroSearchInput");
+        if (inp) inp.value = qrCode;
+        handleQuickSearch(qrCode);
+      }
     });
   </script>
 
@@ -7233,14 +9102,10 @@ SP-002,Xà Lách Thuỷ Canh Lolo,Lolo Bionda,Rau ăn lá,kg,Xà lách thủy ca
 
 if __name__ == "__main__":
     html_content = generate_spa_html()
-    
-    # 1. Write to backend/static/index.html
     target1 = os.path.join("backend", "static", "index.html")
     with open(target1, "w", encoding="utf-8") as f:
         f.write(html_content)
     print(f"Successfully wrote {len(html_content)} bytes to {target1}")
-    
-    # 2. Write to root index.html
     target2 = "index.html"
     with open(target2, "w", encoding="utf-8") as f:
         f.write(html_content)

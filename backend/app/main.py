@@ -120,8 +120,9 @@ def get_spa_interface():
 )
 def get_public_batch_trace_global(
     batch_code: str,
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
 ):
     """API Tra cứu công khai nguồn gốc lô hàng theo mã định danh (S-48 / S-50)."""
-    return get_public_batch_trace(batch_code=batch_code, db=db)
+    return get_public_batch_trace(batch_code=batch_code, request=request, db=db)
 

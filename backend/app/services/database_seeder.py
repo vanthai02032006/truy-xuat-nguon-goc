@@ -412,6 +412,7 @@ def run_full_database_seed(db: Session, force_reset: bool = False) -> dict[str, 
         status=HandoverStatus.PENDING.value,
         temperature="3.8°C",
     )
+    b_retail1.status = "chờ xác nhận"
     db.add(ho2)
 
     # 8. Chuyến xe lạnh & Giám sát nhiệt độ (S-40 -> S-45)
@@ -486,6 +487,8 @@ def run_full_database_seed(db: Session, force_reset: bool = False) -> dict[str, 
 
     db.add(RecallAffectedBatch(recall_id=recall.id, batch_id=b_split3b.id, organization_id=org_farm.id, initial_quantity=300.0, remaining_quantity=300.0))
     db.add(RecallAffectedBatch(recall_id=recall.id, batch_id=b_merge_m2.id, organization_id=org_coop.id, initial_quantity=700.0, remaining_quantity=700.0))
+    b_split3b.status = "Bị phong tỏa thu hồi"
+    b_merge_m2.status = "Bị phong tỏa thu hồi"
 
     db.add(RecallOrganizationAction(recall_id=recall.id, organization_id=org_coop.id, status="PENDING", action_notes="Cần niêm phong lô M2"))
     db.add(RecallOrganizationAction(recall_id=recall.id, organization_id=org_farm.id, status="CONFIRMED_ISOLATED", action_notes="Đã cách ly tại kho"))

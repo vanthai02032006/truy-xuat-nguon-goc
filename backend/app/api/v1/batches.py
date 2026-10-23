@@ -2,11 +2,13 @@ import json
 from datetime import datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import (
     ADMIN_ROLES,
+    DISTRIBUTOR_ROLES,
+    FARM_ROLES,
     INSPECTOR_ROLES,
     get_current_user,
     get_db,
@@ -16,11 +18,18 @@ from app.core.config import settings
 from app.models.batch import Batch
 from app.models.batch_relation import BatchRelation, BatchRelationType
 from app.models.chain_event import ChainEvent
-from app.models.cold_chain import TransportTrip, TripBatch, TripStatus
+from app.models.cold_chain import (
+    ColdChainViolation,
+    TransportTrip,
+    TripBatch,
+    TripStatus,
+)
 from app.models.handover import Handover, HandoverStatus
 from app.models.land_plot import LandPlot
 from app.models.material import BatchMaterialLog
+from app.models.organization import Organization
 from app.models.product import Product
+from app.models.recall import Recall, RecallAffectedBatch, RecallStatus
 from app.models.user import User, UserRole
 from app.repositories.batch_repository import BatchRepository
 from app.schemas.batch import (
@@ -30,6 +39,7 @@ from app.schemas.batch import (
     FarmOriginInfo,
     JourneyMilestone,
     PublicBatchTraceResponse,
+    PublicMapPoint,
 )
 from app.schemas.batch_relation import (
     BatchLineageResponse,
@@ -55,6 +65,11 @@ from app.services.batch_code_service import generate_unique_batch_code
 from app.services.hash_chain_service import record_chain_event
 from app.services.inspection_dossier_service import InspectionDossierService
 from app.services.lineage_dag_service import LineageCycleError, LineageDagService
+from app.services.public_location_service import (
+    resolve_province_center,
+    round_public_coordinate,
+)
+from app.services.public_rate_limiter import public_lookup_limiter
 from app.services.recall_service import RecallService
 
 router = APIRouter(prefix="/batches", tags=["batches"])
@@ -69,6 +84,7 @@ router = APIRouter(prefix="/batches", tags=["batches"])
 @router.get("/public/batches/{batch_code}", response_model=PublicBatchTraceResponse)
 def get_public_batch_trace(
     batch_code: str,
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
 ):
     """
@@ -81,6 +97,14 @@ def get_public_batch_trace(
     - Tự động phát hiện chu trình (cycle detection) trong đồ thị phả hệ và dừng an toàn.
     - Không tạo mốc giả hoặc chứng nhận giả: Chỉ hiển thị dữ liệu thực có trong database.
     """
+    # S-50: giới hạn số mã lô khác nhau mỗi IP tra cứu trong 1 phút (đếm cả mã không tồn tại)
+    client_key = request.headers.get("x-real-ip") or (request.client.host if request.client else "unknown")
+    if not public_lookup_limiter.allow(client_key, batch_code):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Bạn đã tra cứu quá nhiều mã lô trong thời gian ngắn. Vui lòng thử lại sau 1 phút.",
+        )
+
     batch = BatchRepository.get_by_code(db, batch_code.strip())
     if not batch:
         raise HTTPException(
@@ -95,6 +119,23 @@ def get_public_batch_trace(
 
     origins: list[FarmOriginInfo] = []
     seen_origin_keys: set[tuple[str, str]] = set()
+
+    def _creator_org(b: Batch) -> Organization | None:
+        """
+        Tổ chức tạo ra lô (sự kiện đầu tiên của lô), không phải tổ chức đang giữ:
+        lô gốc đã bàn giao thì organization_id là bên nhận, không được hiện tên đó là vùng trồng (S-48).
+        """
+        first_event = (
+            db.query(ChainEvent)
+            .filter(ChainEvent.batch_id == b.id)
+            .order_by(ChainEvent.created_at.asc(), ChainEvent.id.asc())
+            .first()
+        )
+        if first_event and first_event.organization_id:
+            org = db.query(Organization).filter(Organization.id == first_event.organization_id).first()
+            if org:
+                return org
+        return b.organization
 
     def _extract_farm_info(b: Batch) -> FarmOriginInfo | None:
         f_name = None
@@ -117,13 +158,17 @@ def get_public_batch_trace(
             plot_name = b.land_plot.name
             if b.land_plot.address:
                 prov = b.land_plot.address.split(",")[-1].strip()
-            elif b.organization:
-                f_name = f"{b.land_plot.name} ({b.organization.name})"
+            else:
+                creator = _creator_org(b)
+                if creator:
+                    f_name = f"{b.land_plot.name} ({creator.name})"
                 prov = "Chưa có thông tin địa phương"
 
-        if not f_name and b.organization:
-            f_name = b.organization.name
-            prov = "Chưa có thông tin địa phương"
+        if not f_name:
+            creator = _creator_org(b)
+            if creator:
+                f_name = creator.name
+                prov = "Chưa có thông tin địa phương"
 
         if f_name:
             return FarmOriginInfo(
@@ -408,6 +453,70 @@ def get_public_batch_trace(
     # Sắp xếp các mốc thời gian tăng dần
     milestones.sort(key=lambda m: m.timestamp or "")
 
+    # 6. Cảnh báo công khai (S-49): lô nằm trong lệnh thu hồi đang mở, hoặc từng vi phạm chuỗi lạnh
+    open_recall = (
+        db.query(Recall)
+        .join(RecallAffectedBatch, RecallAffectedBatch.recall_id == Recall.id)
+        .filter(
+            RecallAffectedBatch.batch_id == batch.id,
+            Recall.status.in_([RecallStatus.ACTIVE.value, RecallStatus.IN_PROGRESS.value]),
+        )
+        .first()
+    )
+    recall_notice = None
+    if open_recall:
+        recall_notice = (
+            "Lô hàng này đang nằm trong lệnh thu hồi của cơ quan quản lý. "
+            "Vui lòng không sử dụng sản phẩm và liên hệ nơi bán để được hướng dẫn."
+        )
+
+    had_cold_chain_violation = (
+        db.query(ColdChainViolation.id)
+        .join(TripBatch, TripBatch.trip_id == ColdChainViolation.trip_id)
+        .filter(TripBatch.batch_id.in_(visited_batch_ids))
+        .first()
+        is not None
+    )
+    cold_chain_notice = None
+    if had_cold_chain_violation:
+        cold_chain_notice = (
+            "Trong quá trình vận chuyển, lô hàng từng ghi nhận nhiệt độ bảo quản vượt ngưỡng "
+            "trong thời gian dài. Thông tin này đã được lưu trong hồ sơ truy xuất."
+        )
+
+    # 7. Bản đồ hành trình (S-60): vùng trồng gốc rồi tới điểm phân phối, không lộ toạ độ chính xác
+    map_points: list[PublicMapPoint] = []
+    seen_points: set[tuple[str, float, float]] = set()
+
+    def _add_point(kind: str, label: str, lat: float, lng: float) -> None:
+        key = (kind, lat, lng)
+        if key not in seen_points:
+            seen_points.add(key)
+            map_points.append(PublicMapPoint(kind=kind, label=label, latitude=lat, longitude=lng))
+
+    for b_item in all_related_batches:
+        plot = b_item.land_plot
+        if plot is not None and plot.latitude is not None and plot.longitude is not None:
+            area = resolve_province_center(plot.address)
+            _add_point(
+                "origin",
+                f"Vùng trồng gốc{f' - {area[0]}' if area else ''}",
+                round_public_coordinate(plot.latitude),
+                round_public_coordinate(plot.longitude),
+            )
+
+    for ce in all_chain_events:
+        if (ce.event_type or "").upper() != "BATCH_STORE_ASSIGNED":
+            continue
+        try:
+            ev_data = json.loads(ce.event_data) if isinstance(ce.event_data, str) else (ce.event_data or {})
+        except (json.JSONDecodeError, TypeError, ValueError):
+            ev_data = {}
+        area = resolve_province_center(ev_data.get("address") if isinstance(ev_data, dict) else None)
+        if area:
+            # Chỉ hiện loại điểm và tỉnh, không hiện tên cửa hàng / đối tác (S-48)
+            _add_point("distribution", f"Điểm phân phối - {area[0]}", area[1], area[2])
+
     return PublicBatchTraceResponse(
         batch_code=batch.batch_code,
         product_name=batch.product_name,
@@ -419,6 +528,10 @@ def get_public_batch_trace(
         is_safe_phi=is_safe,
         phi_message=phi_msg,
         origins=origins,
+        is_recalled=open_recall is not None,
+        recall_notice=recall_notice,
+        cold_chain_notice=cold_chain_notice,
+        map_points=map_points,
     )
 
 
@@ -1074,6 +1187,11 @@ def create_batch_material_log(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cán bộ kiểm tra chỉ có quyền xem dữ liệu (chế độ chỉ đọc).",
         )
+    if current_user.role not in FARM_ROLES | ADMIN_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ vùng trồng (hoặc Quản trị hệ thống) được khai vật tư đã dùng cho lô.",
+        )
 
     try:
         applied_dt = datetime.strptime(material_in.applied_date, "%Y-%m-%d").date()
@@ -1100,6 +1218,21 @@ def create_batch_material_log(
         organization_id=batch.organization_id,
     )
     db.add(log_entry)
+    # S-62: mỗi lần khai vật tư là một sự kiện chỉ-thêm trong chuỗi hash của lô (cùng giao dịch)
+    record_chain_event(
+        db=db,
+        batch_id=batch.id,
+        event_type="MATERIAL_APPLIED",
+        event_data={
+            "material_name": material_in.material_name,
+            "category": material_in.category,
+            "dosage": material_in.dosage,
+            "applied_date": material_in.applied_date,
+            "isolation_days": material_in.isolation_days,
+            "safe_harvest_date": safe_harvest_date,
+        },
+        organization_id=batch.organization_id,
+    )
     db.commit()
     db.refresh(log_entry)
     return log_entry
@@ -1444,7 +1577,7 @@ def get_batch_inspection_dossier(
 
     return InspectionDossierService.generate_dossier(
         db=db,
-        batch_id=batch_id,
+        batch_id=batch.id,
         inspector_user=current_user,
     )
 
@@ -1475,6 +1608,11 @@ def mark_batch_consumed(
         )
 
     is_admin = current_user.role in ADMIN_ROLES
+    if not is_admin and current_user.role not in DISTRIBUTOR_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ nhà phân phối / bán lẻ được ghi nhận lô đã bán hết cho người tiêu dùng.",
+        )
     if not is_admin and batch.organization_id != current_user.organization_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

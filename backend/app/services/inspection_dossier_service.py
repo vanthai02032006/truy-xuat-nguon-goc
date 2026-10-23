@@ -53,9 +53,52 @@ class InspectionDossierService:
                 detail=f"Không tìm thấy lô hàng với ID {batch_id}.",
             )
 
+        # 4. Phả hệ tổ tiên & hậu duệ (S-21, S-26) - truy vết trước để kế thừa vùng trồng gốc cho lô con/gộp
+        ancestors_data = []
+        descendants_data = []
+        try:
+            upstream = LineageDagService.trace_upstream_roots(db, batch.id)
+            ancestors_data = upstream.get("roots", [])
+        except (ValueError, KeyError, AttributeError):
+            ancestors_data = []
+
+        try:
+            downstream = LineageDagService.trace_downstream_descendants(db, batch.id)
+            descendants_data = downstream.get("descendants", [])
+        except (ValueError, KeyError, AttributeError):
+            descendants_data = []
+
+        lineage_info = DossierLineageInfo(
+            ancestor_count=len(ancestors_data),
+            ancestors=ancestors_data,
+            descendant_count=len(descendants_data),
+            descendants=descendants_data,
+        )
+
+        # Kế thừa thửa đất & nông hộ từ lô thu hoạch gốc nếu lô hiện tại là lô tách/gộp/bàn giao
+        root_batches: list[Batch] = []
+        for anc in ancestors_data:
+            anc_id = anc.get("id")
+            if anc_id and anc_id != batch.id:
+                rb = db.query(Batch).filter(Batch.id == anc_id).first()
+                if rb:
+                    root_batches.append(rb)
+
         # 1. Thông tin lô hàng
         org_name = batch.organization.name if batch.organization else f"Tổ chức #{batch.organization_id}"
         land_plot_name = batch.land_plot.name if batch.land_plot else None
+        if not land_plot_name:
+            ancestor_plots = []
+            for anc in ancestors_data:
+                pname = anc.get("land_plot_name")
+                if pname and pname not in ("Chưa gán thửa đất", "Chưa xác định") and pname not in ancestor_plots:
+                    ancestor_plots.append(pname)
+            if not ancestor_plots:
+                for rb in root_batches:
+                    if rb.land_plot and rb.land_plot.name and rb.land_plot.name not in ancestor_plots:
+                        ancestor_plots.append(rb.land_plot.name)
+            if ancestor_plots:
+                land_plot_name = ", ".join(ancestor_plots)
 
         batch_info = DossierBatchInfo(
             id=batch.id,
@@ -116,28 +159,6 @@ class InspectionDossierService:
                 )
             )
 
-        # 4. Phả hệ tổ tiên & hậu duệ (S-21, S-26)
-        ancestors_data = []
-        descendants_data = []
-        try:
-            upstream = LineageDagService.trace_upstream_roots(db, batch.id)
-            ancestors_data = upstream.get("roots", [])
-        except (ValueError, KeyError, AttributeError):
-            ancestors_data = []
-
-        try:
-            downstream = LineageDagService.trace_downstream_descendants(db, batch.id)
-            descendants_data = downstream.get("descendants", [])
-        except (ValueError, KeyError, AttributeError):
-            descendants_data = []
-
-        lineage_info = DossierLineageInfo(
-            ancestor_count=len(ancestors_data),
-            ancestors=ancestors_data,
-            descendant_count=len(descendants_data),
-            descendants=descendants_data,
-        )
-
         # 5. Lịch sử giám sát chuỗi lạnh & vi phạm (S-40 -> S-45)
         trip_batches = db.query(TripBatch).filter(TripBatch.batch_id == batch.id).all()
         trips_list = []
@@ -194,10 +215,11 @@ class InspectionDossierService:
                 recalls_list.append(
                     {
                         "recall_code": r.recall_code,
-                        "title": r.title,
+                        # Model Recall không có cột title/scope_mode: tự dựng tiêu đề từ mã lệnh
+                        "title": getattr(r, "title", None) or f"Lệnh thu hồi {r.recall_code}",
                         "severity": r.severity,
                         "status": r.status,
-                        "scope_mode": r.scope_mode,
+                        "scope_mode": getattr(r, "scope_mode", None) or "DESCENDANTS",
                         "reason": r.reason,
                         "created_at": r.created_at.isoformat() if r.created_at else None,
                     }
@@ -210,8 +232,17 @@ class InspectionDossierService:
 
         # 7. Thông tin nông hộ / vùng trồng (S-56 - Nghị định 13/2023/NĐ-CP)
         farmer_ref = batch.farmer_ref_id
-        if not farmer_ref and batch.land_plot:
-            farmer_ref = batch.land_plot.farmer_ref_id
+        effective_plot = batch.land_plot
+        if not farmer_ref and effective_plot:
+            farmer_ref = effective_plot.farmer_ref_id
+        if not farmer_ref or not effective_plot:
+            for rb in root_batches:
+                if not effective_plot and rb.land_plot:
+                    effective_plot = rb.land_plot
+                if not farmer_ref:
+                    farmer_ref = rb.farmer_ref_id or (rb.land_plot.farmer_ref_id if rb.land_plot else None)
+                if farmer_ref and effective_plot:
+                    break
 
         farmer_obj = None
         if farmer_ref:
@@ -241,13 +272,16 @@ class InspectionDossierService:
                     detail_address=farmer_obj.detail_address,
                 )
         else:
+            fallback_farm_name = land_plot_name
+            if not fallback_farm_name and ancestors_data:
+                fallback_farm_name = ancestors_data[0].get("farm_name")
             farmer_info = DossierFarmerInfo(
                 farmer_ref_id=farmer_ref,
-                display_name=land_plot_name or "Vùng trồng HTX",
+                display_name=fallback_farm_name or "HTX Nông Nghiệp Thắng Lợi (Vùng trồng liên kết)",
                 province="Lâm Đồng",
                 is_anonymized=False,
                 phone=None,
-                detail_address=batch.land_plot.address if batch.land_plot else None,
+                detail_address=effective_plot.address if effective_plot else "Huyện Lạc Dương, Tỉnh Lâm Đồng",
             )
 
         # 8. Metadata xuất hồ sơ

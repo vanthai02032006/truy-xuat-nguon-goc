@@ -52,6 +52,15 @@ class JourneyMilestone(BaseModel):
     status: str = "completed"
 
 
+class PublicMapPoint(BaseModel):
+    """S-60: điểm trên bản đồ công khai, toạ độ chỉ ở mức xã/huyện hoặc trung tâm tỉnh."""
+
+    kind: str  # "origin" (vùng trồng gốc) | "distribution" (điểm phân phối)
+    label: str
+    latitude: float
+    longitude: float
+
+
 class PublicBatchTraceResponse(BaseModel):
     batch_code: str
     product_name: str
@@ -63,5 +72,11 @@ class PublicBatchTraceResponse(BaseModel):
     is_safe_phi: bool = True
     phi_message: str = "Chưa ghi nhận nhật ký sử dụng vật tư nông nghiệp"
     origins: list[FarmOriginInfo] = []
+    # S-49: cảnh báo cho người tiêu dùng, không kèm số đo hay dữ liệu nội bộ
+    is_recalled: bool = False
+    recall_notice: str | None = None
+    cold_chain_notice: str | None = None
+    # S-60: bản đồ hành trình (vùng trồng gốc -> điểm phân phối)
+    map_points: list[PublicMapPoint] = []
 
     model_config = ConfigDict(from_attributes=True)
